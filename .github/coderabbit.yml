@@ -1,0 +1,13 @@
+# 팀원 리뷰가 끝난 뒤 PR을 Merge하기 전에 수동으로 리뷰를 요청(자동실행 비활성화)
+# @coderabbit review 또는 @coderabbit summarize를 PR의 댓글에 작성해 호출
+review:
+  enabled: true         # 리뷰 기능 활성화
+  summary: true         # 요약 활성화
+  auto: false           # 자동실행 비활성화
+  trigger:
+    on_comment: true    # PR에 댓글로 명시적으로 요청할 때만 실행
+    on_label: true      # 특정 라벨이 붙었을 때 실행
+    on_open: false      # PR 생성 시 자동 리뷰 비활성화
+    on_commit: false    # 커밋 추가 시 자동 리뷰 비활성화
+  language: korean      # 리뷰 언어 설정
+  tone: friendly        # 리뷰 말투 설정
