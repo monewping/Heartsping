@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: monewping
+  sql.init.mode: always
+  profiles:
+    active: default
+
+  # DB 접속 정보
+  datasource:
+    url: jdbc:postgresql://localhost:5432/monewpingdb
+    username: monewping
+    password: monewping
+    driver-class-name: org.postgresql.Driver
+    default_schema: monewping
+
+  # JPA 설정
+  jpa:
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        ddl-auto: validate
+        format_sql: true
+        highlight_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    org.project.monewping: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - loggers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  info:
+    env:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
