@@ -8,7 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 @Getter
 @MappedSuperclass
-public class BaseUpdatableEntity extends BaseEntity {
+public abstract class BaseUpdatableEntity extends BaseEntity {
 
     @Column(name = "updated_at")
     @LastModifiedDate
