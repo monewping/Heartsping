@@ -1,0 +1,50 @@
+package org.project.monewping.domain.interest.mapper;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.project.monewping.domain.interest.dto.InterestDto;
+import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.entity.Keyword;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/** 관심사 도메인 객체 변환을 담당하는 매퍼. */
+@Mapper(componentModel = "spring")
+public interface InterestMapper {
+
+    /** 관심사 등록 요청 DTO를 엔티티로 변환한다.
+     * @param dto 관심사 등록 요청 DTO
+     * @return Interest 엔티티
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "keywords", ignore = true)
+    @Mapping(target = "subscriberCount", constant = "0L")
+    Interest toEntity(InterestRegisterRequest dto);
+
+    /** Interest 엔티티를 DTO로 변환한다.
+     * @param entity Interest 엔티티
+     * @return InterestDto
+     */
+    @Mapping(target = "keywords", source = "keywords", qualifiedByName = "keywordsToStrings")
+    @Mapping(target = "subscribedByMe", constant = "false")
+    InterestDto toDto(Interest entity);
+
+    /** Keyword 엔티티 리스트를 String 리스트로 변환한다.
+     * @param keywords Keyword 엔티티 리스트
+     * @return String 리스트
+     */
+    @Named("keywordsToStrings")
+    default List<String> keywordsToStrings(List<Keyword> keywords) {
+        if (keywords == null) {
+            return List.of();
+        }
+        return keywords.stream()
+                .map(Keyword::getKeyword)
+                .collect(Collectors.toList());
+    }
+} 
