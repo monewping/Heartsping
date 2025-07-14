@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import org.project.monewping.global.base.BaseUpdatableEntity;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notifications")
 @Getter
 @NoArgsConstructor
 public class Notification extends BaseUpdatableEntity {

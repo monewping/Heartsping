@@ -16,7 +16,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
       from Notification n
       where n.userId = :userId
         and n.confirmed = false
-        and (:after is null or n.createdAt < :after)
+        and (cast(:after as timestamp) is null or n.createdAt < :after)
       order by n.createdAt desc
     """)
     List<Notification> findPageSlice(@Param("userId") UUID userId, @Param("after") Instant after, Pageable pageable);

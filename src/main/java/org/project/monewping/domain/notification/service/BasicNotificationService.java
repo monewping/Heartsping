@@ -109,7 +109,8 @@ public class BasicNotificationService implements NotificationService {
         Instant nextAfter = null;
         String nextCursor = null;
         if (hasNext) {
-            nextAfter = notificationsSlice.get(limit).getCreatedAt();
+            Notification last = pageList.get(pageList.size() - 1);
+            nextAfter = last.getCreatedAt();
             nextCursor = nextAfter.toString();
             log.debug("next cursor: {}", nextCursor);
         }
