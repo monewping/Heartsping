@@ -36,8 +36,11 @@ public class CommentServiceImpl implements CommentService {
             .map(commentMapper::toResponseDto)
             .toList();
 
-        Long nextIdAfter = comments.isEmpty() ? null : comments.get(comments.size() - 1).getId();
-        String nextCursor = comments.isEmpty() ? null : String.valueOf(nextIdAfter);
+        UUID lastId = comments.isEmpty() ? null : comments.get(comments.size() - 1).getId();
+
+        Long nextIdAfter = lastId == null ? null : Math.abs(lastId.getMostSignificantBits());
+        String nextCursor = lastId == null ? null : lastId.toString();
+
 
         int size = comments.size();
         long totalElements = size;

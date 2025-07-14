@@ -2,6 +2,7 @@ package org.project.monewping.domain.comment.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.springframework.stereotype.Repository;
@@ -26,19 +27,19 @@ public class CommentCustomRepositoryImpl implements CommentCustomRepository {
     public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, int limit) {
         StringBuilder sql = new StringBuilder("SELECT c FROM Comment c WHERE c.articleId = :articleId");
 
-        if (cursor != null) {
-            sql.append(" AND c.id ");
-            sql.append("ASC".equalsIgnoreCase(direction) ? "> :cursor" : "< :cursor");
+        if (after != null) {
+            sql.append(" AND c.createdAt ");
+            sql.append("ASC".equalsIgnoreCase(direction) ? "> :after" : "< :after");
         }
 
-            sql.append(" ORDER BY c.").append(orderBy).append(" ").append(direction.toUpperCase());
-            sql.append(", c.id ").append(direction.toUpperCase());
+        sql.append(" ORDER BY c.").append(orderBy).append(" ").append(direction.toUpperCase());
+        sql.append(", c.id ").append(direction.toUpperCase());
 
         TypedQuery<Comment> query = em.createQuery(sql.toString(), Comment.class);
         query.setParameter("articleId", articleId);
 
-        if (cursor != null) {
-            query.setParameter("cursor", Long.parseLong(cursor));
+        if (after != null) {
+            query.setParameter("after", LocalDateTime.parse(after)); // after는 String이 아니라 ISO8601 DateTime 이어야 함.
         }
 
         return query.setMaxResults(limit + 1).getResultList();

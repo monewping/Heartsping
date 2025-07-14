@@ -1,9 +1,9 @@
 package org.project.monewping.domain.comment.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.*;
-import java.time.LocalDateTime;
 
 /**
  * 댓글 도메인 엔티티
@@ -14,14 +14,34 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name = "comments")
 public class Comment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "uuid")
+    private UUID id;
+
+    @Column(name = "article_id", nullable = false)
     private UUID articleId;
+
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
+    @Column(name = "user_nickname", nullable = false)
+    private String userNickname;
+
+    @Column(nullable = false)
     private String content;
-    private String nickname;
+
+    @Column(name = "like_count", nullable = false)
     private int likeCount;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Column(nullable = false)
+    private Boolean deleted;
 }
