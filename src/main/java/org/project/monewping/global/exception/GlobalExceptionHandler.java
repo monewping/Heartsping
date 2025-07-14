@@ -2,6 +2,7 @@ package org.project.monewping.global.exception;
 
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,16 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.CONFLICT,
                 "DUPLICATE_INTEREST_NAME",
+                e.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(SimilarInterestNameException.class)
+    public ResponseEntity<ErrorResponse> handleSimilarInterestNameException(SimilarInterestNameException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.CONFLICT,
+                "SIMILAR_INTEREST_NAME",
                 e.getMessage()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);

@@ -4,6 +4,7 @@ import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 
 /**
  * 관심사 관련 비즈니스 로직을 제공하는 서비스 인터페이스입니다.
@@ -20,6 +21,7 @@ public interface InterestService {
      * @param request 관심사 등록 요청 DTO
      * @return 등록된 관심사 정보 DTO
      * @throws DuplicateInterestNameException 이미 동일한 이름의 관심사가 존재할 경우
+     * @throws SimilarInterestNameException 80% 이상 유사한 이름의 관심사가 존재할 경우
      * @throws InterestCreationException 관심사 생성 중 예기치 못한 오류가 발생한 경우
      */
     InterestDto create(InterestRegisterRequest request);

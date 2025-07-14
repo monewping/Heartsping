@@ -7,6 +7,7 @@ import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.service.InterestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ public class InterestController {
      * @param request 관심사 등록 요청 DTO
      * @return 생성된 관심사 정보와 201 응답
      * @throws DuplicateInterestNameException 동일한 이름의 관심사가 이미 존재하는 경우
+     * @throws SimilarInterestNameException 80% 이상 유사한 이름의 관심사가 존재하는 경우
      * @throws InterestCreationException 관심사 생성 중 오류가 발생한 경우
      * @throws IllegalArgumentException 요청 데이터가 유효하지 않은 경우
      */
