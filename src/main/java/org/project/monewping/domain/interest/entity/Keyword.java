@@ -30,7 +30,7 @@ public class Keyword extends BaseEntity {
     private Interest interest;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String keyword;
+    private String name;
 
     @Column(nullable = false)
     @Builder.Default
@@ -41,12 +41,12 @@ public class Keyword extends BaseEntity {
      *
      * <p>관심사, 키워드, 생성 시점을 받아 엔티티를 초기화합니다.</p>
      * @param interest 관심사
-     * @param keyword 키워드 텍스트
+     * @param name 키워드 텍스트
      * @param createdAt 생성 시간
      */
-    public Keyword(Interest interest, String keyword, Instant createdAt) {
+    public Keyword(Interest interest, String name, Instant createdAt) {
         this.interest = interest;
-        this.keyword = keyword;
+        this.name = name;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
     }
 
@@ -55,11 +55,11 @@ public class Keyword extends BaseEntity {
      *
      * <p>관심사, 키워드를 받아 생성 시점은 현재 시간으로 설정합니다.</p>
      * @param interest 관심사
-     * @param keyword 키워드 텍스트
+     * @param name 키워드 텍스트
      */
-    public Keyword(Interest interest, String keyword) {
+    public Keyword(Interest interest, String name) {
         this.interest = interest;
-        this.keyword = keyword;
+        this.name = name;
         this.createdAt = Instant.now();
     }
 }
