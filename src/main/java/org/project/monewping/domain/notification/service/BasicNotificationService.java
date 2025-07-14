@@ -92,12 +92,14 @@ public class BasicNotificationService implements NotificationService {
             .map(notificationMapper::toDto)
             .toList();
 
+        long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
+
         return new CursorPageResponseNotificationDto(
             content,
             null,
             null,
             content.size(),
-            content.size(),
+            totalUnreadNotification,
             false
         );
     }

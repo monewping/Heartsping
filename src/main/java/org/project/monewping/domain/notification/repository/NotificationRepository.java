@@ -1,13 +1,25 @@
 package org.project.monewping.domain.notification.repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
-import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
-import org.project.monewping.global.dto.CursorPageResponse;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
-    CursorPageResponse<NotificationDto> findByUserIdAndAfter(UUID userId, Instant after, int limit);
+    @Query("""
+      select n
+      from Notification n
+      where n.userId = :userId
+        and n.confirmed = false
+        and (:after is null or n.createdAt < :after)
+      order by n.createdAt desc
+    """)
+    List<Notification> findPageSlice(@Param("userId") UUID userId, @Param("after") Instant after, Pageable pageable);
+
+    long countByUserIdAndConfirmedFalse(UUID userId);
 }
