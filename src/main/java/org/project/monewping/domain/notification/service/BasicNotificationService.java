@@ -1,5 +1,8 @@
 package org.project.monewping.domain.notification.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -65,52 +68,57 @@ public class BasicNotificationService implements NotificationService {
         log.debug("Creating notifications for user {} and resource {}, resourceType {}", userId, resourceId, resourceType);
         List<Notification> notifications = new ArrayList<>();
 
-        if (resourceType.equals("Article")) {
-//            Article article = articleRepository.findById(resourceId);
-//            UUID interestId = article.getInterest().getId();
+        switch (resourceType) {
+            case "Article": {
+//              Article article = articleRepository.findById(resourceId);
+//              UUID interestId = article.getInterest().getId();
 //
-//            String interestName = interestRepository.findById(interestId).getName();
+//              String interestName = interestRepository.findById(interestId).getName();
 //
-//            List<UUID> subscriberIds = interestSubscriptionRepository.findUserIdsByInterestId(interestId);
+//                List<UUID> subscriberIds = interestSubscriptionRepository.findUserIdsByInterestId(interestId);
 //
-//            long count = articleRepository
-//                .countByInterestIdAndCreatedAtAfter(interestId, lastNotifiedAt);
+//                long count = articleRepository
+//                    .countByInterestIdAndCreatedAtAfter(interestId, lastNotifiedAt);
 //
-//            notifications = subscriberIds.stream()
-//                .map(userId -> {
-//                    String content = String.format(
-//                        "%s와 관련된 기사가 %d건 등록되었습니다.",
-//                        interestName,
-//                        count
-//                    );
-//                    return new Notification(userId, content, resourceId,"Article");
-//                })
-//                .collect(Collectors.toList());
+//              notifications = subscriberIds.stream()
+//                  .map(userId -> {
+//                      String content = String.format(
+//                          "%s와 관련된 기사가 %d건 등록되었습니다.",
+//                          interestName,
+//                            count
+//                      );
+//                        return new Notification(userId, content, resourceId,"Article");
+//                  })
+//                    .collect(Collectors.toList());
 //
-//            notificationRepository.saveAll(notifications);
+//              notificationRepository.saveAll(notifications);
 
-            String testInterestName = "스포츠";
-            int testCount = 2;
-            String testContent = testInterestName + "와 관련된 기사가 " + testCount + "건 등록되었습니다.";
+                String testInterestName = "스포츠";
+                int testCount = 2;
+                String testContent = testInterestName + "와 관련된 기사가 " + testCount + "건 등록되었습니다.";
 
-            Notification notification = new Notification(
-                userId, testContent, resourceId, resourceType
-            );
-            notificationRepository.save(notification);
-            notifications.add(notification);
-        } else if (resourceType.equals("Comment")) {
-            //String user = userRepository.findById(resourceId).getNickname();
+                Notification notification = new Notification(
+                    userId, testContent, resourceId, resourceType
+                );
+                notificationRepository.save(notification);
+                notifications.add(notification);
+                break;
+            }
+            case "Comment": {
+                //String user = userRepository.findById(resourceId).getNickname();
 
-            String testUser = "User";
-            String testContent = testUser + "님이 나의 댓글을 좋아합니다.";
+                String testUser = "User";
+                String testContent = testUser + "님이 나의 댓글을 좋아합니다.";
 
-            Notification notification = new Notification(
-                userId, testContent, resourceId, resourceType
-            );
-            notificationRepository.save(notification);
-            notifications.add(notification);
-        } else {
-            throw new UnsupportedResourceTypeException(resourceType);
+                Notification notification = new Notification(
+                    userId, testContent, resourceId, resourceType
+                );
+                notificationRepository.save(notification);
+                notifications.add(notification);
+                break;
+            }
+            default:
+                throw new UnsupportedResourceTypeException(resourceType);
         }
 
         return notifications.stream()
