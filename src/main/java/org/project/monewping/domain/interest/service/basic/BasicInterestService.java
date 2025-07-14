@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -36,6 +37,7 @@ public class BasicInterestService implements InterestService {
     private final InterestMapper interestMapper;
 
     private static final double SIMILARITY_THRESHOLD = 0.8; // 80% 유사도 임계값
+    private static final JaroWinklerSimilarity JW = new JaroWinklerSimilarity();
 
     /**
      * 관심사를 등록합니다.
@@ -163,87 +165,8 @@ public class BasicInterestService implements InterestService {
      * <p>두 문자열 간의 유사도를 0.0~1.0 사이의 값으로 반환합니다.</p>
      */
     private double calculateSimilarity(String s1, String s2) {
-        if (s1.equals(s2)) {
-            log.info("[InterestService] 유사도 계산: '{}' vs '{}' = 1.0 (동일)", s1, s2);
-            return 1.0;
-        }
-        // Jaro 거리 계산
-        double jaroDistance = calculateJaroDistance(s1, s2);
-        // Jaro-Winkler 보정 적용
-        double jaroWinklerDistance = calculateJaroWinklerDistance(s1, s2, jaroDistance);
-        log.info("[InterestService] 유사도 계산: '{}' vs '{}' = {}", s1, s2, jaroWinklerDistance);
-        return jaroWinklerDistance;
-    }
-
-    /**
-     * Jaro 거리를 계산합니다.
-     */
-    private double calculateJaroDistance(String s1, String s2) {
-        if (s1.length() == 0 && s2.length() == 0) {
-            return 1.0;
-        }
-        int matchDistance = Math.max(s1.length(), s2.length()) / 2 - 1;
-        if (matchDistance < 0) {
-            matchDistance = 0;
-        }
-        boolean[] s1Matches = new boolean[s1.length()];
-        boolean[] s2Matches = new boolean[s2.length()];
-        int matches = 0;
-        int transpositions = 0;
-        // 첫 번째 문자열에서 매치 찾기
-        for (int i = 0; i < s1.length(); i++) {
-            int start = Math.max(0, i - matchDistance);
-            int end = Math.min(i + matchDistance + 1, s2.length());
-            for (int j = start; j < end; j++) {
-                if (s2Matches[j] || s1.charAt(i) != s2.charAt(j)) {
-                    continue;
-                }
-                s1Matches[i] = true;
-                s2Matches[j] = true;
-                matches++;
-                break;
-            }
-        }
-        if (matches == 0) {
-            return 0.0;
-        }
-        // 전치(transposition) 계산
-        int k = 0;
-        for (int i = 0; i < s1.length(); i++) {
-            if (!s1Matches[i]) {
-                continue;
-            }
-            while (!s2Matches[k]) {
-                k++;
-            }
-            if (s1.charAt(i) != s2.charAt(k)) {
-                transpositions++;
-            }
-            k++;
-        }
-        double jaroDistance = (matches / (double) s1.length() + 
-                matches / (double) s2.length() + 
-                (matches - transpositions / 2.0) / matches) / 3.0;
-        return jaroDistance;
-    }
-
-    /**
-     * Jaro-Winkler 보정 적용
-     */
-    private double calculateJaroWinklerDistance(String s1, String s2, double jaroDistance) {
-        if (jaroDistance < 0.7) {
-            return jaroDistance;
-        }
-        int prefixLength = 0;
-        int maxPrefixLength = Math.min(4, Math.min(s1.length(), s2.length()));
-        for (int i = 0; i < maxPrefixLength; i++) {
-            if (s1.charAt(i) == s2.charAt(i)) {
-                prefixLength++;
-            } else {
-                break;
-            }
-        }
-        double jaroWinklerDistance = jaroDistance + 0.1 * prefixLength * (1.0 - jaroDistance);
-        return jaroWinklerDistance;
+        double score = JW.apply(s1, s2);
+        log.info("[InterestService] 유사도 계산: '{}' vs '{}' = {}", s1, s2, score);
+        return score;
     }
 } 
