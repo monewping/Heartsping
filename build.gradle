@@ -41,7 +41,10 @@ dependencies {
     implementation 'software.amazon.awssdk:auth'
     implementation 'software.amazon.awssdk:aws-core'
     implementation 'software.amazon.awssdk:regions'
-
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Jaro Winkler 유사도 계산 의존성
+    implementation 'org.apache.commons:commons-text:1.11.0'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'

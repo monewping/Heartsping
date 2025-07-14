@@ -145,7 +145,8 @@ CREATE TABLE notification (
     updated_at TIMESTAMPTZ NOT NULL,
 
     -- Foreign Key
-    user_id UUID NOT NULL, FOREIGN KEY (user_id) REFERENCES "user" (id),
+    user_id UUID,
+    FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE SET NULL,
 
     -- Check constraint
     CONSTRAINT chk_notification_resource_type
