@@ -20,12 +20,6 @@ public class ArticleServiceTest {
     private NewsViewHistoryRepository viewHistoryRepository;
 
     @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private NewsArticleRepository articleRepository;
-
-    @Mock
     private NewsViewHistoryMapper mapper;
 
     private UUID userId;
@@ -40,19 +34,13 @@ public class ArticleServiceTest {
     }
 
     @Test
-    @DisplayName("기사 뷰 정상 등록")
+    @DisplayName("사용자가 기사를 처음 조회하면 조회 기록이 저장된다")
     void registerView_Success() {
         // given
-        User user = new User(userId, "test@example.com");
-        NewsArticle article = new NewsArticle(articleId, "title", "link");
-
-        given(viewHistoryRepository.findByUserUserIdAndArticleArticleId(userId, articleId))
+        given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
             .willReturn(Optional.empty());
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
-
-        NewsViewHistory history = new NewsViewHistory(user, article, dto.ViewdAt());
-        given(mapper.toEntity(dto, user, article)).willReturn(history);
+        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), userId, article, dto.ViewedAt());
+        given(mapper.toEntity(dto).willReturn(history);
 
         // when
         articleViewService.registerView(dto);
@@ -62,7 +50,7 @@ public class ArticleServiceTest {
     }
 
     @Test
-    @DisplayName("기사 중복 조회 시 예외 발생")
+    @DisplayName("사용자가 이미 조회한 기사 중복 조회 시 예외 발생")
     void registerView_ShouldThrowException_WhenDuplicateView() {
         // given
         given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
