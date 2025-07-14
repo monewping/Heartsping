@@ -70,8 +70,8 @@ public class BasicNotificationService implements NotificationService {
     }
 
     @Override
-    public CursorPageResponse<NotificationDto> getNotifications(UUID userId, Instant after, int limit) {
-        return null;
+    public CursorPageResponse<NotificationDto> findNotifications(UUID userId, Instant after, int limit) {
+        return notificationRepository.findByUserIdAndAfter(userId, after, limit);
     }
 
 

@@ -13,5 +13,5 @@ public interface NotificationService {
 
     List<NotificationDto> create(@NotNull UUID userId, @NotNull UUID resourceId, @NotBlank @Pattern(regexp = "Article|Comment", message = "resourceType은 Article 또는 Comment만 허용됩니다.") String resourceType);
 
-    CursorPageResponse<NotificationDto> getNotifications(UUID userId, Instant after, int limit);
+    CursorPageResponse<NotificationDto> findNotifications(UUID userId, Instant after, int limit);
 }
