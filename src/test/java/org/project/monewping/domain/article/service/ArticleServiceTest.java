@@ -15,7 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.entity.NewsViewHistory;
+import org.project.monewping.domain.article.exception.DuplicateViewHistoryException;
+import org.project.monewping.domain.article.mapper.NewsViewHistoryMapper;
 import org.project.monewping.domain.article.repository.NewsViewHistoryRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,7 +51,7 @@ public class ArticleServiceTest {
         given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
             .willReturn(Optional.empty());
         NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), userId, article, dto.ViewedAt());
-        given(mapper.toEntity(dto).willReturn(history);
+        given(mapper.toEntity(dto)).willReturn(history);
 
         // when
         articleViewService.registerView(dto);
