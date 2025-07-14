@@ -43,13 +43,13 @@ public class ArticleController {
     ) {
         log.info("기사 조회 등록 요청 수신 : userId = {}, articleId = {}", viewedBy, articleId);
 
-        LocalDateTime articlePublishedDate = LocalDateTime.now();
+        LocalDateTime createdAt = LocalDateTime.now();
 
         ArticleViewDto requestDto = new ArticleViewDto(
             UUID.randomUUID(),
             viewedBy,
             articleId,
-            articlePublishedDate
+            createdAt
         );
 
         ArticleViewDto responseDto = articleViewsService.registerView(requestDto);
