@@ -7,14 +7,14 @@ import lombok.Getter;
 
 /**
  * 댓글 응답 DTO
- * 댓글 조회 API 응답에 사용된다.
+ * 댓글 조회 API 응답에 사용됩니다.
  */
 @Getter
-@Builder
 @AllArgsConstructor
 public class CommentResponseDto {
     private Long id;
     private String content;
-    private Long likeCount;
+    private String nickname;
+    private int likeCount;
     private LocalDateTime createdAt;
 }

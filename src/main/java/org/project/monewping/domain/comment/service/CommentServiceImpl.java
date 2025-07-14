@@ -1,5 +1,6 @@
 package org.project.monewping.domain.comment.service;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -12,40 +13,43 @@ import java.util.List;
 
 /**
  * 댓글 서비스 구현체
- * 댓글 도메인 비즈니스 로직을 수행한다.
+ * 기사에 대한 댓글 목록을 조회하는 비즈니스 로직을 제공합니다.
  */
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
+
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
 
-    /**
-     * 댓글 목록 조회 (커서 기반 페이징)
-     *
-     * @param cursorId 커서 ID
-     * @param size 페이지 크기
-     * @return 댓글 목록 응답 DTO
-     */
     @Override
-    public CursorPageResponse<CommentResponseDto> getComments(Long cursorId, int size) {
-        List<Comment> comments = commentRepository.findTop10ByIdLessThanOrderByIdDesc(
-            cursorId != null ? cursorId : Long.MAX_VALUE
-        );
-
-        List<CommentResponseDto> dtoList = comments.stream()
+    public CursorPageResponse<CommentResponseDto> getComments(
+        UUID articleId,
+        String orderBy,
+        String direction,
+        String cursor,
+        String after,
+        int limit
+    ) {
+        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, limit);
+        List<CommentResponseDto> response = comments.stream()
             .map(commentMapper::toResponseDto)
             .toList();
 
-        Long nextIdAfter = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        Long nextIdAfter = comments.isEmpty() ? null : comments.get(comments.size() - 1).getId();
+        String nextCursor = comments.isEmpty() ? null : String.valueOf(nextIdAfter);
+
+        int size = comments.size();
+        long totalElements = size;
+        boolean hasNext = size == limit;
 
         return new CursorPageResponse<>(
-            dtoList,
+            response,
             nextIdAfter,
-            null,
-            dtoList.size(),
-            dtoList.size(),
-            !dtoList.isEmpty()
+            nextCursor,
+            size,
+            totalElements,
+            hasNext
         );
     }
 }

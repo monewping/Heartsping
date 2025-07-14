@@ -1,19 +1,19 @@
 package org.project.monewping.domain.comment.service;
 
+import java.util.UUID;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.global.dto.CursorPageResponse;
-
 /**
- * 댓글 서비스 인터페이스
- * 댓글 도메인 관련 비즈니스 로직을 정의한다.
+ * 댓글 조회 서비스 인터페이스
+ * 기사에 대한 댓글 목록 조회 기능을 정의합니다.
  */
 public interface CommentService {
-    /**
-     * 댓글 목록 조회 (커서 기반)
-     *
-     * @param cursorId 커서 ID
-     * @param size 페이지 크기
-     * @return 댓글 목록 응답 DTO
-     */
-    CursorPageResponse<CommentResponseDto> getComments(Long cursorId, int size);
+    CursorPageResponse<CommentResponseDto> getComments(
+        UUID articleId,
+        String orderBy,
+        String direction,
+        String cursor,
+        String after,
+        int limit
+    );
 }
