@@ -1,5 +1,6 @@
 package org.project.monewping.domain.notification.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
+import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -66,6 +68,12 @@ public class BasicNotificationService implements NotificationService {
             .map(notificationMapper::toDto)
             .collect(Collectors.toList());
     }
+
+    @Override
+    public CursorPageResponse<NotificationDto> getNotifications(UUID userId, Instant after, int limit) {
+        return null;
+    }
+
 
     /**
      * 관심사의 새로운 기사에 대한 알림을 생성합니다. (기능 통합 전 테스트 로직)
