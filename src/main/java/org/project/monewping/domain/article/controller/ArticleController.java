@@ -5,7 +5,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
-import org.project.monewping.domain.article.service.ArticleViewService;
+import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class ArticleController {
 
-    private final ArticleViewService articleViewService;
+    private final ArticleViewsService articleViewsService;
 
     /**
      * 특정 뉴스 기사에 대해 사용자의 조회 기록을 등록한다.
@@ -52,7 +52,7 @@ public class ArticleController {
             articlePublishedDate
         );
 
-        ArticleViewDto responseDto = articleViewService.registerView(requestDto);
+        ArticleViewDto responseDto = articleViewsService.registerView(requestDto);
         log.info("기사 조회 등록 완료 : id = {}, userId = {}, articleId = {}, publishedDate = {}",
             requestDto.id(),
             responseDto.viewedBy(),

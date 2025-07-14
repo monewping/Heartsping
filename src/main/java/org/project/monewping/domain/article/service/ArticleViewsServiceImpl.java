@@ -4,10 +4,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
-import org.project.monewping.domain.article.entity.NewsViewHistory;
-import org.project.monewping.domain.article.exception.DuplicateViewHistoryException;
-import org.project.monewping.domain.article.mapper.NewsViewHistoryMapper;
-import org.project.monewping.domain.article.repository.NewsViewHistoryRepository;
+import org.project.monewping.domain.article.entity.ArticleViews;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.article.mapper.ArticleViewsMapper;
+import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,21 +23,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 @Slf4j
-public class ArticleViewServiceImpl implements ArticleViewService {
+public class ArticleViewsServiceImpl implements ArticleViewsService {
 
-    private final NewsViewHistoryRepository newsViewHistoryRepository;
-    private final NewsViewHistoryMapper newsViewHistoryMapper;
+    private final ArticleViewsRepository articleViewsRepository;
+    private final ArticleViewsMapper articleViewsMapper;
 
     /**
      * 뉴스 기사 조회 기록을 등록한다.
      * <p>
      * 동일한 사용자와 기사 조합의 조회 기록이 이미 존재하면
-     * {@link DuplicateViewHistoryException} 예외를 던진다.
+     * {@link DuplicateArticleViewsException} 예외를 던진다.
      * </p>
      *
      * @param dto 조회 기록 등록 요청 데이터 (사용자 ID, 기사 ID, 조회 시간 포함)
      * @return 저장된 조회 기록의 DTO
-     * @throws DuplicateViewHistoryException 중복 조회 기록 존재 시 발생
+     * @throws DuplicateArticleViewsException 중복 조회 기록 존재 시 발생
      */
     @Override
     public ArticleViewDto registerView(ArticleViewDto dto) {
@@ -47,13 +47,13 @@ public class ArticleViewServiceImpl implements ArticleViewService {
         // 중복 여부 검사
         validateNoDuplicateViewHistory(dto.viewedBy(), dto.articleId());
 
-        NewsViewHistory newsViewHistory = newsViewHistoryMapper.toEntity(dto);
-        NewsViewHistory saved = newsViewHistoryRepository.save(newsViewHistory);
+        ArticleViews articleViews = articleViewsMapper.toEntity(dto);
+        ArticleViews saved = articleViewsRepository.save(articleViews);
 
         log.info("기사 조회 기록 저장 완료 : viewedBy = {}, articleId = {}, articlePublishedDate = {}",
             dto.viewedBy(), dto.articleId(), dto.articlePublishedDate());
 
-        return newsViewHistoryMapper.toDto(saved);
+        return articleViewsMapper.toDto(saved);
     }
 
     /**
@@ -61,13 +61,13 @@ public class ArticleViewServiceImpl implements ArticleViewService {
      *
      * @param viewedBy 사용자 ID
      * @param articleId 뉴스 기사 ID
-     * @throws DuplicateViewHistoryException 중복 조회 기록이 존재할 경우 발생
+     * @throws DuplicateArticleViewsException 중복 조회 기록이 존재할 경우 발생
      */
     private void validateNoDuplicateViewHistory(UUID viewedBy, UUID articleId) {
-        boolean exists = newsViewHistoryRepository.findByViewedByAndArticleId(viewedBy, articleId).isPresent();
+        boolean exists = articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId).isPresent();
         if (exists) {
             log.warn("중복 기사 조회 시도 감지 : viewedBy = {}, articleId = {}", viewedBy, articleId);
-            throw new DuplicateViewHistoryException();
+            throw new DuplicateArticleViewsException();
         }
     }
 }

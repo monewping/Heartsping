@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(name = "article_views")
-public class NewsViewHistory {
+public class ArticleViews {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
-import org.project.monewping.domain.article.service.ArticleViewService;
+import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -20,13 +20,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ArticleController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
-public class ArticleControllerTest {
+public class ArticlesControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ArticleViewService articleViewService;
+    private ArticleViewsService articleViewsService;
 
     @Test
     @DisplayName("기사 뷰 등록 성공 - 200 OK, 반환 데이터 검증")
@@ -43,7 +43,7 @@ public class ArticleControllerTest {
             publishedDate
         );
 
-        doReturn(mockResponse).when(articleViewService).registerView(any(ArticleViewDto.class));
+        doReturn(mockResponse).when(articleViewsService).registerView(any(ArticleViewDto.class));
 
         mockMvc.perform(post("/api/articles/{articleId}/article-views", articleId)
                 .header("Monew-Request-User-ID", userId.toString())

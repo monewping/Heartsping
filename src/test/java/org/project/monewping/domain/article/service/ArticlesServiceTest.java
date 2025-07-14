@@ -23,28 +23,28 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
-import org.project.monewping.domain.article.entity.NewsViewHistory;
-import org.project.monewping.domain.article.exception.DuplicateViewHistoryException;
-import org.project.monewping.domain.article.mapper.NewsViewHistoryMapper;
-import org.project.monewping.domain.article.repository.NewsViewHistoryRepository;
+import org.project.monewping.domain.article.entity.ArticleViews;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.article.mapper.ArticleViewsMapper;
+import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 
 @ExtendWith(MockitoExtension.class)
-public class ArticleServiceTest {
+public class ArticlesServiceTest {
 
     @InjectMocks
-    private ArticleViewServiceImpl articleViewService;
+    private ArticleViewsServiceImpl articleViewService;
 
     @InjectMocks
-    private NewsArticleServiceImpl newsArticleService;
+    private NewsArticleServiceImpl articleService;
 
     @Mock
-    private NewsViewHistoryRepository viewHistoryRepository;
+    private ArticleViewsRepository viewHistoryRepository;
 
     @Mock
-    private NewsViewHistoryMapper mapper;
+    private ArticleViewsMapper mapper;
 
     @Mock
-    private NewsArticleRepository newsArticleRepository;
+    private NewsArticleRepository articleRepository;
 
     @Mock
     private InterestRepository interestRepository;
@@ -66,7 +66,7 @@ public class ArticleServiceTest {
         // given
         given(viewHistoryRepository.findByViewedByAndArticleId(viewedBy, articleId))
             .willReturn(Optional.empty());
-        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), viewedBy, articleId, dto.articlePublishedDate());
+        ArticleViews history = new ArticleViews(UUID.randomUUID(), viewedBy, articleId, dto.articlePublishedDate());
         given(mapper.toEntity(dto)).willReturn(history);
 
         // when
@@ -81,11 +81,11 @@ public class ArticleServiceTest {
     void registerView_ShouldThrowException_WhenDuplicateView() {
         // given
         given(viewHistoryRepository.findByViewedByAndArticleId(viewedBy, articleId))
-            .willReturn(Optional.of(mock(NewsViewHistory.class)));
+            .willReturn(Optional.of(mock(ArticleViews.class)));
 
         // when & then
         assertThatThrownBy(() -> articleViewService.registerView(dto))
-            .isInstanceOf(DuplicateViewHistoryException.class)
+            .isInstanceOf(DuplicateArticleViewsException.class)
             .hasMessageContaining("이미 조회한 기사");
     }
 
@@ -105,11 +105,12 @@ public class ArticleServiceTest {
             LocalDateTime.of(2025, 7, 14, 10, 0)
         );
 
-        when(newsArticleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(true);
+        when(articleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(true);
 
         // when & then
         assertThrows(DuplicateArticleException.class,
-            () -> {newsArticleService.save(request);
+            () -> {
+                articleService.save(request);
         });
     }
 
@@ -129,12 +130,13 @@ public class ArticleServiceTest {
             LocalDateTime.of(2025, 7, 14, 10, 0)
         );
 
-        when(newsArticleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(false);
+        when(articleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(false);
         when(interestRepository.findById(interestId)).thenReturn(Optional.empty());
 
         // when & then
         assertThrows(InterestNotFoundException.class,
-            () -> {newsArticleService.save(request);
+            () -> {
+                articleService.save(request);
         });
     }
 
@@ -178,17 +180,17 @@ public class ArticleServiceTest {
         when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
 
         // existsByOriginalLink는 각 링크별로 다르게 응답
-        when(newsArticleRepository.existsByOriginalLink("https://naver.com/sample-article")).thenReturn(true);
-        when(newsArticleRepository.existsByOriginalLink("https://naver.com/sample-article-2")).thenReturn(false);
+        when(articleRepository.existsByOriginalLink("https://naver.com/sample-article")).thenReturn(true);
+        when(articleRepository.existsByOriginalLink("https://naver.com/sample-article-2")).thenReturn(false);
 
         // when
-        newsArticleService.saveAll(requests);
+        articleService.saveAll(requests);
 
         // then
         // article-1 링크 : 이미 존재하여 저장 호출 안됨
-        verify(newsArticleRepository, never()).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article")));
+        verify(articleRepository, never()).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article")));
         // article-2 링크 : 저장
-        verify(newsArticleRepository, times(1)).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article-2")));
+        verify(articleRepository, times(1)).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article-2")));
 
     }
 
