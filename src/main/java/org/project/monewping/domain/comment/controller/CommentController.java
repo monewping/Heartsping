@@ -2,6 +2,7 @@ package org.project.monewping.domain.comment.controller;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 댓글 API 컨트롤러
- * 댓글 조회 API를 제공합니다.
+ * 댓글 조회 및 등록 API를 제공합니다.
  */
 @RestController
 @RequestMapping("/api/comments")
@@ -36,10 +37,19 @@ public class CommentController {
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
         @RequestParam(required = false, defaultValue = "50") Integer limit
-    ) {
-      CursorPageResponse<CommentResponseDto> response = commentService.getComments(
-          articleId, orderBy, direction, cursor, after, limit
-      );
-      return ResponseEntity.ok(response);
+    )   {
+        CursorPageResponse<CommentResponseDto> response = commentService.getComments(
+            articleId, orderBy, direction, cursor, after, limit
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 댓글을 등록합니다.
+     */
+    @PostMapping
+    public ResponseEntity<Void> registerComment(@RequestBody CommentRegisterRequestDto requestDto) {
+      commentService.registerComment(requestDto);
+      return ResponseEntity.ok().build();
     }
 }
