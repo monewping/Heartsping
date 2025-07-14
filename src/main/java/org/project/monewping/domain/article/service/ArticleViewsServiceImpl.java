@@ -50,8 +50,8 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
         ArticleViews articleViews = articleViewsMapper.toEntity(dto);
         ArticleViews saved = articleViewsRepository.save(articleViews);
 
-        log.info("기사 조회 기록 저장 완료 : viewedBy = {}, articleId = {}, articlePublishedDate = {}",
-            dto.viewedBy(), dto.articleId(), dto.articlePublishedDate());
+        log.info("기사 조회 기록 저장 완료 : viewedBy = {}, articleId = {}, createdAt = {}",
+            dto.viewedBy(), dto.articleId(), dto.createdAt());
 
         return articleViewsMapper.toDto(saved);
     }

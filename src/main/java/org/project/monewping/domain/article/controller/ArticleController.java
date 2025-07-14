@@ -57,7 +57,7 @@ public class ArticleController {
             requestDto.id(),
             responseDto.viewedBy(),
             responseDto.articleId(),
-            responseDto.articlePublishedDate());
+            responseDto.createdAt());
 
         return ResponseEntity.ok(responseDto);
     }

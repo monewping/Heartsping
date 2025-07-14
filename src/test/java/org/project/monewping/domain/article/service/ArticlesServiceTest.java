@@ -66,7 +66,7 @@ public class ArticlesServiceTest {
         // given
         given(viewHistoryRepository.findByViewedByAndArticleId(viewedBy, articleId))
             .willReturn(Optional.empty());
-        ArticleViews history = new ArticleViews(UUID.randomUUID(), viewedBy, articleId, dto.articlePublishedDate());
+        ArticleViews history = new ArticleViews(UUID.randomUUID(), viewedBy, articleId, dto.createdAt());
         given(mapper.toEntity(dto)).willReturn(history);
 
         // when
