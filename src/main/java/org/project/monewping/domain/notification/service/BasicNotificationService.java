@@ -33,6 +33,8 @@ public class BasicNotificationService implements NotificationService {
     //private final InterestRepository interestRepository;
     //private final InterestSubscriptionRepository interestSubscriptionRepository;
 
+    private static final int PAGE_OFFSET = 1;
+
     /**
      * 리소스 별 알림을 생성합니다.
      *
@@ -72,11 +74,29 @@ public class BasicNotificationService implements NotificationService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * 사용자별 읽지 않은 알림 목록을 페이지네이션을 이용하여 조회합니다.
+     *
+     * <p>
+     * - {@code cursor}가 주어지면 ISO-8601 포맷으로 파싱하여 그 시점 이전 알림을 조회하고,
+     *   없다면 {@code after} 값을 기준으로 조회합니다.
+     * - 조회 시 {@code limit + 1}개를 가져와서 실제 응답에는 최대 {@code limit}개만 담고
+     *   나머지로 {@code hasNext}와 {@code nextCursor}를 계산합니다.
+     * - 전체 읽지 않은 알림 개수는 {@code totalElements}에 담아 반환합니다.
+     * </p>
+     *
+     * @param userId 조회할 대상 사용자의 UUID
+     * @param cursor 다음 페이지 조회를 위한 커서. null 또는 빈 문자열인 경우 {@code after}를 사용
+     * @param after  커서가 없을 때 기준이 될 생성 일시(Instant)
+     * @param limit  한 페이지의 최대 조회 알림 개수
+     * @return 커서 기반 페이지네이션 응답을 담은 {@link CursorPageResponseNotificationDto}
+     * @throws IllegalArgumentException {@code cursor}가 올바른 포맷이 아닐 경우 반환
+     */
     @Override
     public CursorPageResponseNotificationDto findNotifications(UUID userId, String cursor, Instant after, int limit) {
         Instant baseAfter = parseBaseAfter(cursor, after);
 
-        Pageable pageable = PageRequest.of(0, limit + 1);
+        Pageable pageable = PageRequest.of(0, limit + PAGE_OFFSET);
         List<Notification> notificationsSlice = notificationRepository.findPageSlice(userId, baseAfter, pageable);
 
         boolean hasNext = notificationsSlice.size() > limit;
@@ -86,14 +106,16 @@ public class BasicNotificationService implements NotificationService {
             .map(notificationMapper::toDto)
             .toList();
 
-        Instant nextAfter = hasNext
-            ? notificationsSlice.get(limit).getCreatedAt()
-            : null;
-        String nextCursor = nextAfter != null
-            ? nextAfter.toString()
-            : null;
+        Instant nextAfter = null;
+        String nextCursor = null;
+        if (hasNext) {
+            nextAfter = notificationsSlice.get(limit).getCreatedAt();
+            nextCursor = nextAfter.toString();
+            log.debug("next cursor: {}", nextCursor);
+        }
 
         long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
+        log.debug("totalUnreadNotification: {}", totalUnreadNotification);
 
         return new CursorPageResponseNotificationDto(
             content,
