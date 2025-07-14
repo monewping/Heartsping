@@ -23,10 +23,7 @@ CREATE TABLE interest (
     name VARCHAR(100) NOT NULL,
     subscriber_count BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-
-    -- Unique Key
-    CONSTRAINT uk_interest_name UNIQUE (name)
+    updated_at TIMESTAMPTZ NOT NULL
 );
 
 -- keyword Table
@@ -35,7 +32,7 @@ CREATE TABLE keyword (
     id UUID PRIMARY KEY,
 
     -- Column
-    keyword TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+    name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL,
 
     -- Foreign Key
     interest_id UUID NOT NULL,

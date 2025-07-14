@@ -2,6 +2,9 @@ package org.project.monewping.domain.article.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,7 +12,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.project.monewping.global.base.BaseEntity;
 
 @Getter
 @Builder
@@ -17,7 +19,12 @@ import org.project.monewping.global.base.BaseEntity;
 @NoArgsConstructor
 @Entity
 @Table(name = "news_view_history")
-public class NewsViewHistory extends BaseEntity {
+public class NewsViewHistory {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
+    private UUID id;
 
     @Column(nullable = false, name = "user_id")
     private UUID userId;
