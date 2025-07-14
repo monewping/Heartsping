@@ -1,11 +1,18 @@
 package org.project.monewping.domain.article.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -129,6 +136,60 @@ public class ArticleServiceTest {
         assertThrows(InterestNotFoundException.class,
             () -> {newsArticleService.save(request);
         });
+    }
+
+    @Test
+    @DisplayName("여러 뉴스 기사 수집 후 저장 중 중복된 출처의 뉴스 기사만 제외하고 나머지 뉴스 기사는 저장한다")
+    void saveAll_ShouldSaveOnlyNonDuplicateArticles_WhenSomeArticlesAreDuplicated() {
+        // given
+        UUID interestId = UUID.randomUUID();
+
+        Interest interest = new Interest(interestId, "AI");
+
+        ArticleSaveRequest request = new ArticleSaveRequest(
+            interestId,
+            "Naver",
+            "https://naver.com/sample-article",
+            "AI Breakthrough",
+            "Summary of the AI article",
+            LocalDateTime.of(2025, 7, 14, 10, 0)
+        );
+
+        ArticleSaveRequest request2 = new ArticleSaveRequest(
+            interestId,
+            "Naver",
+            "https://naver.com/sample-article-2",
+            "AI Breakthrough 2",
+            "Summary of the AI article 2",
+            LocalDateTime.of(2025, 7, 14, 11, 0)
+        );
+
+        ArticleSaveRequest duplicateRequest = new ArticleSaveRequest(
+            interestId,
+            "Naver",
+            "https://naver.com/sample-article",  // 중복된 링크
+            "AI Breakthrough",
+            "Summary of the AI article",
+            LocalDateTime.of(2025, 7, 14, 12, 0)
+        );
+
+        List<ArticleSaveRequest> requests = List.of(request, request2, duplicateRequest);
+
+        when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
+
+        // existsByOriginalLink는 각 링크별로 다르게 응답
+        when(newsArticleRepository.existsByOriginalLink("https://naver.com/sample-article")).thenReturn(true);
+        when(newsArticleRepository.existsByOriginalLink("https://naver.com/sample-article-2")).thenReturn(false);
+
+        // when
+        newsArticleService.saveAll(requests);
+
+        // then
+        // article-1 링크 : 이미 존재하여 저장 호출 안됨
+        verify(newsArticleRepository, never()).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article")));
+        // article-2 링크 : 저장
+        verify(newsArticleRepository, times(1)).save(argThat(article -> article.getOriginalLink().equals("https://naver.com/sample-article-2")));
+
     }
 
 }

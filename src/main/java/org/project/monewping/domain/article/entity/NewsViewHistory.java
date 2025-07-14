@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "news_view_history")
+@Table(name = "article_views")
 public class NewsViewHistory {
 
     @Id

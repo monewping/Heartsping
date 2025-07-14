@@ -1,5 +1,17 @@
--- user Table
-CREATE TABLE "user" (
+-- 하위 테이블부터 삭제
+DROP TABLE IF EXISTS comment_like CASCADE;
+DROP TABLE IF EXISTS comment CASCADE;
+DROP TABLE IF EXISTS news_view_history CASCADE;
+DROP TABLE IF EXISTS notification CASCADE;
+DROP TABLE IF EXISTS interest_subscription CASCADE;
+DROP TABLE IF EXISTS keyword CASCADE;
+DROP TABLE IF EXISTS news_article CASCADE;
+DROP TABLE IF EXISTS interest CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
+
+-- Create Table
+-- users Table
+CREATE TABLE users (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -14,8 +26,8 @@ CREATE TABLE "user" (
     -- Unique Key
     CONSTRAINT uk_user_email UNIQUE (email) );
 
-    -- interest Table
-CREATE TABLE interest (
+-- interests Table
+CREATE TABLE interests (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -26,8 +38,8 @@ CREATE TABLE interest (
     updated_at TIMESTAMPTZ NOT NULL
 );
 
--- keyword Table
-CREATE TABLE keyword (
+-- keywords Table
+CREATE TABLE keywords (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -36,11 +48,11 @@ CREATE TABLE keyword (
 
     -- Foreign Key
     interest_id UUID NOT NULL,
-    FOREIGN KEY (interest_id) REFERENCES interest(id) ON DELETE CASCADE
+    FOREIGN KEY (interest_id) REFERENCES interests(id) ON DELETE CASCADE
 );
 
--- interest_subscription Table
-CREATE TABLE interest_subscription (
+-- interest_subscriptions Table
+CREATE TABLE interest_subscriptions (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -50,15 +62,15 @@ CREATE TABLE interest_subscription (
     -- Foreign Key
     interest_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    FOREIGN KEY (interest_id) REFERENCES interest (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
+    FOREIGN KEY (interest_id) REFERENCES interests (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
 
     -- Unique Constraint (중복 구독 방지)
     CONSTRAINT uk_interest_user UNIQUE (interest_id, user_id)
 );
 
--- news_article Table
-CREATE TABLE news_article (
+-- articles Table
+CREATE TABLE articles (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -77,11 +89,11 @@ CREATE TABLE news_article (
 
     -- Foreign Key
     interest_id UUID NOT NULL,
-    FOREIGN KEY (interest_id) REFERENCES interest(id) ON DELETE CASCADE
+    FOREIGN KEY (interest_id) REFERENCES interests(id) ON DELETE CASCADE
 );
 
--- news_view_history Table
-CREATE TABLE news_view_history (
+-- article_views Table
+CREATE TABLE article_views (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -91,12 +103,12 @@ CREATE TABLE news_view_history (
     -- Foreign key
     user_id UUID NOT NULL,
     article_id UUID NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES news_article(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
 );
 
--- comment Table
-    CREATE TABLE comment (
+-- comments Table
+    CREATE TABLE comments (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -112,12 +124,12 @@ CREATE TABLE news_view_history (
     -- Foreign Key
     article_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    FOREIGN KEY (article_id) REFERENCES news_article(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- comment_like Table
-CREATE TABLE comment_like (
+-- comment_likes Table
+CREATE TABLE comment_likes (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -127,12 +139,12 @@ CREATE TABLE comment_like (
     -- Foreign Key
     comment_id UUID NOT NULL,
     liked_id UUID NOT NULL,
-    FOREIGN KEY (comment_id)REFERENCES comment(id) ON DELETE CASCADE,
-    FOREIGN KEY (liked_id) REFERENCES "user"(id) ON DELETE CASCADE
+    FOREIGN KEY (comment_id)REFERENCES comments(id) ON DELETE CASCADE,
+    FOREIGN KEY (liked_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- notification Table
-CREATE TABLE notification (
+-- notifications Table
+CREATE TABLE notifications (
     -- Primary Key
     id UUID PRIMARY KEY,
 
@@ -146,7 +158,7 @@ CREATE TABLE notification (
 
     -- Foreign Key
     user_id UUID,
-    FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
 
     -- Check constraint
     CONSTRAINT chk_notification_resource_type
