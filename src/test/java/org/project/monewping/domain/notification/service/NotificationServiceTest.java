@@ -2,12 +2,14 @@ package org.project.monewping.domain.notification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
+import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.springframework.data.domain.PageRequest;
@@ -37,12 +40,14 @@ public class NotificationServiceTest {
     private NotificationMapper notificationMapper;
 
     private UUID userId;
+    private UUID resourceId;
     private String cursor;
     private Pageable pageable;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
+        resourceId = UUID.randomUUID();
         cursor = Instant.now().toString();
         pageable = PageRequest.of(0, DEFAULT_LIMIT + 1);
     }
@@ -112,5 +117,34 @@ public class NotificationServiceTest {
         // then
         verify(notificationRepository).findPageSlice(userId, parsed, pageable);
         assertThat(page.totalElements()).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("limit 초과 시 hasNext=true, nextCursor가 마지막 createdAt")
+    void hasNextAndNextCursorForOverflow() {
+        // given
+        Instant base = Instant.parse(cursor);
+        List<Notification> raw = IntStream.range(0, DEFAULT_LIMIT + 1)
+            .mapToObj(i -> {
+                Notification notification = mock(Notification.class);
+                if (i == DEFAULT_LIMIT) {
+                    when(notification.getCreatedAt()).thenReturn(base.plusSeconds(i));
+                }
+                return notification;
+            })
+            .toList();
+        when(notificationRepository.findPageSlice(userId, base, pageable))
+            .thenReturn(raw);
+        when(notificationRepository.countByUserIdAndConfirmedFalse(userId))
+            .thenReturn((long) raw.size());
+
+        // when
+        CursorPageResponseNotificationDto page = notificationService.findNotifications(userId, cursor, null, DEFAULT_LIMIT);
+
+        // then
+        assertThat(page.hasNext()).isTrue();
+        assertThat(page.content()).hasSize(DEFAULT_LIMIT);
+        String expectedCursor = base.plusSeconds(DEFAULT_LIMIT).toString();
+        assertThat(page.nextCursor()).isEqualTo(expectedCursor);
     }
 }

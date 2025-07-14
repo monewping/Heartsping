@@ -79,22 +79,31 @@ public class BasicNotificationService implements NotificationService {
         Pageable pageable = PageRequest.of(0, limit + 1);
         List<Notification> notificationsSlice = notificationRepository.findPageSlice(userId, baseAfter, pageable);
 
-        List<NotificationDto> content = notificationsSlice.stream()
+        boolean hasNext = notificationsSlice.size() > limit;
+        List<Notification> pageList = hasNext ? notificationsSlice.subList(0, limit) : notificationsSlice;
+
+        List<NotificationDto> content = pageList.stream()
             .map(notificationMapper::toDto)
             .toList();
+
+        Instant nextAfter = hasNext
+            ? notificationsSlice.get(limit).getCreatedAt()
+            : null;
+        String nextCursor = nextAfter != null
+            ? nextAfter.toString()
+            : null;
 
         long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
 
         return new CursorPageResponseNotificationDto(
             content,
-            null,
-            null,
+            nextCursor,
+            nextAfter,
             content.size(),
             totalUnreadNotification,
-            false
+            hasNext
         );
     }
-
 
     /**
      * 관심사의 새로운 기사에 대한 알림을 생성합니다. (기능 통합 전 테스트 로직)
