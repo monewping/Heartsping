@@ -40,14 +40,12 @@ public class NotificationServiceTest {
     private NotificationMapper notificationMapper;
 
     private UUID userId;
-    private UUID resourceId;
     private String cursor;
     private Pageable pageable;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
-        resourceId = UUID.randomUUID();
         cursor = Instant.now().toString();
         pageable = PageRequest.of(0, DEFAULT_LIMIT + 1);
     }
