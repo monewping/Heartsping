@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -222,4 +223,21 @@ class CommentControllerTest {
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.hasNext").value(true));
     }
+    @Test
+    @DisplayName("댓글 등록 성공")
+    void registerComment_Success() throws Exception {
+        String requestBody = String.format("""
+        {
+            "articleId": "%s",
+            "userId": "%s",
+            "content": "테스트 댓글입니다."
+        }
+        """, UUID.randomUUID(), UUID.randomUUID());
+
+        mockMvc.perform(post("/api/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk());
+    }
+
 }
