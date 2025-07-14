@@ -27,11 +27,20 @@ public class ArticleServiceTest {
     @InjectMocks
     private ArticleViewServiceImpl articleViewService;
 
+    @InjectMocks
+    private NewsArticleServiceImpl newsArticleService;
+
     @Mock
     private NewsViewHistoryRepository viewHistoryRepository;
 
     @Mock
     private NewsViewHistoryMapper mapper;
+
+    @Mock
+    private NewsArticleRepository newsArticleRepository;
+
+    @Mock
+    private InterestRepository interestRepository;
 
     private UUID viewedBy;
     private UUID articleId;
@@ -71,6 +80,55 @@ public class ArticleServiceTest {
         assertThatThrownBy(() -> articleViewService.registerView(dto))
             .isInstanceOf(DuplicateViewHistoryException.class)
             .hasMessageContaining("이미 조회한 기사");
+    }
+
+    @Test
+    @DisplayName("중복된 출처 링크가 없고 관심사가 존재하면 뉴스 기사 저장에 성공한다")
+    void save_ShouldSaveArticle_WhenOriginalLinkNotDuplicatedAndInterestExists() {
+        // given
+        UUID interestId = UUID.randomUUID();
+
+        ArticleSaveRequest request = new ArticleSaveRequest(
+            // 뉴스 기사가 속한 관심사 ID, 뉴스 출처, 원본 URL, 제목, 요약, 발행 일시
+            interestId,
+            "Naver",
+            "https://naver.com/sample-article",
+            "AI Breakthrough",
+            "Summary of the AI article",
+            LocalDateTime.of(2025, 7, 14, 10, 0)
+        );
+
+        when(newsArticleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(true);
+
+        // when & then
+        assertThrows(DuplicateArticleException.class,
+            () -> {newsArticleService.save(request);
+        });
+    }
+
+    @Test
+    @DisplayName("해당 관심사를 찾을 수 없으면 InterestNotFoundException 예외 발생")
+    void save_ShouldThrowException_WhenInterestNotFound() {
+        // given
+        UUID interestId = UUID.randomUUID();
+
+        ArticleSaveRequest request = new ArticleSaveRequest(
+            // 뉴스 기사가 속한 관심사 ID, 뉴스 출처, 원본 URL, 제목, 요약, 발행 일시
+            interestId,
+            "Naver",
+            "https://naver.com/sample-article",
+            "AI Breakthrough",
+            "Summary of the AI article",
+            LocalDateTime.of(2025, 7, 14, 10, 0)
+        );
+
+        when(newsArticleRepository.existsByOriginalLink(request.getOriginalLink())).thenReturn(false);
+        when(interestRepository.findById(interestId)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThrows(InterestNotFoundException.class,
+            () -> {newsArticleService.save(request);
+        });
     }
 
 }
