@@ -1,17 +1,20 @@
 package org.project.monewping.domain.notification.service;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
-import org.project.monewping.global.dto.CursorPageResponse;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -70,8 +73,33 @@ public class BasicNotificationService implements NotificationService {
     }
 
     @Override
-    public CursorPageResponse<NotificationDto> findNotifications(UUID userId, Instant after, int limit) {
-        return notificationRepository.findByUserIdAndAfter(userId, after, limit);
+    public CursorPageResponseNotificationDto findNotifications(UUID userId, String cursor, Instant after, int limit) {
+        Instant baseAfter;
+        if (cursor != null && !cursor.isEmpty()) {
+            try {
+                baseAfter = Instant.parse(cursor);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid cursor format: " + cursor, e);
+            }
+        } else {
+            baseAfter = after;
+        }
+
+        Pageable pageable = PageRequest.of(0, limit + 1);
+        List<Notification> raw = notificationRepository.findPageSlice(userId, baseAfter, pageable);
+
+        List<NotificationDto> content = raw.stream()
+            .map(notificationMapper::toDto)
+            .toList();
+
+        return new CursorPageResponseNotificationDto(
+            content,
+            null,
+            null,
+            content.size(),
+            content.size(),
+            false
+        );
     }
 
 
