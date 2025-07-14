@@ -39,7 +39,7 @@ public class ArticleViewServiceImpl implements ArticleViewService {
 
     // 동일 기사 중복 조회 검사 메서드
     private void validateNoDuplicateViewHistory(UUID viewedBy, UUID articleId) {
-        boolean exists = newsViewHistoryRepository.findByUserIdAndArticleId(viewedBy, articleId).isPresent();
+        boolean exists = newsViewHistoryRepository.findByViewedByAndArticleId(viewedBy, articleId).isPresent();
         if (exists) {
             log.warn("중복 기사 조회 시도 감지 : viewedBy = {}, articleId = {}", viewedBy, articleId);
             throw new DuplicateViewHistoryException();
