@@ -34,7 +34,10 @@ public interface InterestMapper {
     @Mapping(target = "subscribedByMe", constant = "false")
     InterestDto toDto(Interest entity);
 
-    /** Keyword 엔티티 리스트를 String 리스트로 변환한다.
+    /**
+     * Keyword 엔티티 리스트를 String 리스트로 변환합니다.
+     *
+     * <p>각 Keyword 엔티티의 name 필드를 추출해 반환합니다.</p>
      * @param keywords Keyword 엔티티 리스트
      * @return String 리스트
      */
@@ -44,7 +47,7 @@ public interface InterestMapper {
             return List.of();
         }
         return keywords.stream()
-                .map(Keyword::getKeyword)
+                .map(Keyword::getName)
                 .collect(Collectors.toList());
     }
 } 
