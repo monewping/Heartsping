@@ -74,21 +74,12 @@ public class BasicNotificationService implements NotificationService {
 
     @Override
     public CursorPageResponseNotificationDto findNotifications(UUID userId, String cursor, Instant after, int limit) {
-        Instant baseAfter;
-        if (cursor != null && !cursor.isEmpty()) {
-            try {
-                baseAfter = Instant.parse(cursor);
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid cursor format: " + cursor, e);
-            }
-        } else {
-            baseAfter = after;
-        }
+        Instant baseAfter = parseBaseAfter(cursor, after);
 
         Pageable pageable = PageRequest.of(0, limit + 1);
-        List<Notification> raw = notificationRepository.findPageSlice(userId, baseAfter, pageable);
+        List<Notification> notificationsSlice = notificationRepository.findPageSlice(userId, baseAfter, pageable);
 
-        List<NotificationDto> content = raw.stream()
+        List<NotificationDto> content = notificationsSlice.stream()
             .map(notificationMapper::toDto)
             .toList();
 
@@ -108,7 +99,7 @@ public class BasicNotificationService implements NotificationService {
     /**
      * 관심사의 새로운 기사에 대한 알림을 생성합니다. (기능 통합 전 테스트 로직)
      *
-     * <strong>※ 추후 기능 통합 시 아래 로직으로 대체될 예정입니다.</strong>
+     * <p><strong>※ 추후 기능 통합 시 아래 로직으로 대체될 예정입니다.</strong>
      * <ol>
      *   <li>게시글(article)로부터 관심사(interestId)를 조회</li>
      *   <li>해당 관심사에 구독한 사용자 목록(subscriberIds) 조회</li>
@@ -159,7 +150,7 @@ public class BasicNotificationService implements NotificationService {
     /**
      * 댓글의 좋아요 반응에 대한 알림을 생성합니다.
      *
-     * <strong>※ 추후 기능 통합 시 로직이 수정될 예정입니다.</strong>
+     * <p><strong>※ 추후 기능 통합 시 로직이 수정될 예정입니다.</strong>
      * <ol>
      *   <li>댓글 작성자 닉네임 조회</li>
      *   <li>"{user}님이 나의 댓글을 좋아합니다." 메시지 생성</li>
@@ -177,5 +168,28 @@ public class BasicNotificationService implements NotificationService {
         Notification notification = new Notification(userId, content, commentUserId, "Comment");
         notificationRepository.save(notification);
         return List.of(notification);
+    }
+
+    /**
+     * cursor 값에 따라 조건 별로 파싱을 진행합니다.
+     * <p>
+     * - cursor가 null이거나 빈 문자열("")이면 after를 반환합니다.
+     * - cursor가 ISO-8601 형식의 날짜·시간 문자열이면 Instant.parse(cursor) 결과를 반환합니다.
+     * - cursor가 잘못된 포맷이면 IllegalArgumentException을 던집니다.
+     *
+     * @param cursor ISO-8601 형식의 커서 문자열 혹은 null
+     * @param after  cursor가 없을 때 사용될 기준 시점 Instant
+     * @return cursor를 파싱한 Instant, 또는 cursor가 없으면 after
+     * @throws IllegalArgumentException cursor가 올바른 포맷이 아닐 때
+     */
+    private Instant parseBaseAfter(String cursor, Instant after) {
+        if (cursor != null && !cursor.isEmpty()) {
+            try {
+                return Instant.parse(cursor);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid cursor: " + cursor, e);
+            }
+        }
+        return after;
     }
 }
