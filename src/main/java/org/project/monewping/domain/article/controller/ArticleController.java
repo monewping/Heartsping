@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 뉴스 기사 조회 기록 등록 관련 REST API 컨트롤러.
+ * <p>
+ * 클라이언트로부터 사용자 ID와 기사 ID를 받아
+ * 조회 기록 등록 요청을 처리한다.
+ * </p>
+ */
+
 @RestController
 @RequestMapping("/api/articles")
 @RequiredArgsConstructor
@@ -21,7 +29,13 @@ public class ArticleController {
 
     private final ArticleViewService articleViewService;
 
-    // 뉴스 기사 뷰 등록
+    /**
+     * 특정 뉴스 기사에 대해 사용자의 조회 기록을 등록한다.
+     *
+     * @param articleId 조회할 뉴스 기사 ID (경로 변수)
+     * @param viewedBy 요청 헤더 "Monew-Request-User-ID"에 포함된 사용자 ID
+     * @return 등록된 조회 기록 정보 (ArticleViewDto)
+     */
     @PostMapping("/{articleId}/article-views")
     public ResponseEntity<ArticleViewDto> registerArticleView(
         @PathVariable UUID articleId,
