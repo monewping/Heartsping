@@ -25,7 +25,7 @@ import org.project.monewping.domain.article.repository.NewsViewHistoryRepository
 public class ArticleServiceTest {
 
     @InjectMocks
-    private ArticleViewService viewService;
+    private ArticleViewServiceImpl articleViewService;
 
     @Mock
     private NewsViewHistoryRepository viewHistoryRepository;
@@ -50,7 +50,7 @@ public class ArticleServiceTest {
         // given
         given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
             .willReturn(Optional.empty());
-        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), userId, article, dto.ViewedAt());
+        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), userId, articleId, dto.viewedAt());
         given(mapper.toEntity(dto)).willReturn(history);
 
         // when
