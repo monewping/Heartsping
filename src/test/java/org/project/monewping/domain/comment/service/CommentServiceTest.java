@@ -3,6 +3,7 @@ package org.project.monewping.domain.comment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
@@ -299,4 +301,31 @@ class CommentServiceTest {
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
     }
+    @Test
+    @DisplayName("댓글 등록 성공")
+    void registerComment_Success() {
+        CommentRegisterRequestDto requestDto = new CommentRegisterRequestDto();
+        requestDto.setArticleId(UUID.randomUUID());
+        requestDto.setUserId(UUID.randomUUID());
+        requestDto.setContent("테스트 댓글입니다.");
+
+        Comment mockComment = Comment.builder()
+            .id(UUID.randomUUID())
+            .articleId(requestDto.getArticleId())
+            .userId(requestDto.getUserId())
+            .content(requestDto.getContent())
+            .userNickname("테스트 유저")
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .likeCount(0)
+            .deleted(false)
+            .build();
+
+        when(commentMapper.toEntity(any(CommentRegisterRequestDto.class))).thenReturn(mockComment);
+
+        commentService.registerComment(requestDto);
+
+        verify(commentRepository).save(any(Comment.class));
+    }
+
 }
