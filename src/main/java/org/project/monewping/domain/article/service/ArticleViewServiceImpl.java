@@ -21,24 +21,27 @@ public class ArticleViewServiceImpl implements ArticleViewService {
     private final NewsViewHistoryMapper newsViewHistoryMapper;
 
     @Override
-    public void registerView(ArticleViewDto dto) {
+    public ArticleViewDto registerView(ArticleViewDto dto) {
 
-        log.info("기사 조회 등록 요청 : userId = {}, articleId = {}", dto.userId(), dto.articleId());
+        log.info("기사 조회 등록 요청 : viewedBy = {}, articleId = {}", dto.viewedBy(), dto.articleId());
 
         // 중복 여부 검사
-        validateNoDuplicateViewHistory(dto.userId(), dto.articleId());
+        validateNoDuplicateViewHistory(dto.viewedBy(), dto.articleId());
 
         NewsViewHistory newsViewHistory = newsViewHistoryMapper.toEntity(dto);
-        newsViewHistoryRepository.save(newsViewHistory);
+        NewsViewHistory saved = newsViewHistoryRepository.save(newsViewHistory);
 
-        log.info("기사 조회 기록 저장 완료 : userId = {}, articleId = {}, viewedAt = {}",
-            dto.userId(), dto.articleId(), dto.viewedAt());
+        log.info("기사 조회 기록 저장 완료 : viewedBy = {}, articleId = {}, articlePublishedDate = {}",
+            dto.viewedBy(), dto.articleId(), dto.articlePublishedDate());
+
+        return newsViewHistoryMapper.toDto(saved);
     }
 
     // 동일 기사 중복 조회 검사 메서드
-    private void validateNoDuplicateViewHistory(UUID userId, UUID articleId) {
-        if (newsViewHistoryRepository.findByUserIdAndArticleId(userId, articleId).isPresent()) {
-            log.warn("중복 기사 조회 시도 감지 : userId = {}, articleId = {}", userId, articleId);
+    private void validateNoDuplicateViewHistory(UUID viewedBy, UUID articleId) {
+        boolean exists = newsViewHistoryRepository.findByUserIdAndArticleId(viewedBy, articleId).isPresent();
+        if (exists) {
+            log.warn("중복 기사 조회 시도 감지 : viewedBy = {}, articleId = {}", viewedBy, articleId);
             throw new DuplicateViewHistoryException();
         }
     }

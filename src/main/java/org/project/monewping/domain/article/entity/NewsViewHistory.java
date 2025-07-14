@@ -27,12 +27,12 @@ public class NewsViewHistory {
     private UUID id;
 
     @Column(nullable = false, name = "user_id")
-    private UUID userId;
+    private UUID viewedBy;
 
     @Column(nullable = false, name = "article_id")
     private UUID articleId;
 
     @Column(nullable = false, name = "viewed_at")
-    private LocalDateTime viewedAt;
+    private LocalDateTime articlePublishedDate;
 
 }

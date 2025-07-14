@@ -4,9 +4,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ArticleViewDto(
-    UUID userId,
+    UUID id,
+    UUID viewedBy,
     UUID articleId,
-    LocalDateTime viewedAt
+    LocalDateTime articlePublishedDate
 ) {
 
 }

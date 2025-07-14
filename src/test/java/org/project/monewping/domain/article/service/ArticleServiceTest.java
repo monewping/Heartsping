@@ -33,24 +33,24 @@ public class ArticleServiceTest {
     @Mock
     private NewsViewHistoryMapper mapper;
 
-    private UUID userId;
+    private UUID viewedBy;
     private UUID articleId;
     private ArticleViewDto dto;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
+        viewedBy = UUID.randomUUID();
         articleId = UUID.randomUUID();
-        dto = new ArticleViewDto(userId, articleId, LocalDateTime.now());
+        dto = new ArticleViewDto(UUID.randomUUID(), viewedBy, articleId, LocalDateTime.now());
     }
 
     @Test
     @DisplayName("사용자가 기사를 처음 조회하면 조회 기록이 저장된다")
     void registerView_Success() {
         // given
-        given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
+        given(viewHistoryRepository.findByUserIdAndArticleId(viewedBy, articleId))
             .willReturn(Optional.empty());
-        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), userId, articleId, dto.viewedAt());
+        NewsViewHistory history = new NewsViewHistory(UUID.randomUUID(), viewedBy, articleId, dto.articlePublishedDate());
         given(mapper.toEntity(dto)).willReturn(history);
 
         // when
@@ -64,7 +64,7 @@ public class ArticleServiceTest {
     @DisplayName("사용자가 이미 조회한 기사 중복 조회 시 예외 발생")
     void registerView_ShouldThrowException_WhenDuplicateView() {
         // given
-        given(viewHistoryRepository.findByUserIdAndArticleId(userId, articleId))
+        given(viewHistoryRepository.findByUserIdAndArticleId(viewedBy, articleId))
             .willReturn(Optional.of(mock(NewsViewHistory.class)));
 
         // when & then
