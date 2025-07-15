@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.fetcher;
+package org.project.monewping.domain.article.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
