@@ -92,6 +92,7 @@ CREATE TABLE articles
     title VARCHAR(100) NOT NULL,
     summary TEXT NOT NULL,
     published_at DATE NOT NULL,
+    comment_count BIGINT NOT NULL,
     view_count BIGINT NOT NULL,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL,
