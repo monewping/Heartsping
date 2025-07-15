@@ -44,4 +44,9 @@ public class Comment {
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted;
+
+    public void delete() {
+        this.isDeleted = true;
+        this.updatedAt = Instant.now();
+    }
 }

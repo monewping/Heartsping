@@ -52,4 +52,25 @@ public class CommentController {
       commentService.registerComment(requestDto);
       return ResponseEntity.ok().build();
     }
+
+    /**
+     * 댓글을 삭제합니다.
+     * 논리 삭제와 물리 삭제로 나뉜다.
+     */
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID commentId,
+        @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        commentService.deleteComment(commentId, userPrincipal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{commentId}/hard")
+    public ResponseEntity<Void> deleteCommentPhysically(
+        @PathVariable UUID commentId,
+        @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        commentService.deleteCommentPhysically(commentId, userPrincipal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
 }

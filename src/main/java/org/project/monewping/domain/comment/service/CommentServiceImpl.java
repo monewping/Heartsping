@@ -5,10 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
 
 import java.util.List;
 
@@ -60,4 +62,33 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentMapper.toEntity(requestDto);
         commentRepository.save(comment);
     }
+
+
+    // 논리 삭제
+    @Override
+    public void deleteComment(UUID commentId, UUID userId) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new CommentNotFoundException(commentId));
+
+        if (!comment.getUserId().equals(userId)) {
+            throw new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다.");
+        }
+
+        comment.delete();
+        commentRepository.save(comment);
+    }
+
+    // 물리 삭제
+    @Override
+    public void deleteCommentPhysically(UUID commentId, UUID userId) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new CommentNotFoundException(commentId));
+
+        if (!comment.getUserId().equals(userId)) {
+            throw new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다.");
+        }
+
+        commentRepository.delete(comment); // JPA 영구 삭제
+    }
+
 }
