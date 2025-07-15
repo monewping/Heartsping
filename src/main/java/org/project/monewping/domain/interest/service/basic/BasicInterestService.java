@@ -2,16 +2,19 @@ package org.project.monewping.domain.interest.service.basic;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.project.monewping.domain.interest.dto.InterestDto;
+import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
-import org.project.monewping.domain.interest.dto.InterestDto;
-import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.InterestService;
+import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -19,7 +22,6 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -35,6 +37,7 @@ public class BasicInterestService implements InterestService {
 
     private final InterestRepository interestRepository;
     private final InterestMapper interestMapper;
+    private static final String SERVICE_NAME = "[InterestService] ";
 
     private static final double SIMILARITY_THRESHOLD = 0.8; // 80% 유사도 임계값
     private static final JaroWinklerSimilarity JW = new JaroWinklerSimilarity();
@@ -169,4 +172,10 @@ public class BasicInterestService implements InterestService {
         log.info("[InterestService] 유사도 계산: '{}' vs '{}' = {}", s1, s2, score);
         return score;
     }
-} 
+
+    @Override
+    @Transactional
+    public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID) {
+        return interestRepository.searchWithCursor(request, monewRequestUserID);
+    }
+}

@@ -1,10 +1,12 @@
 package org.project.monewping.domain.interest.service;
 
 import org.project.monewping.domain.interest.dto.InterestDto;
-import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 
 /**
  * 관심사 관련 비즈니스 로직을 제공하는 서비스 인터페이스입니다.
@@ -25,4 +27,6 @@ public interface InterestService {
      * @throws InterestCreationException 관심사 생성 중 예기치 못한 오류가 발생한 경우
      */
     InterestDto create(InterestRegisterRequest request);
+    CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID);
+    // [ADD] 관심사 목록 검색 (검색/정렬/커서 페이지네이션)
 } 

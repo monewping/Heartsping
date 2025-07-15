@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.project.monewping.domain.interest.dto.InterestDto;
-import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 
@@ -33,6 +33,16 @@ public interface InterestMapper {
     @Mapping(target = "keywords", source = "keywords", qualifiedByName = "keywordsToStrings")
     @Mapping(target = "subscribedByMe", constant = "false")
     InterestDto toDto(Interest entity);
+
+    /**
+     * Interest 엔티티 리스트를 InterestDto 리스트로 변환합니다.
+     * @param entities Interest 엔티티 리스트
+     * @return InterestDto 리스트
+     */
+    default List<InterestDto> toDtoList(List<Interest> entities) {
+        if (entities == null) return List.of();
+        return entities.stream().map(this::toDto).collect(Collectors.toList());
+    }
 
     /**
      * Keyword 엔티티 리스트를 String 리스트로 변환합니다.
