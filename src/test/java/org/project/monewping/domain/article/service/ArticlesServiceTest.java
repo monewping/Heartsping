@@ -1,6 +1,7 @@
 package org.project.monewping.domain.article.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -80,7 +81,7 @@ public class ArticlesServiceTest {
     }
 
     @Test
-    @DisplayName("중복된 출처의 뉴스 기사만 제외하고 나머지 뉴스 기사 저장")
+    @DisplayName("중복된 출처의 뉴스 기사만 제외하고 나머지 뉴스 기사 saveAll으로 저장")
     void saveAll_ShouldSaveOnlyNonDuplicateArticles() {
         // given - 관심사, 기사 요청 목록, 중복 여부 설정
         UUID interestId = UUID.randomUUID();
@@ -103,10 +104,14 @@ public class ArticlesServiceTest {
         List<ArticleSaveRequest> requests = List.of(request1, request2, duplicate);
 
         when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
-        when(articlesRepository.existsByOriginalLink("https://naver.com/sample-1")).thenReturn(true);
-        when(articlesRepository.existsByOriginalLink("https://naver.com/sample-2")).thenReturn(false);
 
-        // articlesMapper.toEntity() 모킹해서 실제 엔티티 리턴하도록 설정
+        // findAllByOriginalLinkIn() 모킹 추가 (리팩토링된 구현 반영)
+        when(articlesRepository.findAllByOriginalLinkIn(any()))
+            .thenReturn(List.of(
+                Articles.builder().originalLink("https://naver.com/sample-1").build() // 이미 존재하는 기사
+            ));
+
+        // articlesMapper.toEntity() 모킹
         when(articlesMapper.toEntity(any(ArticleSaveRequest.class), any(Interest.class)))
             .thenAnswer(invocation -> {
                 ArticleSaveRequest dto = invocation.getArgument(0);
@@ -123,18 +128,22 @@ public class ArticlesServiceTest {
                     .build();
             });
 
-        // when - 기사 리스트 저장 요청
+        // when
         articleService.saveAll(requests);
 
-        // then - 중복되지 않은 기사만 저장했는지 검증
-        verify(articlesRepository, times(1)).save(articleCaptor.capture());
+        // then - saveAll 호출 확인
+        ArgumentCaptor<List<Articles>> articleListCaptor = ArgumentCaptor.forClass(List.class);
+        verify(articlesRepository, times(1)).saveAll(articleListCaptor.capture());
 
-        Articles savedArticle = articleCaptor.getValue();
-        assertEquals("https://naver.com/sample-2", savedArticle.getOriginalLink());
+        List<Articles> savedArticles = articleListCaptor.getValue();
+        assertEquals(1, savedArticles.size());
+        assertEquals("https://naver.com/sample-2", savedArticles.get(0).getOriginalLink());
 
-        // 중복 링크인 "https://naver.com/sample-1" 저장 안 됐는지 검증
-        verify(articlesRepository, never())
-            .save(argThat(article -> article != null && "https://naver.com/sample-1".equals(article.getOriginalLink())));
+        // 중복된 기사 링크는 저장 목록에 없어야 함
+        List<String> savedLinks = savedArticles.stream()
+            .map(Articles::getOriginalLink)
+            .toList();
+        assertFalse(savedLinks.contains("https://naver.com/sample-1"));
     }
 
 }
