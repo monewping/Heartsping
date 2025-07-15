@@ -18,7 +18,7 @@ import java.util.List;
  * 키워드와의 연관관계를 설정합니다.</p>
  */
 @Entity
-@Table(name = "interest")
+@Table(name = "interests")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -27,7 +27,7 @@ public class Interest extends BaseUpdatableEntity {
     @Column(length = 100, nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "subscriber_count")
     private Long subscriberCount;
 
     @OneToMany(mappedBy = "interest", cascade = CascadeType.ALL, orphanRemoval = true)
