@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 
     /**
@@ -17,7 +19,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * <p>
      * 이 메서드는 {@code confirmed = false}인 알림만 조회하며,
      * 선택적으로 {@code after} 파라미터를 이용해 기준 시점 이후의 알림을 필터링할 수 있습니다.
-     * 정렬 기준은 {@code createdAt} 기준 내림차순이며, 페이징 처리를 위해 {@link Pageable}을 사용합니다.
+     * 정렬 기준은 {@code createdAt} 기준 오름차순이며, 페이징 처리를 위해 {@link Pageable}을 사용합니다.
      * </p>
      *
      * @param userId 알림을 조회할 사용자 ID

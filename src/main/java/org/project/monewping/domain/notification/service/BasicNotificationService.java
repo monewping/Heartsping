@@ -122,7 +122,7 @@ public class BasicNotificationService implements NotificationService {
             content,
             nextCursor,
             nextAfter,
-            content.size(),
+            limit,
             totalUnreadNotification,
             hasNext
         );
