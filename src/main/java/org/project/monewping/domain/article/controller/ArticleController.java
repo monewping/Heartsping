@@ -1,6 +1,5 @@
 package org.project.monewping.domain.article.controller;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,21 +42,16 @@ public class ArticleController {
     ) {
         log.info("기사 조회 등록 요청 수신 : userId = {}, articleId = {}", viewedBy, articleId);
 
-        LocalDateTime createdAt = LocalDateTime.now();
+        // Service로 사용자 ID, 기사 ID 전달
+        ArticleViewDto responseDto = articleViewsService.registerView(viewedBy, articleId);
 
-        ArticleViewDto requestDto = new ArticleViewDto(
-            UUID.randomUUID(),
-            viewedBy,
-            articleId,
-            createdAt
-        );
-
-        ArticleViewDto responseDto = articleViewsService.registerView(requestDto);
-        log.info("기사 조회 등록 완료 : id = {}, userId = {}, articleId = {}, publishedDate = {}",
-            requestDto.id(),
+        log.info("기사 조회 등록 완료 : id = {}, userId = {}, articleId = {}, createdAt = {}, publishedAt = {}",
+            responseDto.id(),
             responseDto.viewedBy(),
             responseDto.articleId(),
-            responseDto.createdAt());
+            responseDto.createdAt(),
+            responseDto.articlePublishedAt()
+        );
 
         return ResponseEntity.ok(responseDto);
     }

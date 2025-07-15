@@ -2,9 +2,12 @@ package org.project.monewping.domain.article.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,10 +32,11 @@ public class ArticleViews {
     @Column(nullable = false, name = "user_id")
     private UUID viewedBy;
 
-    @Column(nullable = false, name = "article_id")
-    private UUID articleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, name = "article_id")
+    private Articles article;
 
     @Column(nullable = false, name = "viewed_at")
-    private LocalDateTime articlePublishedDate;
+    private LocalDateTime createdAt;
 
 }

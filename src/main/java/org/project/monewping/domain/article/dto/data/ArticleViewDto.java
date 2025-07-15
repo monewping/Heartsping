@@ -33,7 +33,6 @@ public record ArticleViewDto(
     @NotNull(message = "조회한 날짜는 필수입니다")
     LocalDateTime createdAt,
 
-
     @NotNull(message = "조회하는 뉴스 기사 ID는 필수입니다")
     UUID articleId,
 

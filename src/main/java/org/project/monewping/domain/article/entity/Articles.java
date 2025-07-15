@@ -41,8 +41,11 @@ public class Articles extends BaseEntity {
     @Column(name = "published_at",  nullable = false)
     private LocalDateTime publishedAt;
 
+    @Column(name = "comment_count", nullable = false)
+    private long commentCount;
+
     @Column(name = "view_count", nullable = false)
-    private int viewCount;
+    private long viewCount;
 
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
