@@ -1,8 +1,10 @@
 package org.project.monewping.domain.comment.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
@@ -326,6 +330,89 @@ class CommentServiceTest {
         commentService.registerComment(requestDto);
 
         verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 성공")
+    void deleteComment_Success() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(java.util.Optional.of(comment));
+
+        commentService.deleteComment(commentId, userId);
+
+        assertThat(comment.getIsDeleted()).isTrue();
+        verify(commentRepository).save(comment);
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
+    void deleteComment_Fail_NotOwner() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID attackerId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(ownerId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(java.util.Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteComment(commentId, attackerId))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공")
+    void deleteCommentPhysically_Success() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        commentService.deleteCommentPhysically(commentId, userId);
+
+        verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
+    void deleteCommentPhysically_Fail_NotOwner() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID attackerId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(ownerId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteCommentPhysically(commentId, attackerId))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
     }
 
 }
