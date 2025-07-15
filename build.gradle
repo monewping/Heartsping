@@ -59,28 +59,52 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport // 테스트가 성공하든 실패하든 항상 JaCoCo 리포트를 생성
+}
+
+jacoco {
+    toolVersion = "0.8.10" // JaCoCo 버전 설정
 }
 
 jacocoTestReport {
-    dependsOn test // 테스트가 실행된 후에만 리포트 생성 가능
+    dependsOn test // test 태스크가 실행된 후에 실행
     reports {
-        xml.required = true // XML 리포트 생성 (CI에서 사용 가능)
-        html.required = true // HTML 리포트 생성 (시각화)
+        xml.required = true // CI/CD 환경에서 사용
+        html.required = true // 개발자가 로컬에서 확인할 수 있는 HTML 리포트를 생성
+    }
+
+    // 커버리지 측정에서 제외할 파일들을 지정합니다.
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                "**/*Request.class",
+                "**/*Response.class",
+                "org/project/monewping/domain/*/domain/**",
+                "org/project/monewping/global/**",
+                "org/project/monewping/MonewpingApplication.class"
+            ])
+        }))
     }
 }
 
 tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
-    // test가 먼저 실행된 후 검증하도록 보장
-    dependsOn test
+    dependsOn jacocoTestReport // 리포트가 생성된 후 검증을 수행
 
     violationRules {
         rule {
             element = 'BUNDLE'
-            includes = ['org.project.monewping.domain.*'] // 수정 필요
+            // 커버리지 검증에서 제외할 파일들을 지정
+            excludes = [
+                "**.*Request",
+                "**.*Response",
+                "org.project.monewping.domain.*.domain.*",
+                "org.project.monewping.global.*.*",
+                "org.project.monewping.MonewpingApplication"
+            ]
             limit {
                 counter = 'LINE'
-                value   = 'COVEREDRATIO'
-                minimum = 0.60
+                value = 'COVEREDRATIO'
+                minimum = 0.80 // 라인 커버리지 최소 비율을 80%로 설정
             }
         }
     }
