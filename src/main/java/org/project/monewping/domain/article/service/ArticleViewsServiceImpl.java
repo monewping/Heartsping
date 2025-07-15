@@ -9,7 +9,6 @@ import org.project.monewping.domain.article.entity.ArticleViews;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
-import org.project.monewping.domain.article.mapper.ArticleViewsMapper;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,6 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
 
     private final ArticleViewsRepository articleViewsRepository;
     private final ArticlesRepository articlesRepository;
-    private final ArticleViewsMapper articleViewsMapper;
 
     /**
      * 뉴스 기사 조회 기록을 등록한다.
@@ -62,6 +60,7 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
             });
 
         // 2. 엔티티 생성 및 저장
+        log.info("기사 조회 정보 생성 : viewedBy = {}, articleId = {}, createdAt = {}", viewedBy, articleId, LocalDateTime.now());
         ArticleViews articleViews = ArticleViews.builder()
             .id(UUID.randomUUID())
             .viewedBy(viewedBy)
@@ -69,9 +68,12 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
             .createdAt(LocalDateTime.now())
             .build();
 
+        log.info("기사 조회 정보 저장 : viewedBy = {}, articleId = {}", viewedBy, articleId);
         ArticleViews saved = articleViewsRepository.save(articleViews);
 
         // 3. DTO 생성 및 반환
+        log.info("뉴스 기사 정보 응답 : viewedBy = {}, articleId = {}, source = {}, title = {}",
+            viewedBy, articleId, article.getSource(), article.getTitle());
         return new ArticleViewDto(
             saved.getId(),
             viewedBy,

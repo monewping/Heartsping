@@ -1,6 +1,5 @@
 package org.project.monewping.domain.article.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,20 +30,30 @@ public class ArticlesControllerTest {
     @Test
     @DisplayName("기사 뷰 등록 성공 - 200 OK, 반환 데이터 검증")
     void RegisterArticleView_Success() throws Exception {
+        // given
         UUID articleId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID viewId = UUID.randomUUID();
-        LocalDateTime publishedDate = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
         ArticleViewDto mockResponse = new ArticleViewDto(
             viewId,
             userId,
+            now,
             articleId,
-            publishedDate
+            "Naver",
+            "https://news.naver.com/sample",
+            "테스트 기사 제목",
+            now.minusDays(1),
+            "뉴스 기사 요약",
+            5L,
+            100L
         );
 
-        doReturn(mockResponse).when(articleViewsService).registerView(any(ArticleViewDto.class));
+        // when
+        doReturn(mockResponse).when(articleViewsService).registerView(userId, articleId);
 
+        // then
         mockMvc.perform(post("/api/articles/{articleId}/article-views", articleId)
                 .header("Monew-Request-User-ID", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
