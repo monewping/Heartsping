@@ -1,6 +1,6 @@
 package org.project.monewping.domain.comment.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,5 +20,5 @@ public class CommentResponseDto {
     private String content;
     private String userNickname;
     private int likeCount;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

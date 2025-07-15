@@ -2,7 +2,7 @@ package org.project.monewping.domain.comment.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.springframework.stereotype.Repository;
@@ -39,7 +39,7 @@ public class CommentCustomRepositoryImpl implements CommentCustomRepository {
         query.setParameter("articleId", articleId);
 
         if (after != null) {
-            query.setParameter("after", LocalDateTime.parse(after)); // after는 String이 아니라 ISO8601 DateTime 이어야 함.
+            query.setParameter("after", Instant.parse(after)); // after는 String이 아니라 ISO8601 DateTime 이어야 함.
         }
 
         return query.setMaxResults(limit + 1).getResultList();

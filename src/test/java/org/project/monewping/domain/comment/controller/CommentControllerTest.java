@@ -8,7 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -55,14 +56,14 @@ class CommentControllerTest {
                 "첫 번째 댓글입니다.",
                 "사용자1",
                 5,
-                LocalDateTime.now().minusHours(1)
+                Instant.now().minus(Duration.ofHours(1))
             ),
             new CommentResponseDto(
                 UUID.randomUUID(),
                 "두 번째 댓글입니다.",
                 "사용자2",
                 3,
-                LocalDateTime.now().minusHours(2)
+                Instant.now().minus(Duration.ofHours(1))
             )
         );
 

@@ -1,7 +1,7 @@
 package org.project.monewping.domain.comment.domain;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 
@@ -37,10 +37,10 @@ public class Comment {
     private int likeCount;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Column(nullable = false)
     private Boolean deleted;

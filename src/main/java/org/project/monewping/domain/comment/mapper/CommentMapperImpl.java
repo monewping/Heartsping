@@ -1,6 +1,6 @@
 package org.project.monewping.domain.comment.mapper;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
@@ -25,8 +25,8 @@ public class CommentMapperImpl implements CommentMapper {
             .userNickname("익명")  // 임시
             .content(requestDto.getContent())
             .likeCount(0)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
             .deleted(false)
             .build();
     }

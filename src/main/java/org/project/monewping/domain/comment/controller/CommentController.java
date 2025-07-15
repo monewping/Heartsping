@@ -37,7 +37,7 @@ public class CommentController {
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
         @RequestParam(required = false, defaultValue = "50") Integer limit
-    )   {
+    ) {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
             articleId, orderBy, direction, cursor, after, limit
         );

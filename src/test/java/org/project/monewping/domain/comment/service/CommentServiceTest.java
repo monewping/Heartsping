@@ -6,7 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -56,9 +57,8 @@ class CommentServiceTest {
                 .userNickname("사용자1")
                 .content("첫 번째 댓글입니다.")
                 .likeCount(5)
-                .createdAt(LocalDateTime.now().minusHours(1))
-                .updatedAt(LocalDateTime.now().minusHours(1))
-                .deleted(false)
+                .createdAt(Instant.now().minus(Duration.ofHours(1)))
+                .updatedAt(Instant.now().minus(Duration.ofHours(1)))
                 .build(),
             Comment.builder()
                 .id(UUID.randomUUID())
@@ -67,8 +67,8 @@ class CommentServiceTest {
                 .userNickname("사용자2")
                 .content("두 번째 댓글입니다.")
                 .likeCount(3)
-                .createdAt(LocalDateTime.now().minusHours(2))
-                .updatedAt(LocalDateTime.now().minusHours(2))
+                .createdAt(Instant.now().minus(Duration.ofHours(1)))
+                .updatedAt(Instant.now().minus(Duration.ofHours(1)))
                 .deleted(false)
                 .build()
         );
@@ -315,8 +315,8 @@ class CommentServiceTest {
             .userId(requestDto.getUserId())
             .content(requestDto.getContent())
             .userNickname("테스트 유저")
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
             .likeCount(0)
             .deleted(false)
             .build();
