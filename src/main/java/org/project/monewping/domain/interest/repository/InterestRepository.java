@@ -16,7 +16,7 @@ import java.util.UUID;
  * 이름 기반 조회 기능을 제공합니다.</p>
  */
 @Repository
-public interface InterestRepository extends JpaRepository<Interest, UUID> {
+public interface InterestRepository extends JpaRepository<Interest, UUID>, InterestRepositoryCustom {
 
     /** 관심사 이름으로 조회한다.
      * @param name 관심사 이름
