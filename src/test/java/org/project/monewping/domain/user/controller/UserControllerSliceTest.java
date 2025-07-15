@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +71,7 @@ class UserControllerSliceTest {
         UUID.randomUUID(),
         "test@example.com", 
         "testuser",
-        LocalDateTime.now());
+        Instant.now());
 
     given(userService.register(any(UserRegisterRequest.class)))
         .willReturn(expectedResponse);

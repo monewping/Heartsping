@@ -14,7 +14,7 @@ import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +73,7 @@ class UserControllerTest {
         UUID.randomUUID(),
         "test@example.com",
         "testuser",
-        LocalDateTime.now());
+        Instant.now());
   }
 
   /**

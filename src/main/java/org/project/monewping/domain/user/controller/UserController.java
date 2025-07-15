@@ -20,9 +20,6 @@ import lombok.RequiredArgsConstructor;
  * 사용자 등록, 조회, 수정, 삭제 등의 HTTP 요청을 처리합니다.
  * </p>
  * 
- * @author monewping team
- * @version 1.0
- * @since 1.0
  */
 @RestController
 @RequestMapping("/api/users")

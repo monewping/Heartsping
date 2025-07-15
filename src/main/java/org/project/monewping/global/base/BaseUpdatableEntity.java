@@ -2,7 +2,7 @@ package org.project.monewping.global.base;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -16,5 +16,5 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
 
   @Column(name = "updated_at")
   @LastModifiedDate
-  private LocalDateTime updatedAt;
+  private Instant updatedAt;
 }
