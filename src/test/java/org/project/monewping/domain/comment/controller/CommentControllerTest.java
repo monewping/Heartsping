@@ -2,7 +2,10 @@ package org.project.monewping.domain.comment.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -12,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +24,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.http.MediaType;
@@ -239,6 +245,60 @@ class CommentControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 성공")
+    void deleteComment_Success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // when
+        doNothing().when(commentService).deleteComment(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
+                .principal(() -> userId.toString()))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
+    void deleteComment_Fail_NotOwner() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
+            .when(commentService).deleteComment(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
+                .principal(() -> userId.toString()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공")
+    void deleteCommentPhysically_Success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doNothing().when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
+                .principal(() -> userId.toString()))
+            .andExpect(status().isNoContent());
+    }
+    @Test
+    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
+    void deleteCommentPhysically_Fail_NotOwner() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
+            .when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
+                .principal(() -> userId.toString()))
+            .andExpect(status().isForbidden()); // 전역 예외처리에서 403 반환한다고 가정
     }
 
 }
