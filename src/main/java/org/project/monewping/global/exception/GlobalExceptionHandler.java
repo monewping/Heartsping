@@ -3,6 +3,7 @@ package org.project.monewping.global.exception;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -84,6 +85,34 @@ public class GlobalExceptionHandler {
         null);
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
+
+  /**
+   * JSON 파싱 오류를 처리합니다.
+   * 
+   * <p>
+   * 잘못된 JSON 형식으로 인해 발생하는 예외를 처리하여
+   * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.
+   * </p>
+   * 
+   * @param ex JSON 파싱 예외
+   * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException ex) {
+
+    String message = "잘못된 JSON 형식입니다.";
+    if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+      message = "JSON 파싱 오류: 올바른 JSON 형식으로 요청해주세요.";
+    }
+
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST,
+        message,
+        ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
 
   /**
