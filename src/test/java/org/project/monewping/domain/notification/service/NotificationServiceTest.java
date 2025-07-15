@@ -1,6 +1,7 @@
 package org.project.monewping.domain.notification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,7 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("알림 서비스 단위 테스트")
+@DisplayName("Notification Service 단위 테스트")
 public class NotificationServiceTest {
 
     private static final int DEFAULT_LIMIT = 10;
@@ -125,14 +126,20 @@ public class NotificationServiceTest {
         List<Notification> raw = IntStream.range(0, DEFAULT_LIMIT + 1)
             .mapToObj(i -> {
                 Notification notification = mock(Notification.class);
-                if (i == DEFAULT_LIMIT) {
-                    when(notification.getCreatedAt()).thenReturn(base.plusSeconds(i));
+                if (i == DEFAULT_LIMIT - 1) {
+                    when(notification.getCreatedAt())
+                        .thenReturn(base.plusSeconds(i));
                 }
                 return notification;
             })
             .toList();
-        when(notificationRepository.findPageSlice(userId, base, pageable))
-            .thenReturn(raw);
+
+        when(notificationRepository.findPageSlice(
+            eq(userId),
+            eq(base),
+            any(Pageable.class))
+        ).thenReturn(raw);
+
         when(notificationRepository.countByUserIdAndConfirmedFalse(userId))
             .thenReturn((long) raw.size());
 
@@ -142,7 +149,7 @@ public class NotificationServiceTest {
         // then
         assertThat(page.hasNext()).isTrue();
         assertThat(page.content()).hasSize(DEFAULT_LIMIT);
-        String expectedCursor = base.plusSeconds(DEFAULT_LIMIT).toString();
+        String expectedCursor = base.plusSeconds(DEFAULT_LIMIT - 1).toString();
         assertThat(page.nextCursor()).isEqualTo(expectedCursor);
     }
 }
