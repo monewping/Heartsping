@@ -1,10 +1,13 @@
 package org.project.monewping.domain.interest.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.interest.dto.InterestDto;
-import org.project.monewping.domain.interest.dto.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
+import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
@@ -48,12 +51,24 @@ public class InterestController {
             
             log.info("[InterestController] 관심사 등록 API 성공: id={}, name={}", responseDto.id(), responseDto.name());
             
-            return ResponseEntity.status(HttpStatus.CREATED)
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
                     .header("Location", "/api/interests/" + responseDto.id())
                     .body(responseDto);
         } catch (Exception e) {
             log.error("[InterestController] 관심사 등록 API 실패: name={}, error={}", request.name(), e.getMessage(), e);
             throw e;
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<CursorPageResponseInterestDto> findAll(
+            @Valid @ModelAttribute CursorPageRequestSearchInterestDto request,
+            @RequestHeader("Monew-Request-User-ID") @NotBlank String subscriberId
+    ) {
+        CursorPageResponseInterestDto response = interestService.findInterestByNameAndSubcriberCountByCursor(request, subscriberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 } 
