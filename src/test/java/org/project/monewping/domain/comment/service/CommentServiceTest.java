@@ -69,7 +69,7 @@ class CommentServiceTest {
                 .likeCount(3)
                 .createdAt(Instant.now().minus(Duration.ofHours(1)))
                 .updatedAt(Instant.now().minus(Duration.ofHours(1)))
-                .deleted(false)
+                .isDeleted(false)
                 .build()
         );
 
@@ -318,7 +318,7 @@ class CommentServiceTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .likeCount(0)
-            .deleted(false)
+            .isDeleted(false)
             .build();
 
         when(commentMapper.toEntity(any(CommentRegisterRequestDto.class))).thenReturn(mockComment);
