@@ -2,6 +2,7 @@ package org.project.monewping.domain.article.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -21,9 +22,9 @@ import org.project.monewping.domain.article.entity.ArticleViews;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
-import org.project.monewping.domain.article.mapper.ArticleViewsMapper;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class ArticleViewsServiceTest {
@@ -36,9 +37,6 @@ public class ArticleViewsServiceTest {
 
     @Mock
     private ArticlesRepository articlesRepository;
-
-    @Mock
-    private ArticleViewsMapper articleViewsMapper;
 
     private UUID viewedBy;
     private UUID articleId;
@@ -63,22 +61,30 @@ public class ArticleViewsServiceTest {
             .viewCount(123L)
             .deleted(false)
             .build();
+
+        ReflectionTestUtils.setField(articles, "id", articleId);
     }
 
     @Test
     @DisplayName("사용자가 기사를 처음 조회하면 조회 기록이 저장된다")
     void registerView_success() {
+        // given - 기존에 동일한 조회 기록이 없고, 해당 기사도 존재하는 경우
         given(articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId))
             .willReturn(Optional.empty());
 
         given(articlesRepository.findById(articleId))
             .willReturn(Optional.of(articles));
 
-        ArgumentCaptor<ArticleViews> captor = ArgumentCaptor.forClass(ArticleViews.class);
+        given(articleViewsRepository.save(any(ArticleViews.class)))
+            .willAnswer(invocation -> invocation.getArgument(0));
 
+        // when - 조회 기록 등록
         ArticleViewDto result = articleViewsService.registerView(viewedBy, articleId);
 
+        // then - 저장된 Entity와 반환된 Dto 검증
+        ArgumentCaptor<ArticleViews> captor = ArgumentCaptor.forClass(ArticleViews.class);
         then(articleViewsRepository).should().save(captor.capture());
+
         ArticleViews savedEntity = captor.getValue();
 
         assertThat(result).isNotNull();
@@ -96,6 +102,7 @@ public class ArticleViewsServiceTest {
     @Test
     @DisplayName("사용자가 이미 조회한 기사에 대해 중복 등록하면 예외 발생")
     void registerView_duplicate_shouldThrow() {
+        // given - 이미 조회 기록이 존재하는 경우
         ArticleViews existingView = ArticleViews.builder()
             .id(UUID.randomUUID())
             .viewedBy(viewedBy)
@@ -106,6 +113,7 @@ public class ArticleViewsServiceTest {
         given(articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId))
             .willReturn(Optional.of(existingView));
 
+        // when & then - 예외 발생 확인
         assertThatThrownBy(() -> articleViewsService.registerView(viewedBy, articleId))
             .isInstanceOf(DuplicateArticleViewsException.class)
             .hasMessageContaining("이미 조회한 기사");

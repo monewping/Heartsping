@@ -1,6 +1,7 @@
 package org.project.monewping.domain.article.controller;
 
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,15 +11,19 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.service.ArticleViewsService;
+import org.project.monewping.global.exception.GlobalExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ArticleController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@Import(GlobalExceptionHandler.class)
 public class ArticlesControllerTest {
 
     @Autowired
@@ -86,4 +91,20 @@ public class ArticlesControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("중복 조회 시 409 Conflict 응답")
+    void RegisterArticleView_Conflict() throws Exception {
+        UUID articleId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(articleViewsService.registerView(userId, articleId))
+            .thenThrow(new DuplicateArticleViewsException());
+
+        mockMvc.perform(post("/api/articles/{articleId}/article-views", articleId)
+                .header("Monew-Request-User-ID", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isConflict());
+    }
+
 }
