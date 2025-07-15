@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 관심사 정보를 전달하는 DTO입니다.
+ * 관심사 정보 DTO입니다.
  *
- * <p>관심사의 식별자, 이름, 키워드, 구독자 수, 구독 여부를 포함합니다.</p>
+ * - id: 관심사 식별자(UUID)
+ * - name: 관심사 이름
+ * - keywords: 관심사에 연결된 키워드 문자열 목록
+ * - subscriberCount: 구독자 수
+ * - subscribedByMe: 내가 구독 중인지 여부
  */
 @Builder
 public record InterestDto(

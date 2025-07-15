@@ -22,13 +22,11 @@ import java.util.UUID;
 /**
  * 관심사 커서 기반 목록 조회를 QueryDSL로 구현하는 Repository입니다.
  *
- * <p>검색어(관심사 이름/키워드), 정렬, 커서 페이지네이션 등
- * 실무에서 요구되는 복잡한 동적 쿼리를 처리합니다.</p>
- * <ul>
- *   <li>QueryDSL의 selectFrom, containsIgnoreCase, orderBy 등 동적 쿼리 메소드 사용</li>
- *   <li>limit+1 방식으로 hasNext 판별</li>
- *   <li>실제 응답은 DTO로 변환 필요</li>
- * </ul>
+ * 검색어(관심사 이름/키워드), 정렬, 커서 페이지네이션 등
+ * 실무에서 요구되는 복잡한 동적 쿼리를 처리합니다.
+ * - QueryDSL의 selectFrom, containsIgnoreCase, orderBy 등 동적 쿼리 메소드 사용
+ * - limit+1 방식으로 hasNext 판별
+ * - 실제 응답은 DTO로 변환 필요
  */
 @Repository
 @RequiredArgsConstructor

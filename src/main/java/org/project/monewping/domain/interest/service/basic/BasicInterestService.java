@@ -26,8 +26,9 @@ import java.util.stream.Collectors;
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
  *
- * <p>관심사 생성, 중복 체크, 키워드 관리 등
- * 관심사 도메인 핵심 기능을 제공합니다.</p>
+ * <p>관심사 생성, 중복 체크, 키워드 관리 등 도메인 핵심 기능과
+ * 검색/정렬/구독자 수 기반 커서 페이지네이션 등 실무에서 요구되는
+ * 다양한 관심사 목록 조회 기능을 제공합니다.</p>
  */
 @Slf4j
 @Service
@@ -173,6 +174,21 @@ public class BasicInterestService implements InterestService {
         return score;
     }
 
+    /**
+     * 검색어(관심사 이름/키워드), 정렬, 구독자 수 기준 커서 페이지네이션으로 관심사 목록을 조회합니다.
+     *
+     * - 검색어(keyword): 관심사 이름 또는 키워드에 부분일치하는 항목 조회
+     * - 정렬(orderBy, direction): 이름/구독자수 기준 오름차순·내림차순 정렬
+     * - 커서(cursor, after): 커서 기반 페이지네이션(무한 스크롤 등)에 사용
+     * - limit: 페이지 크기(최대 100)
+     * - monewRequestUserID: 요청자 ID(구독 여부 등 추가 정보에 활용)
+     *
+     * @param request 검색/정렬/커서/사이즈 등 요청 DTO
+     * @param monewRequestUserID 요청자 ID(구독 여부 등 추가 정보에 활용 가능)
+     * @return 커서 페이지네이션 응답 DTO (관심사 목록, 다음 커서 등 포함)
+     * @throws IllegalArgumentException 커서 값이 잘못된 형식일 경우 등
+     */
+    // TODO 구독 관련 로직 추가 예정
     @Override
     @Transactional
     public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID) {

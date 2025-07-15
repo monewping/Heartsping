@@ -6,10 +6,10 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * 관심사 등록 요청을 위한 DTO입니다.
+ * 관심사 등록 요청 DTO입니다.
  *
- * <p>관심사 이름과 키워드 목록을 받아 생성 요청에 사용되며,
- * Bean Validation으로 유효성을 검증합니다.</p>
+ * - name: 관심사 이름(필수, 100자 이하, 영문/숫자/한글/공백만 허용)
+ * - keywords: 관심사에 연결할 키워드 문자열 목록(선택)
  */
 public record InterestRegisterRequest(
     @NotBlank(message = "관심사 이름은 필수입니다.")
