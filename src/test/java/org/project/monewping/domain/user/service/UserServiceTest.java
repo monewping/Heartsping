@@ -1,5 +1,7 @@
 package org.project.monewping.domain.user.service;
 
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -77,9 +79,12 @@ class UserServiceTest {
         .build();
 
     savedUser = User.builder()
+        .id(UUID.randomUUID())
         .email("test@example.com")
         .nickname("testuser")
         .password("password123")
+        .createdAt(Instant.now())
+        .updatedAt(Instant.now())
         .build();
 
     response = new UserRegisterResponse(
