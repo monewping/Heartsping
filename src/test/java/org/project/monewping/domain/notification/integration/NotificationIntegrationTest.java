@@ -1,14 +1,18 @@
 package org.project.monewping.domain.notification.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -63,5 +67,24 @@ public class NotificationIntegrationTest {
             .andExpect(jsonPath("$.content[0].userId").value(userId.toString()))
             .andExpect(jsonPath("$.content[0].resourceId").value(resourceId.toString()))
             .andExpect(jsonPath("$.content[0].resourceType").value("Comment"));
+    }
+
+    @Test
+    void testConfirmAllNotifications() throws Exception {
+        notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceId, "Comment"));
+        notificationRepository.save(new Notification(userId, "골프와 관련된 기사가 2건 등록되었습니다.", resourceId, "Article"));
+
+        mockMvc.perform(patch("/api/notifications")
+                .header("Monew-Request-User-ID", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isOk());
+
+        long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
+        assertThat(totalUnreadNotification).isZero();
+
+        List<Notification> all = notificationRepository.findAll();
+        assertThat(all).isNotEmpty()
+            .allMatch(Notification::getConfirmed);
     }
 }

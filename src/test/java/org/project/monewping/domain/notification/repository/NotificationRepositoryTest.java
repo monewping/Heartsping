@@ -64,4 +64,16 @@ public class NotificationRepositoryTest {
         );
         assertThat(secondPage).allMatch(n -> n.getCreatedAt().isAfter(cursor));
     }
+
+    @Test
+    @DisplayName("모든 알림 확인 상태 수정 성공")
+    void testConfirmAllByUserId() {
+        int updated = notificationRepository.confirmAllByUserId(userId);
+        assertThat(updated).isEqualTo(3);
+
+        List<Notification> all = notificationRepository.findAll();
+        assertThat(all)
+            .isNotEmpty()
+            .allMatch(Notification::getConfirmed);
+    }
 }
