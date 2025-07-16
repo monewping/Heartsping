@@ -64,4 +64,24 @@ class InterestControllerTest {
                 .andExpect(jsonPath("$.content[0].subscriberCount").value(10L))
                 .andExpect(jsonPath("$.content[0].subscribedByMe").value(false));
     }
+
+    @Test
+    @DisplayName("키워드는 최소 1개 이상이어야 한다 - 빈 리스트면 400 반환")
+    void should_return400_when_keywords_is_empty() throws Exception {
+        String requestBody = """
+            {
+                \"name\": \"관심사 이름\",
+                \"keywords\": []
+            }
+            """;
+
+        mockMvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/interests")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+        )
+        .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.details").value(org.hamcrest.Matchers.containsString("키워드는 1개 이상 10개 이하로 입력해야 합니다.")));
+    }
 } 
