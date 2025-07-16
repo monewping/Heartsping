@@ -1,9 +1,8 @@
 package org.project.monewping.domain.interest.repository.impl;
 
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.OrderSpecifier;
-import jakarta.persistence.EntityManager;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
@@ -11,10 +10,8 @@ import org.project.monewping.domain.interest.dto.response.CursorPageResponseInte
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.QInterest;
 import org.project.monewping.domain.interest.entity.QKeyword;
-import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepositoryCustom;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -31,13 +28,9 @@ import java.util.UUID;
  */
 @Repository
 @RequiredArgsConstructor
-public class InterestRepositoryImpl implements InterestRepositoryCustom {
-    private final EntityManager em;
+public class InterestRepositoryCustomImpl implements InterestRepositoryCustom {
     private final JPAQueryFactory queryFactory;
-    private final InterestMapper interestMapper;
-
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     /**
      * 커서 기반 관심사 목록을 검색/정렬/페이지네이션하여 반환합니다.
