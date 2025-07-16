@@ -1,7 +1,6 @@
 package org.project.monewping.domain.notification.service;
 
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -15,6 +14,7 @@ import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -53,7 +53,7 @@ public class BasicNotificationService implements NotificationService {
     @Override
     @Transactional
     public List<NotificationDto> create(UUID userId, UUID resourceId, String resourceType) {
-        log.debug("Creating notifications for user {} and resource {}, resourceType {}", userId, resourceId, resourceType);
+        log.debug("알림 생성 - userId: {}, resourceId: {}, resourceType: {}", userId, resourceId, resourceType);
         List<Notification> notifications;
 
         switch (resourceType) {
@@ -75,18 +75,19 @@ public class BasicNotificationService implements NotificationService {
     }
 
     /**
-     * 사용자별 읽지 않은 알림 목록을 페이지네이션을 이용하여 조회합니다.
+     * 특정 사용자의 읽지 않은 알림 목록을 페이지네이션을 이용하여 조회합니다.
      *
      * <p>
-     * - {@code cursor}가 주어지면 ISO-8601 포맷으로 파싱하여 그 시점 이전 알림을 조회하고,
-     *   없다면 {@code after} 값을 기준으로 조회합니다.
+     * - {@code cursor}가 주어지면 ISO-8601 포맷으로 파싱하여 해당 시점 이후 알림을 조회합니다.
+     *   {@code cursor}가 null 또는 빈 문자열인 경우 {@code after} 이후의 알림을 조회합니다.
+     *   모두 null인 경우, 가장 오래된 알림부터 조회합니다.
      * - 조회 시 {@code limit + 1}개를 가져와서 실제 응답에는 최대 {@code limit}개만 담고
-     *   나머지로 {@code hasNext}와 {@code nextCursor}를 계산합니다.
+     *   나머지 한 개로 {@code hasNext}와 {@code nextCursor}를 계산합니다.
      * - 전체 읽지 않은 알림 개수는 {@code totalElements}에 담아 반환합니다.
      * </p>
      *
      * @param userId 조회할 대상 사용자의 UUID
-     * @param cursor 다음 페이지 조회를 위한 커서. null 또는 빈 문자열인 경우 {@code after}를 사용
+     * @param cursor 다음 페이지 조회를 위한 커서. null 또는 빈 문자열인 경우 첫 페이지 조회
      * @param after  커서가 없을 때 기준이 될 생성 일시(Instant)
      * @param limit  한 페이지의 최대 조회 알림 개수
      * @return 커서 기반 페이지네이션 응답을 담은 {@link CursorPageResponseNotificationDto}
@@ -94,13 +95,28 @@ public class BasicNotificationService implements NotificationService {
      */
     @Override
     public CursorPageResponseNotificationDto findNotifications(UUID userId, String cursor, Instant after, int limit) {
-        Instant baseAfter = parseBaseAfter(cursor, after);
+        Instant parsedCursor;
+        if (cursor != null && !cursor.isBlank()) {
+            parsedCursor = Instant.parse(cursor);
+        } else {
+            parsedCursor = after;
+        }
+        log.debug("알림 목록 조회 - parsedCursor: {}",  parsedCursor);
 
-        Pageable pageable = PageRequest.of(0, limit + PAGE_OFFSET);
-        List<Notification> notificationsSlice = notificationRepository.findPageSlice(userId, baseAfter, pageable);
+        Pageable pageable = PageRequest.of(
+            0,
+            limit + PAGE_OFFSET,
+            Sort.by("createdAt").ascending().and(Sort.by("id").ascending())
+        );
 
-        boolean hasNext = notificationsSlice.size() > limit;
-        List<Notification> pageList = hasNext ? notificationsSlice.subList(0, limit) : notificationsSlice;
+        List<Notification> slice = (parsedCursor == null)
+            ? notificationRepository.findPageFirst(userId, pageable)
+            : notificationRepository.findPageAfter(userId, parsedCursor, pageable);
+
+        boolean hasNext = slice.size() > limit;
+        List<Notification> pageList = hasNext
+            ? slice.subList(0, limit)
+            : slice;
 
         List<NotificationDto> content = pageList.stream()
             .map(notificationMapper::toDto)
@@ -109,14 +125,13 @@ public class BasicNotificationService implements NotificationService {
         Instant nextAfter = null;
         String nextCursor = null;
         if (hasNext) {
-            Notification last = pageList.get(pageList.size() - 1);
-            nextAfter = last.getCreatedAt();
-            nextCursor = nextAfter.toString();
-            log.debug("next cursor: {}", nextCursor);
+            Instant lastCreatedAt = pageList.get(limit - 1).getCreatedAt();
+            nextAfter = lastCreatedAt;
+            nextCursor = lastCreatedAt.toString();
         }
 
         long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
-        log.debug("totalUnreadNotification: {}", totalUnreadNotification);
+        log.debug("알림 목록 조회 - totalUnreadNotification: {}", totalUnreadNotification);
 
         return new CursorPageResponseNotificationDto(
             content,
@@ -224,28 +239,5 @@ public class BasicNotificationService implements NotificationService {
         Notification notification = new Notification(userId, content, commentUserId, "Comment");
         notificationRepository.save(notification);
         return List.of(notification);
-    }
-
-    /**
-     * cursor 값에 따라 조건 별로 파싱을 진행합니다.
-     * <p>
-     * - cursor가 null이거나 빈 문자열("")이면 after를 반환합니다.
-     * - cursor가 ISO-8601 형식의 날짜·시간 문자열이면 Instant.parse(cursor) 결과를 반환합니다.
-     * - cursor가 잘못된 포맷이면 IllegalArgumentException을 던집니다.
-     *
-     * @param cursor ISO-8601 형식의 커서 문자열 혹은 null
-     * @param after  cursor가 없을 때 사용될 기준 시점 Instant
-     * @return cursor를 파싱한 Instant, 또는 cursor가 없으면 after
-     * @throws IllegalArgumentException cursor가 올바른 포맷이 아닐 때
-     */
-    private Instant parseBaseAfter(String cursor, Instant after) {
-        if (cursor != null && !cursor.isEmpty()) {
-            try {
-                return Instant.parse(cursor);
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid cursor: " + cursor, e);
-            }
-        }
-        return after;
     }
 }
