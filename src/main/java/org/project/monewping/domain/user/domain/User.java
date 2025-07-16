@@ -36,6 +36,6 @@ public class User extends BaseUpdatableEntity {
   @Column(name = "nickname", nullable = false, length = 50)
   private String nickname;
 
-  @Column(name = "password", nullable = false)
+  @Column(name = "password", nullable = false, length = 100)
   private String password;
 }

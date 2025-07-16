@@ -1,4 +1,4 @@
-package org.project.monewping.domain.user.Integration;
+package org.project.monewping.domain.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
