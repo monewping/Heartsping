@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.project.monewping.global.base.BaseUpdatableEntity;
@@ -11,7 +12,7 @@ import org.project.monewping.global.base.BaseUpdatableEntity;
 @Entity
 @Table(name = "notifications")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification extends BaseUpdatableEntity {
 
     @Column(name = "user_id", nullable = false)

@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,6 @@ import org.project.monewping.domain.notification.dto.CursorPageResponseNotificat
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,20 +48,16 @@ public class NotificationServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         cursor = Instant.now().toString();
-        pageable = PageRequest.of(0, DEFAULT_LIMIT + 1);
     }
 
     @Test
     @DisplayName("알림이 없으면 빈 페이지 응답을 반환한다")
     void returnEmptyPageWhenNoNotifications() {
         // given
-        Pageable pageable = PageRequest.of(0, DEFAULT_LIMIT + 1);
-        when(notificationRepository.findPageSlice(
+        when(notificationRepository.findPageFirst(
             eq(userId),
-            eq(null),
-            eq(pageable)
-        ))
-            .thenReturn(List.of());
+            any(Pageable.class)
+        )).thenReturn(List.of());
 
         // when
         CursorPageResponseNotificationDto page = notificationService.findNotifications(
@@ -75,6 +71,7 @@ public class NotificationServiceTest {
         assertThat(page.content()).isEmpty();
         assertThat(page.totalElements()).isZero();
         assertThat(page.hasNext()).isFalse();
+        verify(notificationRepository).findPageFirst(eq(userId), any(Pageable.class));
     }
 
     @Test
@@ -84,37 +81,38 @@ public class NotificationServiceTest {
         String cursor = "2025-07-14T12:34:56Z";
         Instant parsed = Instant.parse(cursor);
 
-        when(notificationRepository.findPageSlice(
+        when(notificationRepository.findPageAfter(
             eq(userId),
             eq(parsed),
-            eq(pageable)
-        ))
-            .thenReturn(List.of());
+            any(Pageable.class)
+        )).thenReturn(List.of());
 
         // when
         notificationService.findNotifications(userId, cursor, null, DEFAULT_LIMIT);
 
         // then
-        verify(notificationRepository).findPageSlice(userId, parsed, pageable);
+        verify(notificationRepository).findPageAfter(eq(userId), eq(parsed), any(Pageable.class));
     }
 
     @Test
     @DisplayName("읽지 않은 알림 개수를 totalElements로 반환한다")
     void totalElementsReflectsConfirmedFalseCount() {
+        // given
         String cursor = "2025-07-14T12:34:56Z";
         Instant parsed = Instant.parse(cursor);
 
-        // given
-        when(notificationRepository.findPageSlice(userId, parsed, pageable))
+        when(notificationRepository.findPageAfter(eq(userId), eq(parsed), any(Pageable.class)))
             .thenReturn(List.of());
         when(notificationRepository.countByUserIdAndConfirmedFalse(userId))
             .thenReturn(5L);
 
         // when
-        CursorPageResponseNotificationDto page = notificationService.findNotifications(userId, cursor, null, DEFAULT_LIMIT);
+        CursorPageResponseNotificationDto page = notificationService.findNotifications(
+            userId, cursor, null, DEFAULT_LIMIT
+        );
 
         // then
-        verify(notificationRepository).findPageSlice(userId, parsed, pageable);
+        verify(notificationRepository).findPageAfter(eq(userId), eq(parsed), any(Pageable.class));
         assertThat(page.totalElements()).isEqualTo(5L);
     }
 
@@ -123,28 +121,27 @@ public class NotificationServiceTest {
     void hasNextAndNextCursorForOverflow() {
         // given
         Instant base = Instant.parse(cursor);
-        List<Notification> raw = IntStream.range(0, DEFAULT_LIMIT + 1)
-            .mapToObj(i -> {
-                Notification notification = mock(Notification.class);
-                if (i == DEFAULT_LIMIT - 1) {
-                    when(notification.getCreatedAt())
-                        .thenReturn(base.plusSeconds(i));
-                }
-                return notification;
-            })
+
+        Notification notificationWithCursor = mock(Notification.class);
+        when(notificationWithCursor.getCreatedAt())
+            .thenReturn(base.plusSeconds(DEFAULT_LIMIT - 1));
+
+        List<Notification> raw = Stream
+            .concat(
+                IntStream.range(0, DEFAULT_LIMIT - 1)
+                    .mapToObj(i -> mock(Notification.class)),
+                Stream.of(notificationWithCursor, mock(Notification.class))
+            )
             .toList();
 
-        when(notificationRepository.findPageSlice(
-            eq(userId),
-            eq(base),
-            any(Pageable.class))
-        ).thenReturn(raw);
-
+        when(notificationRepository.findPageAfter(eq(userId), eq(base), any(Pageable.class)))
+            .thenReturn(raw);
         when(notificationRepository.countByUserIdAndConfirmedFalse(userId))
             .thenReturn((long) raw.size());
 
         // when
-        CursorPageResponseNotificationDto page = notificationService.findNotifications(userId, cursor, null, DEFAULT_LIMIT);
+        CursorPageResponseNotificationDto page = notificationService
+            .findNotifications(userId, cursor, null, DEFAULT_LIMIT);
 
         // then
         assertThat(page.hasNext()).isTrue();
