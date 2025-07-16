@@ -37,20 +37,21 @@ CREATE TABLE users
 CREATE TABLE interests
 (
     -- Primary Key
-    id UUID PRIMARY KEY,
+    id               UUID PRIMARY KEY,
 
     -- Columns
-    name VARCHAR(100) NOT NULL,
-    subscriber_count BIGINT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    name             VARCHAR(100) NOT NULL,
+    subscriber_count BIGINT       NOT NULL,
+    created_at       TIMESTAMPTZ  NOT NULL,
+    updated_at       TIMESTAMPTZ  NOT NULL
+
 );
 
 -- keywords Table
-CREATE TABLE keywords
-(
-    -- Primary Key
-    id UUID PRIMARY KEY,
+    CREATE TABLE keywords
+        (
+        -- Primary Key
+        id UUID PRIMARY KEY,
 
     -- Columns
     name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL,
@@ -84,24 +85,24 @@ CREATE TABLE interest_subscriptions
 CREATE TABLE articles
 (
     -- Primary Key
-    id UUID PRIMARY KEY,
+    id            UUID PRIMARY KEY,
 
     -- Columns
-    source VARCHAR(10) NOT NULL,
+    source        VARCHAR(10)  NOT NULL,
     original_link VARCHAR(300) NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    summary TEXT NOT NULL,
-    published_at DATE NOT NULL,
-    comment_count BIGINT NOT NULL,
-    view_count BIGINT NOT NULL,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL,
+    title         VARCHAR(100) NOT NULL,
+    summary       TEXT         NOT NULL,
+    published_at  DATE         NOT NULL,
+    comment_count BIGINT       NOT NULL,
+    view_count    BIGINT       NOT NULL,
+    is_deleted    BOOLEAN DEFAULT FALSE,
+    created_at    TIMESTAMPTZ  NOT NULL,
 
     -- Unique Key
     CONSTRAINT uk_article_link UNIQUE (original_link),
 
     -- Foreign Key
-    interest_id UUID NOT NULL,
+    interest_id   UUID         NOT NULL,
     FOREIGN KEY (interest_id) REFERENCES interests (id) ON DELETE CASCADE
 );
 
@@ -115,8 +116,8 @@ CREATE TABLE article_views
     viewed_at TIMESTAMPTZ NOT NULL,
 
     -- Foreign keys
-    user_id    UUID NOT NULL,
-    article_id UUID NOT NULL,
+    user_id    UUID        NOT NULL,
+    article_id UUID        NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (article_id) REFERENCES articles (id) ON DELETE CASCADE
 );
@@ -138,8 +139,8 @@ CREATE TABLE comments
     is_deleted BOOLEAN DEFAULT FALSE,
 
     -- Foreign Keys
-    article_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    article_id    UUID         NOT NULL,
+    user_id       UUID         NOT NULL,
     FOREIGN KEY (article_id) REFERENCES articles (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
