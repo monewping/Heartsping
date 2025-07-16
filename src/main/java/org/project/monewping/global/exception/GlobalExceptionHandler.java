@@ -88,6 +88,29 @@ public class GlobalExceptionHandler {
   }
 
   /**
+   * 로그인 실패 예외를 처리합니다.
+   * 
+   * <p>
+   * 로그인 시 이메일 또는 비밀번호가 일치하지 않는 경우 발생하는 예외를 처리하여
+   * 401 Unauthorized 상태 코드와 함께 오류 메시지를 반환합니다.
+   * </p>
+   * 
+   * @param ex 로그인 실패 예외
+   * @return 401 Unauthorized 상태와 오류 정보를 포함한 ResponseEntity
+   */
+  @ExceptionHandler(LoginFailedException.class)
+  public ResponseEntity<ErrorResponse> handleLoginFailedException(
+      LoginFailedException ex) {
+
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.UNAUTHORIZED,
+        ex.getMessage(),
+        null);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+  }
+
+  /**
    * JSON 파싱 오류를 처리합니다.
    * 
    * <p>

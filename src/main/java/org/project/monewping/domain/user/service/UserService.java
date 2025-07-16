@@ -43,6 +43,7 @@ public class UserService {
      * <ol>
      * <li>이메일 중복 검사 수행</li>
      * <li>사용자 엔티티 생성</li>
+     * <li>비밀번호 암호화</li>
      * <li>데이터베이스 저장</li>
      * <li>응답 객체 변환 및 반환</li>
      * </ol>
@@ -55,6 +56,18 @@ public class UserService {
     public UserRegisterResponse register(UserRegisterRequest request) {
         validateEmailNotExists(request.email());
         User user = userMapper.toEntity(request);
+        
+        // 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(request.password());
+        user = User.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .password(encodedPassword)
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+        
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
     }
