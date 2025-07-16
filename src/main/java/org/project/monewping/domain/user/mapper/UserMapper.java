@@ -11,12 +11,12 @@ import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface UserMapper {
 
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
-  User toEntity(UserRegisterRequest request);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    User toEntity(UserRegisterRequest request);
 
-  UserRegisterResponse toResponse(User user);
+    UserRegisterResponse toResponse(User user);
 
-  LoginResponse toLoginResponse(User user);
+    LoginResponse toLoginResponse(User user);
 }

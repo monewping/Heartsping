@@ -56,7 +56,7 @@ public class UserService {
     public UserRegisterResponse register(UserRegisterRequest request) {
         validateEmailNotExists(request.email());
         User user = userMapper.toEntity(request);
-        
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.password());
         user = User.builder()
@@ -67,7 +67,7 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
-        
+
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
     }

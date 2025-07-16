@@ -32,130 +32,130 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  /**
-   * Bean Validation 실패 시 예외를 처리합니다.
-   * 
-   * <p>
-   * 
-   * @Valid 애노테이션을 사용한 유효성 검사 실패 시 발생하는 예외를 처리하여
-   *        400 Bad Request 상태 코드와 함께 상세한 오류 메시지를 반환합니다.
-   *        </p>
-   * 
-   * @param ex 유효성 검사 실패 예외
-   * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleValidationExceptions(
-      MethodArgumentNotValidException ex) {
+    /**
+     * Bean Validation 실패 시 예외를 처리합니다.
+     * 
+     * <p>
+     * 
+     * @Valid 애노테이션을 사용한 유효성 검사 실패 시 발생하는 예외를 처리하여
+     *        400 Bad Request 상태 코드와 함께 상세한 오류 메시지를 반환합니다.
+     *        </p>
+     * 
+     * @param ex 유효성 검사 실패 예외
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
 
-    String errors = ex.getBindingResult().getAllErrors().stream()
-        .map(error -> {
-          String fieldName = ((FieldError) error).getField();
-          String errorMessage = error.getDefaultMessage();
-          return fieldName + ": " + errorMessage;
-        })
-        .collect(Collectors.joining(", "));
+        String errors = ex.getBindingResult().getAllErrors().stream()
+                .map(error -> {
+                    String fieldName = ((FieldError) error).getField();
+                    String errorMessage = error.getDefaultMessage();
+                    return fieldName + ": " + errorMessage;
+                })
+                .collect(Collectors.joining(", "));
 
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.BAD_REQUEST,
-        "유효성 검사 실패",
-        errors);
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST,
+                "유효성 검사 실패",
+                errors);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-  }
-
-  /**
-   * 이메일 중복 예외를 처리합니다.
-   * 
-   * <p>
-   * 회원가입 시 동일한 이메일을 가진 사용자가 이미 존재하는 경우 발생하는 예외를 처리하여
-   * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.
-   * </p>
-   * 
-   * @param ex 이메일 중복 예외
-   * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(EmailAlreadyExistsException.class)
-  public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(
-      EmailAlreadyExistsException ex) {
-
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.CONFLICT,
-        ex.getMessage(),
-        null);
-
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-  }
-
-  /**
-   * 로그인 실패 예외를 처리합니다.
-   * 
-   * <p>
-   * 로그인 시 이메일 또는 비밀번호가 일치하지 않는 경우 발생하는 예외를 처리하여
-   * 401 Unauthorized 상태 코드와 함께 오류 메시지를 반환합니다.
-   * </p>
-   * 
-   * @param ex 로그인 실패 예외
-   * @return 401 Unauthorized 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(LoginFailedException.class)
-  public ResponseEntity<ErrorResponse> handleLoginFailedException(
-      LoginFailedException ex) {
-
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.UNAUTHORIZED,
-        ex.getMessage(),
-        null);
-
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-  }
-
-  /**
-   * JSON 파싱 오류를 처리합니다.
-   * 
-   * <p>
-   * 잘못된 JSON 형식으로 인해 발생하는 예외를 처리하여
-   * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.
-   * </p>
-   * 
-   * @param ex JSON 파싱 예외
-   * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-      HttpMessageNotReadableException ex) {
-
-    String message = "잘못된 JSON 형식입니다.";
-    if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
-      message = "JSON 파싱 오류: 올바른 JSON 형식으로 요청해주세요.";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.BAD_REQUEST,
-        message,
-        ex.getMessage());
+    /**
+     * 이메일 중복 예외를 처리합니다.
+     * 
+     * <p>
+     * 회원가입 시 동일한 이메일을 가진 사용자가 이미 존재하는 경우 발생하는 예외를 처리하여
+     * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.
+     * </p>
+     * 
+     * @param ex 이메일 중복 예외
+     * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(
+            EmailAlreadyExistsException ex) {
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-  }
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.CONFLICT,
+                ex.getMessage(),
+                null);
 
-  /**
-   * 기타 예외를 처리합니다.
-   * 
-   * <p>
-   * 명시적으로 처리되지 않은 모든 예외를 처리하여
-   * 500 Internal Server Error 상태 코드와 함께 일반적인 오류 메시지를 반환합니다.
-   * </p>
-   * 
-   * @param ex 처리되지 않은 예외
-   * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "서버 내부 오류가 발생했습니다.",
-        ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
 
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-  }
+    /**
+     * 로그인 실패 예외를 처리합니다.
+     * 
+     * <p>
+     * 로그인 시 이메일 또는 비밀번호가 일치하지 않는 경우 발생하는 예외를 처리하여
+     * 401 Unauthorized 상태 코드와 함께 오류 메시지를 반환합니다.
+     * </p>
+     * 
+     * @param ex 로그인 실패 예외
+     * @return 401 Unauthorized 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ErrorResponse> handleLoginFailedException(
+            LoginFailedException ex) {
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage(),
+                null);
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * JSON 파싱 오류를 처리합니다.
+     * 
+     * <p>
+     * 잘못된 JSON 형식으로 인해 발생하는 예외를 처리하여
+     * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.
+     * </p>
+     * 
+     * @param ex JSON 파싱 예외
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex) {
+
+        String message = "잘못된 JSON 형식입니다.";
+        if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+            message = "JSON 파싱 오류: 올바른 JSON 형식으로 요청해주세요.";
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST,
+                message,
+                ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * 기타 예외를 처리합니다.
+     * 
+     * <p>
+     * 명시적으로 처리되지 않은 모든 예외를 처리하여
+     * 500 Internal Server Error 상태 코드와 함께 일반적인 오류 메시지를 반환합니다.
+     * </p>
+     * 
+     * @param ex 처리되지 않은 예외
+     * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "서버 내부 오류가 발생했습니다.",
+                ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
 }

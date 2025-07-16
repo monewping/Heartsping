@@ -18,27 +18,27 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-  /**
-   * 주어진 이메일로 사용자 존재 여부를 확인합니다.
-   * 
-   * <p>
-   * 회원가입 시 이메일 중복 검사에 사용됩니다.
-   * </p>
-   * 
-   * @param email 확인할 이메일 주소
-   * @return 해당 이메일을 가진 사용자가 존재하면 true, 없으면 false
-   */
-  boolean existsByEmail(String email);
+    /**
+     * 주어진 이메일로 사용자 존재 여부를 확인합니다.
+     * 
+     * <p>
+     * 회원가입 시 이메일 중복 검사에 사용됩니다.
+     * </p>
+     * 
+     * @param email 확인할 이메일 주소
+     * @return 해당 이메일을 가진 사용자가 존재하면 true, 없으면 false
+     */
+    boolean existsByEmail(String email);
 
-  /**
-   * 주어진 이메일로 사용자를 조회합니다.
-   * 
-   * <p>
-   * 로그인 시 사용자 인증에 사용됩니다.
-   * </p>
-   * 
-   * @param email 조회할 이메일 주소
-   * @return 해당 이메일을 가진 사용자의 Optional 객체
-   */
-  Optional<User> findByEmail(String email);
+    /**
+     * 주어진 이메일로 사용자를 조회합니다.
+     * 
+     * <p>
+     * 로그인 시 사용자 인증에 사용됩니다.
+     * </p>
+     * 
+     * @param email 조회할 이메일 주소
+     * @return 해당 이메일을 가진 사용자의 Optional 객체
+     */
+    Optional<User> findByEmail(String email);
 }
