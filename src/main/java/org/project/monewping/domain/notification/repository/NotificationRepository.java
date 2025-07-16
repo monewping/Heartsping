@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -38,4 +39,24 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findPageSlice(@Param("userId") UUID userId, @Param("after") Instant after, Pageable pageable);
 
     long countByUserIdAndConfirmedFalse(UUID userId);
+
+    /**
+     * 사용자의 모든 알림을 읽음 처리합니다.
+     *
+     * <p>
+     * userId 조건에 맞는 알림들을 confirmed=true로 변경합니다.
+     * 대량의 알림을 처리하는 경우를 고려해서 벌크 수정 방식을 사용합니다.
+     * </p>
+     *
+     * @param userId 특정 사용자의 id
+     * @return 수정된 알림 개수
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("""
+        UPDATE Notification n
+            SET n.confirmed = true
+        WHERE n.userId = :userId
+            AND n.confirmed = false
+        """)
+    int confirmAllByUserId(@Param("userId") UUID userId);
 }

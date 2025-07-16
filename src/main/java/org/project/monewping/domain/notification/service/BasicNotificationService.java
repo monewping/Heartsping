@@ -129,6 +129,30 @@ public class BasicNotificationService implements NotificationService {
     }
 
     /**
+     * 주어진 사용자 ID에 해당하는 모든 미확인 알림을 확인 처리합니다.
+     *
+     * <p>
+     *     이 메서드는 Notification 엔티티에서 {@code confirmed = false}인 레코드를 찾아
+     *     {@code confirmed = true}로 업데이트하며, 처리된 알림의 개수를 로그로 기록합니다.
+     * </p>
+     *
+     * @param userId 확인 처리를 수행할 사용자의 ID
+     * @throws IllegalArgumentException 사용자 ID가 {@code null}인 경우
+     * @throws UserNotFoundException 사용자 정보가 존재하지 않는 경우 (TODO: 예외 처리 추가 예정)
+     */
+    @Override
+    @Transactional
+    public void confirmAll(UUID userId) {
+//        boolean userExists = userRepository.existsById(userId);
+//        if (!userExists) {
+//            //UserNotFoundException 추가
+//        }
+
+        int updatedCount = notificationRepository.confirmAllByUserId(userId);
+        log.info("총 {}개의 알림이 확인 처리되었습니다. (userId: {})", updatedCount, userId);
+    }
+
+    /**
      * 관심사의 새로운 기사에 대한 알림을 생성합니다. (기능 통합 전 테스트 로직)
      *
      * <p><strong>※ 추후 기능 통합 시 아래 로직으로 대체될 예정입니다.</strong>
