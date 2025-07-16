@@ -130,7 +130,8 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(userRepository.save(userToSave)).willReturn(savedUser);
+        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
+        given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
         // when
@@ -144,7 +145,8 @@ class UserServiceTest {
 
         verify(userRepository).existsByEmail(registerRequest.email());
         verify(userMapper).toEntity(registerRequest);
-        verify(userRepository).save(userToSave);
+        verify(passwordEncoder).encode(registerRequest.password());
+        verify(userRepository).save(any(User.class));
         verify(userMapper).toResponse(savedUser);
     }
 
@@ -183,7 +185,8 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(userRepository.save(userToSave)).willReturn(savedUser);
+        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
+        given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
         // when
@@ -207,7 +210,8 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(userRepository.save(userToSave)).willReturn(savedUser);
+        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
+        given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
         // when
