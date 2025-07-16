@@ -1,11 +1,11 @@
-package org.project.monewping.domain.interest.slice.controller;
+package org.project.monewping.domain.interest.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.project.monewping.domain.interest.controller.InterestController;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.service.InterestService;
+import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,6 +30,8 @@ class InterestControllerTest {
 
     @MockitoBean
     private InterestService interestService;
+    @MockitoBean
+    private SubscriptionService subscriptionService;
 
     @Test
     @DisplayName("관심사 목록 조회 API를 호출하면 200 OK와 결과가 반환된다")
@@ -47,7 +48,8 @@ class InterestControllerTest {
                 List.of(dto),
                 null, null, 1, 1L, false
         );
-        given(interestService.findInterestByNameAndSubcriberCountByCursor(any(), anyString()))
+
+        given(interestService.findInterestByNameAndSubcriberCountByCursor(any(), any(UUID.class)))
                 .willReturn(response);
 
         // When & Then
@@ -55,7 +57,7 @@ class InterestControllerTest {
                 .param("orderBy", "name")
                 .param("direction", "ASC")
                 .param("limit", "10")
-                .header("Monew-Request-User-ID", "test-user-id"))
+                .header("Monew-Request-User-ID", UUID.randomUUID().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].name").value("축구"))
                 .andExpect(jsonPath("$.content[0].keywords[0]").value("수비수"))

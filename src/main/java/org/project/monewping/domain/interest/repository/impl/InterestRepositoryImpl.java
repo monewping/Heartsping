@@ -1,4 +1,4 @@
-package org.project.monewping.domain.interest.repository;
+package org.project.monewping.domain.interest.repository.impl;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -12,6 +12,9 @@ import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.QInterest;
 import org.project.monewping.domain.interest.entity.QKeyword;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
+import org.project.monewping.domain.interest.repository.InterestRepositoryCustom;
+import org.project.monewping.domain.interest.repository.SubscriptionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -35,6 +38,11 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private final InterestMapper interestMapper;
 
+    // === 신규: SubscriptionRepository 주입 ===
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
+    // === 신규 끝 ===
+
     /**
      * 커서 기반 관심사 목록을 검색/정렬/페이지네이션하여 반환합니다.
      *
@@ -48,7 +56,7 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
      */
     // TODO : 유저 정보(monewRequestUserID)에 따른 구독 여부 추가 구현 예정
     @Override
-    public CursorPageResponseInterestDto searchWithCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID) {
+    public CursorPageResponseInterestDto searchWithCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID) {
         QInterest interest = QInterest.interest;
         QKeyword keyword = QKeyword.keyword;
 
@@ -109,7 +117,19 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
         if (hasNext) {
             entityList = entityList.subList(0, request.limit());
         }
-        List<InterestDto> content = interestMapper.toDtoList(entityList);
+
+        // === 신규: 구독 여부(subscribedByMe) 반영 ===
+        List<UUID> subscribedInterestIds = subscriptionRepository.findInterestIdsByUserId(monewRequestUserID);
+        List<InterestDto> content = entityList.stream()
+            .map(interestObj -> InterestDto.builder()
+                .id(interestObj.getId())
+                .name(interestObj.getName())
+                .keywords(interestObj.getKeywords().stream().map(k -> k.getName()).toList())
+                .subscriberCount(interestObj.getSubscriberCount())
+                .subscribedByMe(subscribedInterestIds.contains(interestObj.getId()))
+                .build())
+            .toList();
+        // === 신규 끝 ===
 
         // 전체 개수 (검색 조건 포함, null-safe)
         Long totalElements = queryFactory.select(interest.count())

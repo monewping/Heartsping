@@ -1,4 +1,4 @@
-package org.project.monewping.domain.interest.service.basic;
+package org.project.monewping.domain.interest.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class BasicInterestService implements InterestService {
+public class InterestServiceImpl implements InterestService {
 
     private final InterestRepository interestRepository;
     private final InterestMapper interestMapper;
@@ -188,10 +189,9 @@ public class BasicInterestService implements InterestService {
      * @return 커서 페이지네이션 응답 DTO (관심사 목록, 다음 커서 등 포함)
      * @throws IllegalArgumentException 커서 값이 잘못된 형식일 경우 등
      */
-    // TODO 구독 관련 로직 추가 예정
     @Override
     @Transactional
-    public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID) {
+    public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID) {
         return interestRepository.searchWithCursor(request, monewRequestUserID);
     }
 }

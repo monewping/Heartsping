@@ -10,6 +10,10 @@ import org.project.monewping.domain.interest.exception.DuplicateInterestNameExce
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.InterestService;
+import org.project.monewping.domain.user.entity.User;
+import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.interest.entity.Subscription;
+import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -31,6 +36,11 @@ class InterestApiIntegrationTest {
 
     @Autowired
     InterestRepository interestRepository;
+
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    SubscriptionRepository subscriptionRepository;
 
     /* 관심사 등록 */
     @Test
@@ -226,7 +236,7 @@ class InterestApiIntegrationTest {
         var searchRequest = new CursorPageRequestSearchInterestDto(
                 null, "name", "ASC", null, null, 10
         );
-        var result = interestService.findInterestByNameAndSubcriberCountByCursor(searchRequest, "test-user");
+        var result = interestService.findInterestByNameAndSubcriberCountByCursor(searchRequest, UUID.randomUUID());
 
         // Then
         assertThat(result).isNotNull();
@@ -249,14 +259,14 @@ class InterestApiIntegrationTest {
 
         // When: 이름에 '구'가 포함된 관심사 검색
         var searchByName = new CursorPageRequestSearchInterestDto("구", "name", "ASC", null, null, 10);
-        var resultByName = interestService.findInterestByNameAndSubcriberCountByCursor(searchByName, "test-user");
+        var resultByName = interestService.findInterestByNameAndSubcriberCountByCursor(searchByName, UUID.randomUUID());
         // Then
         assertThat(resultByName.content()).extracting("name")
                 .containsExactlyInAnyOrder("축구", "야구", "농구");
 
         // When: 키워드에 '라켓'이 포함된 관심사 검색
         var searchByKeyword = new CursorPageRequestSearchInterestDto("라켓", "name", "ASC", null, null, 10);
-        var resultByKeyword = interestService.findInterestByNameAndSubcriberCountByCursor(searchByKeyword, "test-user");
+        var resultByKeyword = interestService.findInterestByNameAndSubcriberCountByCursor(searchByKeyword, UUID.randomUUID());
         // Then
         assertThat(resultByKeyword.content()).extracting("name")
                 .containsExactly("테니스");
@@ -280,14 +290,14 @@ class InterestApiIntegrationTest {
 
         // When: 구독자 수 오름차순
         var ascRequest = new CursorPageRequestSearchInterestDto(null, "subscriberCount", "ASC", null, null, 10);
-        var ascResult = interestService.findInterestByNameAndSubcriberCountByCursor(ascRequest, "test-user");
+        var ascResult = interestService.findInterestByNameAndSubcriberCountByCursor(ascRequest, UUID.randomUUID());
         // Then
         assertThat(ascResult.content()).extracting("name")
                 .containsExactly("농구", "야구", "축구");
 
         // When: 구독자 수 내림차순
         var descRequest = new CursorPageRequestSearchInterestDto(null, "subscriberCount", "DESC", null, null, 10);
-        var descResult = interestService.findInterestByNameAndSubcriberCountByCursor(descRequest, "test-user");
+        var descResult = interestService.findInterestByNameAndSubcriberCountByCursor(descRequest, UUID.randomUUID());
         // Then
         assertThat(descResult.content()).extracting("name")
                 .containsExactly("축구", "야구", "농구");
@@ -303,16 +313,56 @@ class InterestApiIntegrationTest {
 
         // When: 이름 오름차순
         var ascRequest = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 10);
-        var ascResult = interestService.findInterestByNameAndSubcriberCountByCursor(ascRequest, "test-user");
+        var ascResult = interestService.findInterestByNameAndSubcriberCountByCursor(ascRequest, UUID.randomUUID());
         // Then
         assertThat(ascResult.content()).extracting("name")
                 .containsExactly("농구", "야구", "축구");
 
         // When: 이름 내림차순
         var descRequest = new CursorPageRequestSearchInterestDto(null, "name", "DESC", null, null, 10);
-        var descResult = interestService.findInterestByNameAndSubcriberCountByCursor(descRequest, "test-user");
+        var descResult = interestService.findInterestByNameAndSubcriberCountByCursor(descRequest, UUID.randomUUID());
         // Then
         assertThat(descResult.content()).extracting("name")
                 .containsExactly("축구", "야구", "농구");
+    }
+
+    @Test
+    @DisplayName("관심사 목록 조회 시 요청 유저의 구독 여부가 InterestDto에 올바르게 반영된다")
+    void should_IncludeSubscribedByMe_When_ListInterests() {
+        // Given: 관심사 2개 등록, 실제 User 생성
+        var req1 = new InterestRegisterRequest("축구", List.of("공", "스포츠"));
+        var req2 = new InterestRegisterRequest("야구", List.of("방망이", "스포츠"));
+        var soccerDto = interestService.create(req1);
+        var baseballDto = interestService.create(req2);
+
+        User user = userRepository.save(User.builder()
+                .email("test@email.com")
+                .nickname("tester")
+                .password("pw")
+                .build());
+        UUID userId = user.getId();
+
+        // When: 구독 전 조회
+        var searchRequest = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 10);
+        var resultBefore = interestService.findInterestByNameAndSubcriberCountByCursor(searchRequest, userId);
+
+        // Then: 구독 전에는 모두 false
+        assertThat(resultBefore.content()).hasSize(2);
+        assertThat(resultBefore.content()).allSatisfy(dto -> assertThat(dto.subscribedByMe()).isFalse());
+
+        // When: user가 '축구'를 구독
+        subscriptionRepository.save(new Subscription(user, interestRepository.findById(soccerDto.id()).orElseThrow()));
+
+        // When: 구독 후 조회
+        var resultAfter = interestService.findInterestByNameAndSubcriberCountByCursor(searchRequest, userId);
+
+        // Then: '축구'만 true, '야구'는 false
+        assertThat(resultAfter.content()).anySatisfy(dto -> {
+            if (dto.name().equals("축구")) {
+                assertThat(dto.subscribedByMe()).isTrue();
+            } else if (dto.name().equals("야구")) {
+                assertThat(dto.subscribedByMe()).isFalse();
+            }
+        });
     }
 }

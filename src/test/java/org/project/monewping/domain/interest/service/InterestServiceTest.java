@@ -1,4 +1,4 @@
-package org.project.monewping.domain.interest.slice.service;
+package org.project.monewping.domain.interest.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,20 +10,22 @@ import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearch
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
-import org.project.monewping.domain.interest.service.basic.BasicInterestService;
+import org.project.monewping.domain.interest.service.impl.InterestServiceImpl;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class InterestServiceTest {
 
     @InjectMocks
-    private BasicInterestService interestService;
+    private InterestServiceImpl interestService;
 
     @Mock
     private InterestRepository interestRepository;
@@ -34,46 +36,46 @@ class InterestServiceTest {
     @DisplayName("관심사 목록 조회 요청 시 Repository에서 결과를 받아 반환한다")
     void should_returnResult_when_findInterestByNameAndSubcriberCountByCursor() {
         // Given
-        given(interestRepository.searchWithCursor(any(), any()))
+        given(interestRepository.searchWithCursor(any(), any(UUID.class)))
                 .willReturn(new CursorPageResponseInterestDto(null, null, null, 0, 0L, false));
 
         // When
         CursorPageResponseInterestDto result = interestService.findInterestByNameAndSubcriberCountByCursor(
                 new CursorPageRequestSearchInterestDto("test", "name", "ASC", null, null, 10),
-                "test-user"
+                UUID.randomUUID()
         );
 
         // Then
         assertThat(result).isNotNull();
-        verify(interestRepository, times(1)).searchWithCursor(any(), any());
+        verify(interestRepository, times(1)).searchWithCursor(any(), any(UUID.class));
     }
 
     @Test
     @DisplayName("Repository에서 예외 발생 시 Service도 예외를 던진다")
     void should_throwException_when_repositoryThrows() {
         // Given
-        given(interestRepository.searchWithCursor(any(), any()))
+        given(interestRepository.searchWithCursor(any(), any(UUID.class)))
                 .willThrow(new RuntimeException("DB Error"));
 
         // When & Then
         assertThatThrownBy(() -> interestService.findInterestByNameAndSubcriberCountByCursor(
                 new CursorPageRequestSearchInterestDto("test", "name", "ASC", null, null, 10),
-                "test-user"
+                UUID.randomUUID()
         )).isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("DB Error");
+          .hasMessageContaining("DB Error");
     }
 
     @Test
     @DisplayName("Repository에서 null 반환 시 Service도 null을 반환한다")
     void should_returnNull_when_repositoryReturnsNull() {
         // Given
-        given(interestRepository.searchWithCursor(any(), any()))
+        given(interestRepository.searchWithCursor(any(), any(UUID.class)))
                 .willReturn(null);
 
         // When
         CursorPageResponseInterestDto result = interestService.findInterestByNameAndSubcriberCountByCursor(
                 new CursorPageRequestSearchInterestDto("test", "name", "ASC", null, null, 10),
-                "test-user"
+                UUID.randomUUID()
         );
 
         // Then
@@ -88,14 +90,15 @@ class InterestServiceTest {
                 "축구", "subscriberCount", "DESC", "some-cursor", "2024-07-15T10:00:00Z", 20
         );
         CursorPageResponseInterestDto mockResponse = new CursorPageResponseInterestDto(null, null, null, 0, 0L, false);
-        given(interestRepository.searchWithCursor(request, "user-1")).willReturn(mockResponse);
+        UUID userId = UUID.randomUUID();
+        given(interestRepository.searchWithCursor(request, userId)).willReturn(mockResponse);
 
         // When
-        CursorPageResponseInterestDto result = interestService.findInterestByNameAndSubcriberCountByCursor(request, "user-1");
+        CursorPageResponseInterestDto result = interestService.findInterestByNameAndSubcriberCountByCursor(request, userId);
 
         // Then
         assertThat(result).isNotNull();
-        verify(interestRepository).searchWithCursor(request, "user-1");
+        verify(interestRepository).searchWithCursor(request, userId);
     }
 
     @Test
@@ -105,16 +108,18 @@ class InterestServiceTest {
         CursorPageRequestSearchInterestDto request1 = new CursorPageRequestSearchInterestDto(null, null, null, null, null, 1);
         CursorPageRequestSearchInterestDto request2 = new CursorPageRequestSearchInterestDto("", "name", "ASC", null, null, 100);
         CursorPageResponseInterestDto mockResponse = new CursorPageResponseInterestDto(null, null, null, 0, 0L, false);
-        given(interestRepository.searchWithCursor(any(), any())).willReturn(mockResponse);
+        UUID userId1 = UUID.randomUUID();
+        UUID userId2 = UUID.randomUUID();
+        given(interestRepository.searchWithCursor(any(), any(UUID.class))).willReturn(mockResponse);
 
         // When
-        CursorPageResponseInterestDto result1 = interestService.findInterestByNameAndSubcriberCountByCursor(request1, "user-2");
-        CursorPageResponseInterestDto result2 = interestService.findInterestByNameAndSubcriberCountByCursor(request2, "user-3");
+        CursorPageResponseInterestDto result1 = interestService.findInterestByNameAndSubcriberCountByCursor(request1, userId1);
+        CursorPageResponseInterestDto result2 = interestService.findInterestByNameAndSubcriberCountByCursor(request2, userId2);
 
         // Then
         assertThat(result1).isNotNull();
         assertThat(result2).isNotNull();
-        verify(interestRepository).searchWithCursor(request1, "user-2");
-        verify(interestRepository).searchWithCursor(request2, "user-3");
+        verify(interestRepository).searchWithCursor(request1, userId1);
+        verify(interestRepository).searchWithCursor(request2, userId2);
     }
 } 
