@@ -21,13 +21,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
-    @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
+  @Id
+  @Column(name = "id", nullable = false, unique = true)
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @Column(name = "created_at", nullable = false)
-    @CreatedDate
-    private Instant createdAt;
+  @Column(name = "created_at", nullable = false)
+  @CreatedDate
+  private Instant createdAt;
 
 }
