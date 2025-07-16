@@ -1,0 +1,100 @@
+### 사용자 등록 API 테스트
+
+### 1. 정상적인 사용자 등록
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "nickname": "testuser",
+  "password": "password123"
+}
+
+### 2. 두 번째 사용자 등록 (다른 이메일)
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "nickname": "user2",
+  "password": "password456"
+}
+
+### 3. 이메일 중복 테스트 (첫 번째 요청과 같은 이메일)
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "nickname": "duplicateuser",
+  "password": "password789"
+}
+
+### 4. 유효성 검사 오류 - 잘못된 이메일 형식
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "nickname": "testuser",
+  "password": "password123"
+}
+
+### 5. 유효성 검사 오류 - 빈 닉네임
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "test3@example.com",
+  "nickname": "",
+  "password": "password123"
+}
+
+### 6. 유효성 검사 오류 - 짧은 비밀번호
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "test4@example.com",
+  "nickname": "testuser4",
+  "password": "123"
+}
+
+### 7. 유효성 검사 오류 - 누락된 필드
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "test5@example.com",
+  "nickname": "testuser5"
+}
+
+### 8. 유효성 검사 오류 - null 값
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": null,
+  "nickname": null,
+  "password": null
+}
+
+### 9. 한글 닉네임 테스트
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "korean@example.com",
+  "nickname": "한글사용자",
+  "password": "password123"
+}
+
+### 10. 긴 이메일/닉네임 테스트
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "email": "verylongemailaddressthatexceedsthelimittotestvalidation@example.com",
+  "nickname": "verylongnicknamethatshouldexceedthelimitfortestingvalidationpurposes",
+  "password": "password123"
+}
