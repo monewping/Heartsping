@@ -5,6 +5,13 @@ import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 
 public interface ArticleViewsService {
 
-    ArticleViewDto registerView(UUID viewedBy, UUID articleId);
+    /**
+ * Registers a view for the specified article by the given user.
+ *
+ * @param viewedBy the UUID of the user viewing the article
+ * @param articleId the UUID of the article being viewed
+ * @return an ArticleViewDto representing the registered view
+ */
+ArticleViewDto registerView(UUID viewedBy, UUID articleId);
 
 }

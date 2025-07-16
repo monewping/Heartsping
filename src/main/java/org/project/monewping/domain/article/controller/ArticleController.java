@@ -28,12 +28,12 @@ public class ArticleController {
 
     private final ArticleViewsService articleViewsService;
 
-    /**
-     * 특정 뉴스 기사에 대해 사용자의 조회 기록을 등록한다.
+    /****
+     * Registers a view record for a specific news article by a user.
      *
-     * @param articleId 조회할 뉴스 기사 ID (경로 변수)
-     * @param viewedBy 요청 헤더 "Monew-Request-User-ID"에 포함된 사용자 ID
-     * @return 등록된 조회 기록 정보 (ArticleViewDto)
+     * @param articleId the ID of the news article to register a view for
+     * @param viewedBy the ID of the user viewing the article, provided in the "Monew-Request-User-ID" request header
+     * @return the registered article view record as an ArticleViewDto
      */
     @PostMapping("/{articleId}/article-views")
     public ResponseEntity<ArticleViewDto> registerArticleView(

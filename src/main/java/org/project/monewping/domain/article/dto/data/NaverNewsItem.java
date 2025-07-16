@@ -23,9 +23,9 @@ public record NaverNewsItem(
     String pubDate
 ) {
     /**
-     * pubDate(RFC_1123 포맷)를 Asia/Seoul 시간대 기준 LocalDateTime으로 변환합니다.
+     * Converts the RFC 1123 formatted publication date to a LocalDateTime in the Asia/Seoul timezone.
      *
-     * @return 변환된 LocalDateTime 객체
+     * @return the publication date as a LocalDateTime adjusted to the Asia/Seoul timezone
      */
     public LocalDateTime getPublishedAt() {
         return ZonedDateTime

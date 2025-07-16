@@ -26,12 +26,14 @@ public class ArticlesServiceImpl implements ArticlesService {
     private final ArticlesMapper articlesMapper;
 
     /**
-     * 단일 뉴스 기사를 저장합니다.
-     * 중복된 originalLink가 존재할 경우 {@link DuplicateArticleException} 예외가 발생합니다.
+     * Saves a single news article.
      *
-     * @param request 저장할 뉴스 기사 요청 DTO
-     * @throws DuplicateArticleException 원본 링크가 이미 존재하는 경우
-     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
+     * Throws a {@link DuplicateArticleException} if an article with the same original link already exists,
+     * or an {@link InterestNotFoundException} if the specified interest does not exist.
+     *
+     * @param request the DTO containing the news article data to save
+     * @throws DuplicateArticleException if an article with the same original link already exists
+     * @throws InterestNotFoundException if the specified interest is not found
      */
     @Override
     public void save(ArticleSaveRequest request) {
@@ -52,10 +54,12 @@ public class ArticlesServiceImpl implements ArticlesService {
     }
 
     /**
-     * 여러 뉴스 기사 요청을 받아 중복된 originalLink를 제외하고 저장합니다.
+     * Saves multiple news articles, excluding those with original links that already exist in the database.
      *
-     * @param requests 뉴스 기사 요청 리스트
-     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
+     * If the provided list is null or empty, the method returns immediately without performing any operation.
+     *
+     * @param requests List of article save requests to process.
+     * @throws InterestNotFoundException if the specified interest ID does not correspond to any existing interest.
      */
     @Override
     public void saveAll(List<ArticleSaveRequest> requests) {

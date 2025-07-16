@@ -39,11 +39,10 @@ public class NaverArticleFetcher implements ArticleFetcher {
     private static final String NAVER_NEWS_SEARCH_API = "https://openapi.naver.com/v1/search/news.json";
 
     /**
-     * 네이버 뉴스 API를 호출하여 주어진 키워드로 뉴스 기사를 검색하고,
-     * 내부 저장 요청 DTO 리스트로 변환하여 반환합니다.
+     * Fetches news articles from the Naver News API using the given keyword and converts them into a list of internal DTOs.
      *
-     * @param keyword 검색 키워드 (예: "인공지능", "주식")
-     * @return 수집된 뉴스 기사의 {@link ArticleSaveRequest} 리스트
+     * @param keyword the search keyword to query news articles for
+     * @return a list of {@link ArticleSaveRequest} objects representing the fetched news articles; returns an empty list if the API call fails or no articles are found
      */
     @Override
     public List<ArticleSaveRequest> fetch(String keyword) {

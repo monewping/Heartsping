@@ -22,16 +22,12 @@ public class ArticleCollectorScheduler {
     private final ArticlesService articlesService;
 
     /**
-     * 매 시간 정각에 실행되는 뉴스 기사 수집 배치 작업입니다.
+     * Periodically collects news articles for all user interests and saves them in bulk.
      * <p>
-     * 모든 관심사를 조회하여 각 관심사의 키워드로 외부 API를 통해 기사를 수집하고,
-     * 중복을 제외한 기사를 저장합니다.
-     * <p>
-     * - 관심사 이름을 키워드로 사용하여 수집
-     * - 수집된 기사 리스트를 {@link ArticlesService#saveAll} 메서드를 통해 저장
-     * - 수집 시작 및 종료 시점, 관심사별 수집 건수에 대한 로그를 기록
-     *
-     * @throws RuntimeException 수집 중 예외 발생 시 로그로 기록하며 배치 수행 중단하지 않음
+     * Runs at the start of every hour, fetching articles from external sources for each interest keyword,
+     * transforming them into save requests, and persisting them via the articles service.
+     * Logs the start and end of the batch process, as well as the number of articles collected per interest.
+     * Any exceptions during collection are logged but do not interrupt the batch execution.
      */
     @Scheduled(cron = "0 0 * * * *")
     public void collectArticlesByInterest() {

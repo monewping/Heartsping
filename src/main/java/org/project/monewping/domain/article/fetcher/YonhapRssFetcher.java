@@ -34,20 +34,28 @@ public class YonhapRssFetcher implements ArticleFetcher {
 
     private final HttpClient client;
 
-    // 테스트 코드 진행을 위해 생성자 주입 추가
+    /**
+     * Constructs a YonhapRssFetcher with the specified HttpClient.
+     *
+     * @param client the HttpClient to use for HTTP requests
+     */
     public YonhapRssFetcher(HttpClient client) {
         this.client = client;
     }
 
-    // 기본 생성자 (Spring 빈 등록용) - 기본 HttpClient 생성
+    /**
+     * Constructs a YonhapRssFetcher with a default HttpClient instance for use as a Spring bean.
+     */
     public YonhapRssFetcher() {
         this(HttpClient.newHttpClient());
     }
-    /**
-     * 주어진 키워드를 기준으로 한국 경제 RSS에서 뉴스 기사를 수집합니다.
+    /****
+     * Fetches news articles from the Yonhap News RSS feed that contain the specified keyword in the title or description.
      *
-     * @param keyword 관심사 키워드 (해당 키워드가 제목 또는 요약에 포함된 기사만 수집 대상)
-     * @return 수집된 뉴스 기사 목록 ({@link ArticleSaveRequest})
+     * The method sends an HTTP GET request to the Yonhap News RSS feed, parses the XML response, and filters articles based on the presence of the keyword (case-insensitive) in either the title or description. Each matching article is converted into an {@link ArticleSaveRequest} object. If the RSS feed cannot be retrieved or parsed, or if an error occurs, an empty list is returned.
+     *
+     * @param keyword The keyword to filter articles by; only articles with this keyword in the title or description are included.
+     * @return A list of {@link ArticleSaveRequest} objects representing the filtered news articles.
      */
     @Override
     public List<ArticleSaveRequest> fetch(String keyword) {
@@ -133,11 +141,11 @@ public class YonhapRssFetcher implements ArticleFetcher {
 
 
     /**
-     * XML 태그 이름을 기준으로 해당 노드에서 값을 추출합니다.
+     * Retrieves the text content of the first occurrence of the specified tag within the given XML node.
      *
-     * @param tagName 태그 이름 (예: "title", "link")
-     * @param item    RSS item 노드
-     * @return 태그 값 또는 null
+     * @param tagName the name of the tag to search for (e.g., "title", "link")
+     * @param item the XML node representing an RSS item
+     * @return the text content of the tag, or null if the tag or its content is missing
      */
     private String getTagValue(String tagName, org.w3c.dom.Node item) {
         var nodes = ((org.w3c.dom.Element) item).getElementsByTagName(tagName);

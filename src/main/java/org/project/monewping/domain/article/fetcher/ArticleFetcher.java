@@ -9,11 +9,11 @@ import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 public interface ArticleFetcher {
 
     /**
-     * 키워드를 기반으로 외부에서 뉴스 기사를 수집합니다.
-     *
-     * @param keyword 검색 키워드 (예: "인공지능", "주식")
-     * @return 수집된 기사 리스트
-     */
+ * Fetches news articles from external sources based on the provided keyword.
+ *
+ * @param keyword the search keyword used to collect relevant news articles
+ * @return a list of ArticleSaveRequest objects representing the fetched articles
+ */
     List<ArticleSaveRequest> fetch(String keyword);
 
 }

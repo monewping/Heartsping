@@ -33,10 +33,13 @@ public class ChosunRssFetcher implements ArticleFetcher{
     private static final DateTimeFormatter PUBDATE_FORMATER = DateTimeFormatter.RFC_1123_DATE_TIME;
 
     /**
-     * 주어진 키워드를 기준으로 조선 일보 RSS에서 뉴스 기사를 수집합니다.
+     * Fetches news articles from the Chosun Ilbo RSS feed that contain the specified keyword in the title or description.
      *
-     * @param keyword 관심사 키워드 (해당 키워드가 제목 또는 요약에 포함된 기사만 수집 대상)
-     * @return 수집된 뉴스 기사 목록 ({@link ArticleSaveRequest})
+     * Filters articles by the given keyword (case-insensitive) and returns a list of matching articles as {@link ArticleSaveRequest} objects.
+     * If an error occurs during fetching or parsing, returns an empty list.
+     *
+     * @param keyword The keyword to filter articles by; only articles with this keyword in the title or description are included.
+     * @return A list of articles matching the keyword.
      */
     @Override
     public List<ArticleSaveRequest> fetch(String keyword) {
@@ -122,11 +125,11 @@ public class ChosunRssFetcher implements ArticleFetcher{
 
 
     /**
-     * XML 태그 이름을 기준으로 해당 노드에서 값을 추출합니다.
+     * Retrieves the text content of the first occurrence of the specified tag within the given XML node.
      *
-     * @param tagName 태그 이름 (예: "title", "link")
-     * @param item    RSS item 노드
-     * @return 태그 값 또는 null
+     * @param tagName the name of the XML tag to search for (e.g., "title", "link")
+     * @param item the XML node representing an RSS item
+     * @return the text value of the tag, or {@code null} if the tag or its content is not found
      */
     private String getTagValue(String tagName, org.w3c.dom.Node item) {
         var nodes = ((org.w3c.dom.Element) item).getElementsByTagName(tagName);

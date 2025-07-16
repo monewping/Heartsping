@@ -36,13 +36,15 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
     private final ArticlesRepository articlesRepository;
 
     /**
-     * 뉴스 기사 조회 기록을 등록한다.
+     * Registers a view record for a news article by a specific user.
      *
-     * @param viewedBy  사용자 ID
-     * @param articleId 뉴스 기사 ID
-     * @return 등록된 조회 기록 DTO
-     * @throws DuplicateArticleViewsException 중복된 조회 기록이 이미 존재하는 경우
-     * @throws ArticleNotFoundException 기사 ID가 존재하지 않는 경우
+     * Creates and saves a new article view entry if the user has not already viewed the article. Returns a DTO containing the view record and article details.
+     *
+     * @param viewedBy the unique identifier of the user viewing the article
+     * @param articleId the unique identifier of the article being viewed
+     * @return a DTO representing the registered article view, including article and view details
+     * @throws DuplicateArticleViewsException if a view record for this user and article already exists
+     * @throws ArticleNotFoundException if the specified article does not exist
      */
     @Override
     public ArticleViewDto registerView(UUID viewedBy, UUID articleId) {
@@ -90,11 +92,11 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
     }
 
     /**
-     * 동일 사용자-기사 조합의 중복 조회 여부를 검사한다.
+     * Checks if a view record already exists for the given user and article combination.
      *
-     * @param viewedBy  사용자 ID
-     * @param articleId 뉴스 기사 ID
-     * @throws DuplicateArticleViewsException 중복 조회 기록 존재 시 발생
+     * @param viewedBy the unique identifier of the user
+     * @param articleId the unique identifier of the article
+     * @throws DuplicateArticleViewsException if a view record for this user and article already exists
      */
     private void validateNoDuplicateViewHistory(UUID viewedBy, UUID articleId) {
         boolean exists = articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId).isPresent();
