@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -16,4 +17,6 @@ public interface UserMapper {
   User toEntity(UserRegisterRequest request);
 
   UserRegisterResponse toResponse(User user);
+
+  LoginResponse toLoginResponse(User user);
 }

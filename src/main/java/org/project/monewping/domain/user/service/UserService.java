@@ -1,11 +1,14 @@
 package org.project.monewping.domain.user.service;
 
 import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   /**
    * 사용자 회원가입을 처리합니다.
@@ -52,6 +56,20 @@ public class UserService {
     return userMapper.toResponse(savedUser);
   }
 
+  /**
+   * 사용자 로그인을 처리합니다.
+   * 
+   * <p>
+   * 이메일과 비밀번호를 검증하여 사용자 인증을 수행합니다.
+   * </p>
+   * 
+   * @param request 로그인 요청 정보 (이메일, 비밀번호)
+   * @return 로그인 성공한 사용자 정보
+   * @throws LoginFailedException 이메일 또는 비밀번호가 일치하지 않는 경우
+   */
+  public LoginResponse login(LoginRequest request) {
+    throw new UnsupportedOperationException("아직 구현되지 않음");
+  }
 
 
   /**
