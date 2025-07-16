@@ -3,6 +3,7 @@ package org.project.monewping.domain.user.repository;
 import org.project.monewping.domain.user.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 import java.util.UUID;
 
@@ -39,5 +40,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
    * @param email 조회할 이메일 주소
    * @return 해당 이메일을 가진 사용자의 Optional 객체
    */
-  java.util.Optional<User> findByEmail(String email);
+  Optional<User> findByEmail(String email);
 }
