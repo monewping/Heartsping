@@ -28,10 +28,21 @@ import org.xml.sax.InputSource;
 @Component
 public class YonhapRssFetcher implements ArticleFetcher {
 
-    private static final String RSS_FEED_URL = "https://www.yonhapnewstv.co.kr/browse/feed/";
+    private static final String RSS_FEED_URL = "http://www.yonhapnewstv.co.kr/browse/feed/";
 
     private static final DateTimeFormatter PUBDATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
 
+    private final HttpClient client;
+
+    // 테스트 코드 진행을 위해 생성자 주입 추가
+    public YonhapRssFetcher(HttpClient client) {
+        this.client = client;
+    }
+
+    // 기본 생성자 (Spring 빈 등록용) - 기본 HttpClient 생성
+    public YonhapRssFetcher() {
+        this(HttpClient.newHttpClient());
+    }
     /**
      * 주어진 키워드를 기준으로 한국 경제 RSS에서 뉴스 기사를 수집합니다.
      *
@@ -44,7 +55,6 @@ public class YonhapRssFetcher implements ArticleFetcher {
 
         try {
             // 1. HTTP GET 요청
-            HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(RSS_FEED_URL))
                 .GET()

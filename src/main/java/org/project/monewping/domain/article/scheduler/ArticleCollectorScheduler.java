@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class ArticleCollectorScheduler {
 
     private final InterestRepository interestRepository;
-    private final ArticleFetcher articleFetcher;
+    private final List<ArticleFetcher> articleFetchers;
     private final ArticlesService articlesService;
 
     /**
@@ -44,21 +44,23 @@ public class ArticleCollectorScheduler {
             String keyword = interest.getName();
             UUID interestId = interest.getId();
 
-            List<ArticleSaveRequest> fetchedArticles = articleFetcher.fetch(keyword).stream()
-                .map(article -> new ArticleSaveRequest(
-                    interestId,
-                    article.source(),
-                    article.originalLink(),
-                    article.title(),
-                    article.summary(),
-                    article.publishedAt()
-                ))
-                .toList();
+            for (ArticleFetcher fetcher : articleFetchers) {
+                List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword).stream()
+                    .map(article -> new ArticleSaveRequest(
+                        interestId,
+                        article.source(),
+                        article.originalLink(),
+                        article.title(),
+                        article.summary(),
+                        article.publishedAt()
+                    ))
+                    .toList();
 
-            articlesService.saveAll(fetchedArticles);
-            totalCount += fetchedArticles.size();
+                articlesService.saveAll(fetchedArticles);
+                totalCount += fetchedArticles.size();
 
-            log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword,fetchedArticles.size());
+                log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword,fetchedArticles.size());
+            }
 
         }
 

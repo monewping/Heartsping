@@ -28,7 +28,7 @@ import org.xml.sax.InputSource;
 @Component
 public class HankyungRssFetcher implements ArticleFetcher {
 
-    private static final String RSS_FEED_URL = "https://www.hankyung.com/feed/all-news";
+    private static final String RSS_FEED_URL = "https://www.hankyung.com/feed";
 
     private static final DateTimeFormatter PUBDATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
 
