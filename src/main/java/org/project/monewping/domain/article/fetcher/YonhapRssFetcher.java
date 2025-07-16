@@ -43,6 +43,7 @@ public class YonhapRssFetcher implements ArticleFetcher {
     public YonhapRssFetcher() {
         this(HttpClient.newHttpClient());
     }
+
     /**
      * 주어진 키워드를 기준으로 한국 경제 RSS에서 뉴스 기사를 수집합니다.
      *

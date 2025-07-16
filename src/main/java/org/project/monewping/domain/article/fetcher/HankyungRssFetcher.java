@@ -32,6 +32,18 @@ public class HankyungRssFetcher implements ArticleFetcher {
 
     private static final DateTimeFormatter PUBDATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
 
+    private final HttpClient client;
+
+    // 테스트 코드 진행을 위해 생성자 주입 추가
+    public HankyungRssFetcher(HttpClient client) {
+        this.client = client;
+    }
+
+    // 기본 생성자 (Spring 빈 등록용) - 기본 HttpClient 생성
+    public HankyungRssFetcher() {
+        this(HttpClient.newHttpClient());
+    }
+
     /**
      * 주어진 키워드를 기준으로 한국 경제 RSS에서 뉴스 기사를 수집합니다.
      *
@@ -44,7 +56,6 @@ public class HankyungRssFetcher implements ArticleFetcher {
 
         try {
             // 1. HTTP GET 요청
-            HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(RSS_FEED_URL))
                 .GET()
@@ -129,7 +140,7 @@ public class HankyungRssFetcher implements ArticleFetcher {
      * @param item    RSS item 노드
      * @return 태그 값 또는 null
      */
-    private String getTagValue(String tagName, org.w3c.dom.Node item) {
+    protected String getTagValue(String tagName, org.w3c.dom.Node item) {
         var nodes = ((org.w3c.dom.Element) item).getElementsByTagName(tagName);
         if (nodes.getLength() > 0 && nodes.item(0).getFirstChild() != null) {
             return nodes.item(0).getFirstChild().getNodeValue();

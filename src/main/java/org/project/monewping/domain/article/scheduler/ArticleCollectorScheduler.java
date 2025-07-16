@@ -45,21 +45,25 @@ public class ArticleCollectorScheduler {
             UUID interestId = interest.getId();
 
             for (ArticleFetcher fetcher : articleFetchers) {
-                List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword).stream()
-                    .map(article -> new ArticleSaveRequest(
-                        interestId,
-                        article.source(),
-                        article.originalLink(),
-                        article.title(),
-                        article.summary(),
-                        article.publishedAt()
-                    ))
-                    .toList();
+                try {
+                    List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword).stream()
+                        .map(article -> new ArticleSaveRequest(
+                            interestId,
+                            article.source(),
+                            article.originalLink(),
+                            article.title(),
+                            article.summary(),
+                            article.publishedAt()
+                        ))
+                        .toList();
 
-                articlesService.saveAll(fetchedArticles);
-                totalCount += fetchedArticles.size();
+                    articlesService.saveAll(fetchedArticles);
+                    totalCount += fetchedArticles.size();
 
-                log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword,fetchedArticles.size());
+                    log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword, fetchedArticles.size());
+                } catch (Exception e) {
+                    log.error("기사 수집 중 예외 발생 = 키워드 : '{}', 에러 : {}", keyword, e.getMessage(), e);
+                }
             }
 
         }

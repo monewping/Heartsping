@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.service;
+package org.project.monewping.domain.article.fetcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,13 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.data.NaverNewsItem;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.response.NaverNewsResponse;
-import org.project.monewping.domain.article.fetcher.NaverArticleFetcher;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+@DisplayName("NaverArticleFetcher 테스트")
 public class NaverArticleFetcherTest {
 
     private RestTemplate restTemplate;
@@ -92,6 +92,19 @@ public class NaverArticleFetcherTest {
         assertNotNull(articles);
         assertTrue(articles.isEmpty());
     }
+
+    @Test
+    @DisplayName("clientId 또는 clientSecret이 없으면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyList_WhenClientIdOrSecretMissing() throws Exception {
+        setPrivateField(naverArticleFetcher, "clientId", null);
+        setPrivateField(naverArticleFetcher, "clientSecret", null);
+
+        List<ArticleSaveRequest> result = naverArticleFetcher.fetch("키워드");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
 
 
     private void setPrivateField(Object target, String fieldName, Object value) throws Exception{

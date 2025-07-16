@@ -5,9 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.project.monewping.global.base.BaseEntity;
 
 @Entity
@@ -15,7 +15,7 @@ import org.project.monewping.global.base.BaseEntity;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Interest extends BaseEntity {
 
     @Column(nullable = false, length = 100)

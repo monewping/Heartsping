@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.service;
+package org.project.monewping.domain.article.fetcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,10 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
-import org.project.monewping.domain.article.fetcher.YonhapRssFetcher;
 
-// RssFetcher의 내부 골조는 같기에 대표 클래스로 YonhapRssFetcher를 이용하여 테스트
-public class RssFetcherTest {
+@DisplayName("YonhapRssFetcher 테스트")
+public class YonhapRssFetcherTest {
 
     private HttpClient httpClientMock;
     private YonhapRssFetcher yonhapRssFetcher;
@@ -52,21 +51,22 @@ public class RssFetcherTest {
         // HTTP 응답 모킹
         when(httpResponseMock.statusCode()).thenReturn(200);
         when(httpResponseMock.body()).thenReturn(MOCK_RSS_XML);
-
-        // HttpClient 모킹 - 어떤 HttpRequest든 위 응답 반환
         when(httpClientMock.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenReturn(httpResponseMock);
 
-        // 모킹된 HttpClient 주입하여 테스트 대상 생성
         yonhapRssFetcher = new YonhapRssFetcher(httpClientMock);
     }
 
     @Test
-    @DisplayName("fetch() : 키워드와 일치하는 기사만 반환한다")
+    @DisplayName("키워드와 일치하는 기사만 반환한다")
     void fetch_ShouldReturnOnlyArticlesThatMatchKeyword() {
-        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
+        // Given: 키워드 "AI"가 포함된 기사 존재
+        String keyword = "AI";
 
-        // "AI" 키워드가 제목 또는 설명에 포함된 기사만 반환됨
+        // When: fetch 호출
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch(keyword);
+
+        // Then: "AI" 포함 기사만 반환
         assertNotNull(articles);
         assertEquals(1, articles.size());
 
@@ -76,24 +76,30 @@ public class RssFetcherTest {
     }
 
     @Test
-    @DisplayName("fetch() : HTTP 상태 코드가 200이 아니면 빈 리스트 반환")
+    @DisplayName("HTTP 상태 코드가 200이 아니면 빈 리스트 반환")
     void fetch_ShouldReturnEmptyListOnHttpError() throws Exception {
+        // Given: 응답 상태 코드 500 설정
         when(httpResponseMock.statusCode()).thenReturn(500);
 
+        // When: fetch 호출
         List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
 
+        // Then: 빈 리스트 반환
         assertNotNull(articles);
         assertTrue(articles.isEmpty());
     }
 
     @Test
-    @DisplayName("fetch() : 예외 발생 시 빈 리스트 반환")
+    @DisplayName("예외 발생 시 빈 리스트 반환")
     void fetch_ShouldReturnEmptyListOnException() throws Exception {
+        // Given: send 호출 시 예외 발생 설정
         when(httpClientMock.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new RuntimeException("HTTP error"));
 
+        // When: fetch 호출
         List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
 
+        // Then: 빈 리스트 반환
         assertNotNull(articles);
         assertTrue(articles.isEmpty());
     }
