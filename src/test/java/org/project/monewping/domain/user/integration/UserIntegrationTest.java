@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,9 +66,10 @@ class UserIntegrationTest {
         // then - 데이터베이스 저장 검증
         Optional<User> savedUser = userRepository.findByEmail("integration@example.com");
         assertThat(savedUser).isPresent();
-        assertThat(savedUser.get())
-                .extracting("email", "nickname", "password")
-                .containsExactly("integration@example.com", "integrationuser", "password123");
+        assertThat(savedUser.get().getEmail()).isEqualTo("integration@example.com");
+        assertThat(savedUser.get().getNickname()).isEqualTo("integrationuser");
+        assertThat(savedUser.get().getPassword()).isNotEqualTo("password123"); // 암호화되어야 함
+        assertThat(savedUser.get().getPassword()).isNotEmpty(); // 비밀번호가 저장되어야 함
         assertThat(savedUser.get().getId()).isNotNull();
         assertThat(savedUser.get().getCreatedAt()).isNotNull();
         assertThat(savedUser.get().getUpdatedAt()).isNotNull();
@@ -177,6 +179,105 @@ class UserIntegrationTest {
         assertUserExistsByEmail("user3@example.com", true);
     }
 
+    // ========== 로그인 관련 통합 테스트 ==========
+    // 회원가입 후 로그인 기능의 전체 플로우를 검증합니다.
+    // 실제 데이터베이스와 연동하여 Controller → Service → Repository 전체 계층을 테스트합니다.
+
+    @Test
+    @DisplayName("회원가입 후 로그인이 정상적으로 성공한다")
+    void testSuccessfulLoginAfterRegistrationIntegration() throws Exception {
+        // given - 사용자 등록
+        UserRegisterRequest registerRequest = createUserRequest(
+                "login@example.com",
+                "loginuser",
+                "password123");
+
+        performUserRegistration(registerRequest)
+                .andExpect(status().isCreated());
+
+        // when - 로그인 시도
+        LoginRequest loginRequest = new LoginRequest("login@example.com", "password123");
+
+        // then - 로그인 성공 검증
+        org.springframework.test.web.servlet.ResultActions result = performLogin(loginRequest);
+        assertSuccessfulLogin(result, "login@example.com", "loginuser");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 이메일로 로그인 시 401 Unauthorized를 반환한다")
+    void testLoginWithNonExistentEmailIntegration() throws Exception {
+        // given
+        LoginRequest loginRequest = new LoginRequest("nonexistent@example.com", "password123");
+
+        // when & then
+        org.springframework.test.web.servlet.ResultActions result = performLogin(loginRequest);
+        assertLoginFailure(result, "이메일 또는 비밀번호가 일치하지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("잘못된 비밀번호로 로그인 시 401 Unauthorized를 반환한다")
+    void testLoginWithWrongPasswordIntegration() throws Exception {
+        // given - 사용자 등록
+        UserRegisterRequest registerRequest = createUserRequest(
+                "wrongpass@example.com",
+                "wrongpassuser",
+                "password123");
+
+        performUserRegistration(registerRequest)
+                .andExpect(status().isCreated());
+
+        // when - 잘못된 비밀번호로 로그인 시도
+        LoginRequest loginRequest = new LoginRequest("wrongpass@example.com", "wrongpassword");
+
+        // then - 로그인 실패 검증
+        org.springframework.test.web.servlet.ResultActions result = performLogin(loginRequest);
+        assertLoginFailure(result, "이메일 또는 비밀번호가 일치하지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("빈 이메일로 로그인 시 400 Bad Request를 반환한다")
+    void testLoginWithEmptyEmailIntegration() throws Exception {
+        // given
+        LoginRequest loginRequest = new LoginRequest("", "password123");
+
+        // when & then
+        org.springframework.test.web.servlet.ResultActions result = performLogin(loginRequest);
+        result.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("빈 비밀번호로 로그인 시 400 Bad Request를 반환한다")
+    void testLoginWithEmptyPasswordIntegration() throws Exception {
+        // given
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "");
+
+        // when & then
+        org.springframework.test.web.servlet.ResultActions result = performLogin(loginRequest);
+        result.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("여러 사용자 등록 후 각각 로그인이 정상적으로 동작한다")
+    void testMultipleUserLoginIntegration() throws Exception {
+        // given - 여러 사용자 등록
+        UserRegisterRequest user1 = createUserRequest("multi1@example.com", "multi1", "password123");
+        UserRegisterRequest user2 = createUserRequest("multi2@example.com", "multi2", "password456");
+        UserRegisterRequest user3 = createUserRequest("multi3@example.com", "multi3", "password789");
+
+        performUserRegistration(user1).andExpect(status().isCreated());
+        performUserRegistration(user2).andExpect(status().isCreated());
+        performUserRegistration(user3).andExpect(status().isCreated());
+
+        // when & then - 각 사용자별 로그인 성공 검증
+        LoginRequest login1 = new LoginRequest("multi1@example.com", "password123");
+        LoginRequest login2 = new LoginRequest("multi2@example.com", "password456");
+        LoginRequest login3 = new LoginRequest("multi3@example.com", "password789");
+
+        assertSuccessfulLogin(performLogin(login1), "multi1@example.com", "multi1");
+        assertSuccessfulLogin(performLogin(login2), "multi2@example.com", "multi2");
+        assertSuccessfulLogin(performLogin(login3), "multi3@example.com", "multi3");
+    }
+
     // ===== Private Helper Methods =====
 
     /**
@@ -185,6 +286,17 @@ class UserIntegrationTest {
     private org.springframework.test.web.servlet.ResultActions performUserRegistration(UserRegisterRequest request)
             throws Exception {
         return mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print());
+    }
+
+    /**
+     * 로그인 POST 요청을 수행합니다.
+     */
+    private org.springframework.test.web.servlet.ResultActions performLogin(LoginRequest request)
+            throws Exception {
+        return mockMvc.perform(post("/api/users/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print());
@@ -246,6 +358,31 @@ class UserIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("이미 존재하는 이메일입니다."));
+    }
+
+    /**
+     * 성공적인 로그인 응답을 검증합니다.
+     */
+    private void assertSuccessfulLogin(org.springframework.test.web.servlet.ResultActions result,
+            String email, String nickname) throws Exception {
+        result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.nickname").value(nickname))
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    /**
+     * 로그인 실패 응답을 검증합니다.
+     */
+    private void assertLoginFailure(org.springframework.test.web.servlet.ResultActions result, String expectedMessage)
+            throws Exception {
+        result.andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     /**
