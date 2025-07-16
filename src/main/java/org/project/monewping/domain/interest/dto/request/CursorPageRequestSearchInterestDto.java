@@ -5,12 +5,12 @@ import jakarta.validation.constraints.*;
 /**
  * 관심사 커서 기반 페이지네이션 요청 DTO입니다.
  *
- * - keyword: 검색어(관심사 이름 또는 키워드)
- * - orderBy: 정렬 속성(name, subscriberCount)
- * - direction: 정렬 방향(ASC, DESC)
- * - cursor: 커서 값(페이징용)
- * - after: 보조 커서(createdAt 등)
- * - limit: 페이지 크기(1~100)
+ * @param keyword 검색어(관심사 이름 또는 키워드)
+ * @param orderBy 정렬 속성(name, subscriberCount)
+ * @param direction 정렬 방향(ASC, DESC)
+ * @param cursor 커서 값(페이징용)
+ * @param after 보조 커서(createdAt 등)
+ * @param limit 페이지 크기(1~100)
  */
 public record CursorPageRequestSearchInterestDto(
     String keyword,

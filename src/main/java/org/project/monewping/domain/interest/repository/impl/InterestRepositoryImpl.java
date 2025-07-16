@@ -25,11 +25,9 @@ import java.util.UUID;
 /**
  * 관심사 커서 기반 목록 조회를 QueryDSL로 구현하는 Repository입니다.
  *
- * 검색어(관심사 이름/키워드), 정렬, 커서 페이지네이션 등
+ * <p>검색어(관심사 이름/키워드), 정렬, 커서 페이지네이션 등
  * 실무에서 요구되는 복잡한 동적 쿼리를 처리합니다.
- * - QueryDSL의 selectFrom, containsIgnoreCase, orderBy 등 동적 쿼리 메소드 사용
- * - limit+1 방식으로 hasNext 판별
- * - 실제 응답은 DTO로 변환 필요
+ * 구독 여부(subscribedByMe)도 함께 반환합니다.</p>
  */
 @Repository
 @RequiredArgsConstructor
@@ -38,23 +36,21 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private final InterestMapper interestMapper;
 
-    // === 신규: SubscriptionRepository 주입 ===
     @Autowired
     private SubscriptionRepository subscriptionRepository;
-    // === 신규 끝 ===
 
     /**
      * 커서 기반 관심사 목록을 검색/정렬/페이지네이션하여 반환합니다.
      *
      * <p>검색어가 있으면 관심사 이름 또는 키워드에 부분일치하는 데이터를 조회하고,
-     * orderBy/direction에 따라 정렬, 커서(cursor) 이후 데이터만 limit+1개 조회합니다.</p>
+     * orderBy/direction에 따라 정렬, 커서(cursor) 이후 데이터만 limit+1개 조회합니다.
+     * 구독 여부(subscribedByMe)도 함께 포함됩니다.</p>
      *
      * @param request 검색/정렬/커서/사이즈 등 요청 DTO
-     * @param monewRequestUserID 요청자 ID(구독 여부 등 추가 정보에 활용 가능)
+     * @param monewRequestUserID 요청자(구독자) ID (구독여부 판단에 활용)
      * @return 커서 페이지네이션 응답 DTO
-     * @throws IllegalArgumentException 커서 파싱 실패 시
+     * @throws IllegalArgumentException 커서 파싱 실패 등 잘못된 요청일 때
      */
-    // TODO : 유저 정보(monewRequestUserID)에 따른 구독 여부 추가 구현 예정
     @Override
     public CursorPageResponseInterestDto searchWithCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID) {
         QInterest interest = QInterest.interest;
@@ -118,7 +114,6 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
             entityList = entityList.subList(0, request.limit());
         }
 
-        // === 신규: 구독 여부(subscribedByMe) 반영 ===
         List<UUID> subscribedInterestIds = subscriptionRepository.findInterestIdsByUserId(monewRequestUserID);
         List<InterestDto> content = entityList.stream()
             .map(interestObj -> InterestDto.builder()
@@ -129,7 +124,6 @@ public class InterestRepositoryImpl implements InterestRepositoryCustom {
                 .subscribedByMe(subscribedInterestIds.contains(interestObj.getId()))
                 .build())
             .toList();
-        // === 신규 끝 ===
 
         // 전체 개수 (검색 조건 포함, null-safe)
         Long totalElements = queryFactory.select(interest.count())

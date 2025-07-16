@@ -8,11 +8,11 @@ import java.util.UUID;
 /**
  * 관심사 정보 DTO입니다.
  *
- * - id: 관심사 식별자(UUID)
- * - name: 관심사 이름
- * - keywords: 관심사에 연결된 키워드 문자열 목록
- * - subscriberCount: 구독자 수
- * - subscribedByMe: 내가 구독 중인지 여부
+ * @param id 관심사 ID
+ * @param name 관심사 이름
+ * @param keywords 관련 키워드 목록
+ * @param subscriberCount 구독자 수
+ * @param subscribedByMe 요청자의 구독 여부
  */
 @Builder
 public record InterestDto(

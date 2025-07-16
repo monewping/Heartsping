@@ -30,14 +30,6 @@ public class Keyword extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String name;
 
-    /**
-     * Keyword 엔티티를 생성합니다.
-     *
-     * <p>관심사와 키워드를 받아 엔티티를 초기화합니다.
-     * 생성 시점은 BaseEntity에서 자동으로 설정됩니다.</p>
-     * @param interest 관심사
-     * @param name 키워드 텍스트
-     */
     public Keyword(Interest interest, String name) {
         this.interest = interest;
         this.name = name;

@@ -1,25 +1,28 @@
 package org.project.monewping.domain.interest.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
+import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.service.InterestService;
+import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 /**
  * 관심사 도메인의 REST 컨트롤러입니다.
  *
- * <p>관심사 생성 등 HTTP 요청을 처리하며,
+ * <p>관심사 등록, 목록 조회, 구독 등 HTTP 요청을 처리하며
  * 서비스 레이어와 연동해 결과를 반환합니다.</p>
  */
 @Slf4j
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 public class InterestController {
 
     private final InterestService interestService;
+    private final SubscriptionService subscriptionService;
 
     /**
      * 관심사를 등록하는 API입니다.
@@ -61,14 +65,40 @@ public class InterestController {
         }
     }
 
+    /**
+     * 관심사 목록을 커서 기반으로 조회합니다.
+     *
+     * @param request 검색/정렬/커서/사이즈 등 요청 DTO
+     * @param subscriberId 요청자(구독자) ID (구독여부 판단에 활용)
+     * @return 커서 페이지네이션 응답 DTO
+     */
     @GetMapping
     public ResponseEntity<CursorPageResponseInterestDto> findAll(
             @Valid @ModelAttribute CursorPageRequestSearchInterestDto request,
-            @RequestHeader("Monew-Request-User-ID") @NotBlank String subscriberId
+            @RequestHeader("Monew-Request-User-ID") UUID subscriberId
     ) {
         CursorPageResponseInterestDto response = interestService.findInterestByNameAndSubcriberCountByCursor(request, subscriberId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
+    }
+
+    /**
+     * 관심사 구독을 등록합니다.
+     *
+     * @param interestId 구독할 관심사 ID
+     * @param subscriberId 구독자(사용자) ID
+     * @return 구독 정보 DTO
+     */
+    @PostMapping("/{interestId}/subscriptions")
+    public ResponseEntity<SubscriptionDto> subscribe(
+            @PathVariable UUID interestId,
+            @RequestHeader("Monew-Request-User-ID") UUID subscriberId
+    ) {
+        SubscriptionDto response = subscriptionService.subscribe(interestId, subscriberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+
     }
 } 

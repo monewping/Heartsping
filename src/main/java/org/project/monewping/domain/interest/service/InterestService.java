@@ -5,8 +5,10 @@ import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearch
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 
+import java.util.UUID;
+
 public interface InterestService {
 
     InterestDto create(InterestRegisterRequest request);
-    CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, String monewRequestUserID);
+    CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID);
 } 

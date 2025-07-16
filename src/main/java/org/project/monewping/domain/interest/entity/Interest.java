@@ -34,11 +34,6 @@ public class Interest extends BaseUpdatableEntity {
     @Builder.Default
     private List<Keyword> keywords = new ArrayList<>();
 
-    /**
-     * Interest 엔티티 생성자입니다.
-     *
-     * <p>관심사 이름, 구독자 수, 키워드 목록을 받아 엔티티를 초기화합니다.</p>
-     */
     public Interest(String name, Long subscriberCount, List<Keyword> keywords) {
         this.name = name;
         this.subscriberCount = subscriberCount;
