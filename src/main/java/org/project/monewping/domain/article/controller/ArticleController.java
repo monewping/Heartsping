@@ -46,6 +46,7 @@ public class ArticleController {
         ArticleViewDto responseDto = articleViewsService.registerView(viewedBy, articleId);
 
         log.info("기사 조회 등록 완료 : id = {}, 조회한 사용자 ID = {}, 조회한 뉴스 기사의 ID = {}, 뉴스 기사 조회 시각 = {}, 조회한 뉴스 기사 제목 = {}",
+
             responseDto.id(),
             responseDto.viewedBy(),
             responseDto.articleId(),
