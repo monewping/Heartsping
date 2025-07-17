@@ -51,6 +51,6 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<Void> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
         commentService.registerComment(requestDto);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(201).build();
     }
 }
