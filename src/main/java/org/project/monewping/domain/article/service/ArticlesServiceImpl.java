@@ -13,7 +13,6 @@ import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.article.repository.ArticlesRepositoryCustom;
 import org.project.monewping.domain.article.repository.InterestRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
@@ -107,22 +106,32 @@ public class ArticlesServiceImpl implements ArticlesService {
     public CursorPageResponse<ArticleDto> findArticles(ArticleSearchRequest request) {
         List<Articles> entities = articlesRepository.searchArticles(request);
 
-        boolean hasNext = entities.size() > request.size();
-        List<Articles> page = hasNext ? entities.subList(0, request.size()) : entities;
+        boolean hasNext = entities.size() > request.limit();
+
+        // 페이징 사이즈만큼 자르기
+        List<Articles> page = hasNext ? entities.subList(0, request.limit()) : entities;
 
         List<ArticleDto> dtoList = page.stream()
             .map(articlesMapper::toDto)
             .toList();
 
-        UUID nextId = hasNext ? page.get(page.size() - 1).getId() : null;
+        // 다음 커서 계산 (마지막 아이템 기준)
+        String nextCursor = null;
+        if (hasNext) {
+            Articles lastArticle = page.get(page.size() - 1);
+            nextCursor = lastArticle.getId().toString();
+        }
+
+        long totalCount = articlesRepository.countArticles(request);
 
         return new CursorPageResponse<>(
             dtoList,
-            null,
-            nextId != null ? nextId.toString() : null,
+            null, // nextIdAfter는 Long 타입인데, UUID 커서라 null 처리
+            nextCursor,
             dtoList.size(),
-            dtoList.size(),
+            totalCount,
             hasNext
         );
     }
+
 }

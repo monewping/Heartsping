@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.project.monewping.global.base.BaseEntity;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
 @Table(name = "interests")
@@ -24,8 +25,8 @@ public class Interest extends BaseEntity {
     @Column(name = "subscriber_count", nullable = false)
     private long subscriberCount;
 
-
     @Column(name = "updated_at", nullable = false)
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
 }

@@ -8,4 +8,6 @@ public interface ArticlesRepositoryCustom {
 
     List<Articles> searchArticles(ArticleSearchRequest request);
 
+    long countArticles(ArticleSearchRequest request);
+
 }
