@@ -1,6 +1,8 @@
 package org.project.monewping.domain.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(username = "testuser", roles = {"USER"})
 @DisplayName("User 통합 테스트")
 class UserIntegrationTest {
 
@@ -54,7 +58,7 @@ class UserIntegrationTest {
     // given
     UserRegisterRequest request = createUserRequest(
         "integration@example.com",
-        "integrationuser", 
+        "integrationuser",
         "password123");
 
     // when & then - HTTP 요청/응답 검증
@@ -183,8 +187,10 @@ class UserIntegrationTest {
    */
   private org.springframework.test.web.servlet.ResultActions performUserRegistration(UserRegisterRequest request) throws Exception {
     return mockMvc.perform(post("/api/users")
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(request)))
+            .with(csrf())
+            .with(user("testuser").roles("USER"))  // 인증된 사용자 추가
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
         .andDo(print());
   }
 
@@ -214,8 +220,8 @@ class UserIntegrationTest {
   /**
    * 성공적인 회원가입 응답을 검증합니다.
    */
-  private void assertSuccessfulRegistration(org.springframework.test.web.servlet.ResultActions result, 
-                                          String email, String nickname) throws Exception {
+  private void assertSuccessfulRegistration(org.springframework.test.web.servlet.ResultActions result,
+      String email, String nickname) throws Exception {
     result.andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.email").value(email))
