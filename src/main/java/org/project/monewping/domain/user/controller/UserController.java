@@ -1,6 +1,8 @@
 package org.project.monewping.domain.user.controller;
 
+import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -51,9 +53,35 @@ public class UserController {
      *                                                                            시
      *
      */
-    @PostMapping
+    @PostMapping("")
     public ResponseEntity<UserRegisterResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserRegisterResponse response = userService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 사용자 로그인을 처리합니다.
+     *
+     * <p>
+     * 이메일과 비밀번호를 검증하여 사용자 인증을 수행합니다.
+     * 로그인 성공 시 사용자 정보를 반환하고, 실패 시 예외가 발생합니다.
+     * </p>
+     *
+     * @param request 로그인 요청 정보 (이메일, 비밀번호)
+     * @return {@link ResponseEntity}&lt;{@link LoginResponse}&gt;
+     *         200 OK 상태코드와 함께 로그인된 사용자 정보 반환
+     * @throws org.project.monewping.global.exception.LoginFailedException  이메일 또는
+     *                                                                      비밀번호가
+     *                                                                      일치하지 않는
+     *                                                                      경우
+     * @throws org.springframework.web.bind.MethodArgumentNotValidException 유효성
+     *                                                                      검사
+     *                                                                      실패
+     *                                                                      시
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(response);
     }
 }
