@@ -24,6 +24,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
@@ -337,13 +338,19 @@ public class ArticlesServiceTest {
         )).willReturn(List.of(article));
 
         given(articlesMapper.toDto(article)).willReturn(new ArticleDto(
-            article.getId(), article.getSource(), article.getOriginalLink(),
-            article.getTitle(), article.getPublishedAt(), article.getSummary(),
-            0L, 0L, false
+            article.getId(),
+            article.getSource(),
+            article.getOriginalLink(),
+            article.getTitle(),
+            article.getPublishedAt(),
+            article.getSummary(),
+            0L,
+            0L,
+            false
         ));
 
         // When
-        CursorPageResponse<ArticleDto> result = articlesService.findArticles(
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(
             keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
         );
 
