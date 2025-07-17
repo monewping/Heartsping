@@ -86,17 +86,6 @@ public class GlobalExceptionHandler {
      * <p>
      * 예: UUID 등 타입이 맞지 않는 경우 400 Bad Request 반환
      */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-        public ResponseEntity<ErrorResponse> handleTypeMismatchException(
-            MethodArgumentTypeMismatchException ex) {
-            ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST,
-                "요청 파라미터 타입이 올바르지 않습니다.",
-                ex.getMessage()
-            );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
   
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
