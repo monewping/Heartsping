@@ -21,12 +21,13 @@ import org.project.monewping.domain.notification.dto.CursorPageResponseNotificat
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(NotificationController.class)
+@WebMvcTest(controllers = NotificationController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
 @DisplayName("Notification Controller 슬라이스 테스트")
 public class NotificationControllerTest {
 

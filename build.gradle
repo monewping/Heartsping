@@ -41,7 +41,10 @@ dependencies {
     implementation 'software.amazon.awssdk:auth'
     implementation 'software.amazon.awssdk:aws-core'
     implementation 'software.amazon.awssdk:regions'
-
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Jaro Winkler 유사도 계산 의존성
+    implementation 'org.apache.commons:commons-text:1.11.0'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'
@@ -52,6 +55,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
     testImplementation 'com.h2database:h2'
+    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -64,45 +68,46 @@ jacoco {
     toolVersion = "0.8.10" // JaCoCo 버전 설정
 }
 
-jacocoTestReport {
-    dependsOn test // test 태스크가 실행된 후에 실행
-    reports {
-        xml.required = true // CI/CD 환경에서 사용
-        html.required = true // 개발자가 로컬에서 확인할 수 있는 HTML 리포트를 생성
-    }
+def jacocoExcludePatterns = [
+    "**/*Request.class",
+    "**/*Response.class", 
+    "**/*Mapper*.class",
+    "**/*MapperImpl*.class",
+    "org/project/monewping/domain/*/domain/**",
+    "org/project/monewping/global/**",
+    "org/project/monewping/MonewpingApplication.class"
+]
 
-    // 커버리지 측정에서 제외할 파일들을 지정합니다.
-    afterEvaluate {
+afterEvaluate {
+    // JaCoCo 리포트 설정
+    jacocoTestReport {
+        dependsOn test // test 태스크가 실행된 후에 실행
+        reports {
+            xml.required = true // CI/CD 환경에서 사용
+            html.required = true // 개발자가 로컬에서 확인할 수 있는 HTML 리포트를 생성
+        }
+        
+        // 커버리지 측정에서 제외할 파일들을 지정합니다.
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                "**/*Request.class",
-                "**/*Response.class",
-                "org/project/monewping/domain/*/domain/**",
-                "org/project/monewping/global/**",
-                "org/project/monewping/MonewpingApplication.class"
-            ])
+            fileTree(dir: it, exclude: jacocoExcludePatterns)
         }))
     }
-}
+    
+    // JaCoCo 커버리지 검증 설정
+    tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
+        dependsOn jacocoTestReport // 리포트가 생성된 후 검증을 수행
 
-tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
-    dependsOn jacocoTestReport // 리포트가 생성된 후 검증을 수행
+        // jacocoTestReport와 동일한 classDirectories 사용 (중복 제거)
+        classDirectories.setFrom(jacocoTestReport.classDirectories)
 
-    violationRules {
-        rule {
-            element = 'BUNDLE'
-            // 커버리지 검증에서 제외할 파일들을 지정
-            excludes = [
-                "**.*Request",
-                "**.*Response",
-                "org.project.monewping.domain.*.domain.*",
-                "org.project.monewping.global.*.*",
-                "org.project.monewping.MonewpingApplication"
-            ]
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.80 // 라인 커버리지 최소 비율을 80%로 설정
+        violationRules {
+            rule {
+                element = 'BUNDLE'
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.80 // 라인 커버리지 최소 비율을 80%로 설정
+                }
             }
         }
     }
