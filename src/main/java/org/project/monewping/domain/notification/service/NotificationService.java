@@ -17,5 +17,7 @@ public interface NotificationService {
         @NotNull UUID userId, String cursor, Instant after, @NotNull int limit
     );
 
+    void confirmAll(@NotNull UUID userId);
+
     void confirmNotification(@NotNull UUID userId, @NotNull UUID notificationId);
 }
