@@ -4,14 +4,18 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
+import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.repository.ArticlesRepositoryCustom;
 import org.project.monewping.domain.article.repository.InterestRepository;
+import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,5 +101,28 @@ public class ArticlesServiceImpl implements ArticlesService {
         log.info("뉴스 기사 저장 완료 = 저장된 기사 수 : {}, 중복되어 제외된 수 : {}",
             articlesToSave.size(), requests.size() - articlesToSave.size());
 
+    }
+
+    @Override
+    public CursorPageResponse<ArticleDto> findArticles(ArticleSearchRequest request) {
+        List<Articles> entities = articlesRepository.searchArticles(request);
+
+        boolean hasNext = entities.size() > request.size();
+        List<Articles> page = hasNext ? entities.subList(0, request.size()) : entities;
+
+        List<ArticleDto> dtoList = page.stream()
+            .map(articlesMapper::toDto)
+            .toList();
+
+        UUID nextId = hasNext ? page.get(page.size() - 1).getId() : null;
+
+        return new CursorPageResponse<>(
+            dtoList,
+            null,
+            nextId != null ? nextId.toString() : null,
+            dtoList.size(),
+            dtoList.size(),
+            hasNext
+        );
     }
 }
