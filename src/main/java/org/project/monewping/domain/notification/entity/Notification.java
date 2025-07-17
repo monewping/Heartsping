@@ -8,11 +8,13 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.project.monewping.global.base.BaseUpdatableEntity;
 
 @Entity
 @Table(name = "notifications")
 @Getter
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification extends BaseUpdatableEntity {
 
@@ -37,6 +39,10 @@ public class Notification extends BaseUpdatableEntity {
         this.resourceId = resourceId;
         this.resourceType = resourceType;
         this.confirmed = false;
+    }
+
+    public void confirm() {
+        this.confirmed = true;
     }
 
     /*

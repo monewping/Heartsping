@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
@@ -215,5 +216,28 @@ public class BasicNotificationService implements NotificationService {
         Notification notification = new Notification(userId, content, commentUserId, "Comment");
         notificationRepository.save(notification);
         return List.of(notification);
+    }
+
+    /**
+     * 주어진 userId와 notificationId에 해당하는 알림을 확인된 상태로 변경합니다.
+     *
+     * <p>
+     *     트랜잭션 내에서 Dirty Checking으로 변경된 confirmed 필드를
+     *     커밋 시점에 자동으로 DB에 반영합니다.
+     * </p>
+     *
+     * @param userId 조회할 대상 사용자의 ID
+     * @param notificationId 확인 처리할 알림의 ID
+     * @throws NotificationNotFoundException 알림을 찾을 수 없거나 권한이 없는 경우
+     */
+    @Override
+    @Transactional
+    public void confirmNotification(UUID userId, UUID notificationId) {
+        Notification notification = notificationRepository
+            .findByIdAndUserId(notificationId, userId)
+            .orElseThrow(() -> new NotificationNotFoundException(userId, notificationId));
+
+        notification.confirm();
+        log.debug("notification confirmed: {}", notification);
     }
 }

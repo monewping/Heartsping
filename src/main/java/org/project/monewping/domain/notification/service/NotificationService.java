@@ -16,4 +16,6 @@ public interface NotificationService {
     CursorPageResponseNotificationDto findNotifications(
         @NotNull UUID userId, String cursor, Instant after, @NotNull int limit
     );
+
+    void confirmNotification(@NotNull UUID userId, @NotNull UUID notificationId);
 }
