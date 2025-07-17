@@ -1,6 +1,7 @@
 package org.project.monewping.global.exception;
 
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -270,5 +271,16 @@ public class GlobalExceptionHandler {
             null);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidCursorFormatException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCursorFormatException(InvalidCursorFormatException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            "잘못된 커서 형식입니다. ISO-8601 형식을 사용하세요",
+                ex.getCursor()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
