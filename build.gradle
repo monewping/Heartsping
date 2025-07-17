@@ -122,10 +122,15 @@ tasks.check {
 }
 
 
-def querydslDir = "build/generated/sources/annotationProcessor/java/main"
+def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
 
 sourceSets {
-    main.java.srcDirs += [querydslDir]
+    main {
+        java {
+            srcDir querydslDir
+            srcDir 'build/generated/sources/annotationProcessor/java/main'
+        }
+    }
 }
 
 tasks.withType(JavaCompile) {
