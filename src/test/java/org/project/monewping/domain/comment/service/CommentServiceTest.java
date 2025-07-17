@@ -101,13 +101,9 @@ class CommentServiceTest {
     void getComments_Success_WithDefaultParameters() {
         // Given
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("createdAt"),
-            eq("DESC"),
-            eq(null),
-            eq(null),
-            eq(50)
+            eq(testArticleId), eq("createdAt"), eq("DESC"), eq(null), eq(null), eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(testComments.get(0))).thenReturn(testResponseDtos.get(0));
         when(commentMapper.toResponseDto(testComments.get(1))).thenReturn(testResponseDtos.get(1));
@@ -129,7 +125,7 @@ class CommentServiceTest {
         assertThat(result.nextIdAfter()).isEqualTo(Math.abs(testComments.get(1).getId().getMostSignificantBits()));
         assertThat(result.size()).isEqualTo(2);
         assertThat(result.totalElements()).isEqualTo(2L);
-        assertThat(result.hasNext()).isFalse(); // size != limit이므로 false
+        assertThat(result.hasNext()).isFalse();
     }
 
     @Test
@@ -141,13 +137,9 @@ class CommentServiceTest {
         int limit = 20;
 
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("likeCount"),
-            eq("ASC"),
-            eq(cursor),
-            eq(after),
-            eq(limit)
+            eq(testArticleId), eq("likeCount"), eq("ASC"), eq(cursor), eq(after), eq(limit)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -161,7 +153,7 @@ class CommentServiceTest {
         // Then
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
-        assertThat(result.hasNext()).isFalse(); // size != limit이므로 false
+        assertThat(result.hasNext()).isFalse();
     }
 
     @Test
@@ -169,13 +161,9 @@ class CommentServiceTest {
     void getComments_Success_EmptyResult() {
         // Given
         when(commentRepository.findComments(
-            any(UUID.class),
-            any(String.class),
-            any(String.class),
-            any(),
-            any(),
-            any(Integer.class)
+            any(UUID.class), any(String.class), any(String.class), any(), any(), any(Integer.class)
         )).thenReturn(Arrays.asList());
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(0L);
 
         // When
         CursorPageResponse<CommentResponseDto> result = commentService.getComments(
@@ -198,13 +186,9 @@ class CommentServiceTest {
         int limit = 2;
 
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("createdAt"),
-            eq("DESC"),
-            eq(null),
-            eq(null),
-            eq(limit)
+            eq(testArticleId), eq("createdAt"), eq("DESC"), eq(null), eq(null), eq(limit)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -217,7 +201,7 @@ class CommentServiceTest {
 
         // Then
         assertThat(result.content()).hasSize(2);
-        assertThat(result.hasNext()).isTrue(); // size == limit이므로 true
+        assertThat(result.hasNext()).isTrue();
     }
 
     @Test
@@ -227,13 +211,9 @@ class CommentServiceTest {
         String cursor = "cursor_value";
 
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("createdAt"),
-            eq("DESC"),
-            eq(cursor),
-            eq(null),
-            eq(50)
+            eq(testArticleId), eq("createdAt"), eq("DESC"), eq(cursor), eq(null), eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -257,13 +237,9 @@ class CommentServiceTest {
         String after = "2024-01-01T10:00:00";
 
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("createdAt"),
-            eq("DESC"),
-            eq(null),
-            eq(after),
-            eq(50)
+            eq(testArticleId), eq("createdAt"), eq("DESC"), eq(null), eq(after), eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -284,13 +260,9 @@ class CommentServiceTest {
     void getComments_Success_OrderByLikeCount() {
         // Given
         when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("likeCount"),
-            eq("ASC"),
-            eq(null),
-            eq(null),
-            eq(50)
+            eq(testArticleId), eq("likeCount"), eq("ASC"), eq(null), eq(null), eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -305,6 +277,7 @@ class CommentServiceTest {
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
     }
+
     @Test
     @DisplayName("댓글 등록 성공")
     void registerComment_Success() {
@@ -345,7 +318,7 @@ class CommentServiceTest {
             .updatedAt(Instant.now())
             .build();
 
-        given(commentRepository.findById(commentId)).willReturn(java.util.Optional.of(comment));
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
         commentService.deleteComment(commentId, userId);
 
@@ -367,7 +340,7 @@ class CommentServiceTest {
             .updatedAt(Instant.now())
             .build();
 
-        given(commentRepository.findById(commentId)).willReturn(java.util.Optional.of(comment));
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
         assertThatThrownBy(() -> commentService.deleteComment(commentId, attackerId))
             .isInstanceOf(CommentDeleteException.class)
@@ -414,5 +387,4 @@ class CommentServiceTest {
             .isInstanceOf(CommentDeleteException.class)
             .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
     }
-
 }
