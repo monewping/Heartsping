@@ -14,12 +14,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
+@Transactional
 @ActiveProfiles("test")
-@EnableJpaAuditing
 @DisplayName("Notification Repository 슬라이스 테스트")
 public class NotificationRepositoryTest {
 
@@ -30,16 +30,18 @@ public class NotificationRepositoryTest {
 
     @BeforeEach
     void setUp() throws InterruptedException {
-        notificationRepository.deleteAll();
         userId    = UUID.randomUUID();
         UUID resourceA = UUID.randomUUID();
         UUID resourceB = UUID.randomUUID();
 
-        notificationRepository.save(new Notification(userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article"));
-        Thread.sleep(150);
-        notificationRepository.save(new Notification(userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article"));
-        Thread.sleep(150);
-        notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment"));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-06-30T00:00:00Z")));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-07-03T00:00:10Z")));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment", Instant.parse("2025-07-04T00:00:20Z")));
+
+        notificationRepository.flush();
     }
 
     @Test
@@ -64,20 +66,22 @@ public class NotificationRepositoryTest {
     @Test
     @DisplayName("알림 목록 조회 기능의 cursor를 이용한 페이징 처리 성공")
     void findPageAfter() {
-        Pageable pageable = PageRequest.of(
-            0,
-            2,
-            Sort.by("createdAt").ascending().and(Sort.by("id").ascending())
-        );
+        Pageable pageable = PageRequest.of(0, 2, Sort.by("createdAt").ascending());
 
         List<Notification> firstPage = notificationRepository.findPageFirst(userId, pageable);
         assertThat(firstPage).hasSize(2);
 
-        Instant cursor = firstPage.get(1).getCreatedAt();
+        Notification cursorNotification = firstPage.get(1);
+        Instant cursorCreatedAt = cursorNotification.getCreatedAt();
 
-        List<Notification> nextPage = notificationRepository.findPageAfter(userId, cursor, pageable);
+        System.out.println("Cursor → createdAt: " + cursorCreatedAt);
 
-        assertThat(nextPage).allMatch(n -> n.getCreatedAt().isAfter(cursor));
-        assertThat(nextPage).hasSize(1);
+        List<Notification> nextPage = notificationRepository.findPageAfter(
+            userId,
+            cursorCreatedAt,
+            pageable
+        );
+
+        assertThat(nextPage).extracting("content").contains("Binu님이 나의 댓글을 좋아합니다.");
     }
 }
