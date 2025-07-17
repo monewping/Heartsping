@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 
 /**
  * 전역 예외 처리를 담당하는 컨트롤러 어드바이스
- * 
+ *
  * <p>
  * 애플리케이션 전체에서 발생하는 예외를 일관된 형태로 처리하여
  * 클라이언트에게 적절한 HTTP 상태 코드와 오류 메시지를 제공합니다.
  * </p>
- * 
+ *
  * <p>
  * 처리하는 예외 유형:
  * </p>
@@ -27,20 +27,20 @@ import java.util.stream.Collectors;
  * <li>{@link EmailAlreadyExistsException} - 이메일 중복</li>
  * <li>{@link Exception} - 기타 예외</li>
  * </ul>
- * 
+ *
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
   /**
    * Bean Validation 실패 시 예외를 처리합니다.
-   * 
+   *
    * <p>
-   * 
+   *
    * @Valid 애노테이션을 사용한 유효성 검사 실패 시 발생하는 예외를 처리하여
    *        400 Bad Request 상태 코드와 함께 상세한 오류 메시지를 반환합니다.
    *        </p>
-   * 
+   *
    * @param ex 유효성 검사 실패 예외
    * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -66,12 +66,12 @@ public class GlobalExceptionHandler {
 
   /**
    * 이메일 중복 예외를 처리합니다.
-   * 
+   *
    * <p>
    * 회원가입 시 동일한 이메일을 가진 사용자가 이미 존재하는 경우 발생하는 예외를 처리하여
    * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex 이메일 중복 예외
    * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -89,12 +89,12 @@ public class GlobalExceptionHandler {
 
   /**
    * JSON 파싱 오류를 처리합니다.
-   * 
+   *
    * <p>
    * 잘못된 JSON 형식으로 인해 발생하는 예외를 처리하여
    * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex JSON 파싱 예외
    * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -117,12 +117,12 @@ public class GlobalExceptionHandler {
 
   /**
    * 기타 예외를 처리합니다.
-   * 
+   *
    * <p>
    * 명시적으로 처리되지 않은 모든 예외를 처리하여
    * 500 Internal Server Error 상태 코드와 함께 일반적인 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex 처리되지 않은 예외
    * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
    */

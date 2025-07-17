@@ -1,5 +1,6 @@
 package org.project.monewping.domain.comment.controller;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
@@ -48,8 +49,8 @@ public class CommentController {
      * 댓글을 등록합니다.
      */
     @PostMapping
-    public ResponseEntity<Void> registerComment(@RequestBody CommentRegisterRequestDto requestDto) {
-      commentService.registerComment(requestDto);
-      return ResponseEntity.ok().build();
+    public ResponseEntity<Void> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
+        commentService.registerComment(requestDto);
+        return ResponseEntity.ok().build();
     }
 }
