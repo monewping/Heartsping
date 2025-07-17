@@ -71,4 +71,212 @@ public class ArticlesRepositoryTest {
         assertThat(results.get(0).getTitle()).contains("AI");
     }
 
+    @Test
+    @DisplayName("댓글 수 기준으로 내림차순 정렬된 기사 목록을 조회할 수 있다")
+    void searchArticles_sortByCommentCountDesc() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("IT").subscriberCount(0).build()
+        );
+
+        Articles article1 = Articles.builder()
+            .interest(interest)
+            .source("조선일보")
+            .originalLink("https://news.com/1")
+            .title("ChatGPT 열풍")
+            .summary("요약1")
+            .publishedAt(LocalDateTime.now())
+            .commentCount(10L)
+            .build();
+
+        Articles article2 = Articles.builder()
+            .interest(interest)
+            .source("조선일보")
+            .originalLink("https://news.com/2")
+            .title("AI 산업의 미래")
+            .summary("요약2")
+            .publishedAt(LocalDateTime.now().minusHours(1))
+            .commentCount(30L)
+            .build();
+
+        articlesRepository.saveAll(List.of(article1, article2));
+        articlesRepository.flush();
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            null,
+            null,
+            null,
+            null,
+            "commentCount",
+            "DESC",
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).getCommentCount()).isEqualTo(30L);
+        assertThat(results.get(1).getCommentCount()).isEqualTo(10L);
+    }
+
+    @Test
+    @DisplayName("필터 조건에 맞는 전체 기사의 개수를 정확히 반환한다")
+    void countArticles_returnsExactCount() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("경제").subscriberCount(0).build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("한국경제")
+            .originalLink("https://news.com/eco1")
+            .title("경제 성장률 상승")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now())
+            .build());
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("한국경제")
+            .originalLink("https://news.com/eco2")
+            .title("경제 불황 진입")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now())
+            .build());
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            "경제",
+            interest.getId(),
+            List.of("한국경제"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        long count = articlesRepository.countArticles(request);
+
+        // then
+        assertThat(count).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("날짜 필터 없이 전체 기간의 기사를 조회할 수 있다")
+    void searchArticles_withoutDateFilter() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("문화").subscriberCount(0).build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("한겨레")
+            .originalLink("https://news.com/m1")
+            .title("뮤지컬 흥행")
+            .summary("요약1")
+            .publishedAt(LocalDateTime.now().minusDays(30))
+            .build());
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("한겨레")
+            .originalLink("https://news.com/m2")
+            .title("공연 취소")
+            .summary("요약2")
+            .publishedAt(LocalDateTime.now().minusDays(1))
+            .build());
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            List.of("한겨레"),
+            null,
+            null,
+            "publishDate",
+            "ASC",
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).getPublishedAt()).isBefore(results.get(1).getPublishedAt());
+    }
+
+    @Test
+    @DisplayName("이전 ID 기준으로 커서 페이지네이션 조회가 가능하다")
+    void searchArticles_withCursorBeforeId() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("정치").subscriberCount(0).build()
+        );
+
+        Articles a1 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("중앙일보")
+            .originalLink("https://news.com/p1")
+            .title("정치 개혁")
+            .summary("요약1")
+            .publishedAt(LocalDateTime.now().minusMinutes(3))
+            .build());
+
+        Articles a2 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("중앙일보")
+            .originalLink("https://news.com/p2")
+            .title("총선 결과")
+            .summary("요약2")
+            .publishedAt(LocalDateTime.now().minusMinutes(2))
+            .build());
+
+        Articles a3 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("중앙일보")
+            .originalLink("https://news.com/p3")
+            .title("여야 협상")
+            .summary("요약3")
+            .publishedAt(LocalDateTime.now().minusMinutes(1))
+            .build());
+
+        articlesRepository.flush();
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            List.of("중앙일보"),
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            a2.getId().toString(),
+            a2.getPublishedAt(),
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo(a1.getId());
+    }
+
 }
