@@ -10,7 +10,7 @@ import org.project.monewping.domain.interest.exception.DuplicateInterestNameExce
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.InterestService;
-import org.project.monewping.domain.user.entity.User;
+import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.interest.entity.Subscription;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
@@ -162,23 +162,6 @@ class InterestApiIntegrationTest {
         assertThat(dto.name()).isEqualTo("독서");
         assertThat(dto.keywords()).isEmpty();
         Interest saved = interestRepository.findByName("독서").orElseThrow();
-        assertThat(saved.getKeywords()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("빈 키워드 리스트로 관심사를 등록할 수 있다")
-    void should_SaveInterestWithoutKeywords_When_KeywordsEmpty_Then_Success() {
-        // Given
-        InterestRegisterRequest request = new InterestRegisterRequest(
-                "운동",
-                List.of()
-        );
-        // When
-        var dto = interestService.create(request);
-        // Then
-        assertThat(dto.name()).isEqualTo("운동");
-        assertThat(dto.keywords()).isEmpty();
-        Interest saved = interestRepository.findByName("운동").orElseThrow();
         assertThat(saved.getKeywords()).isEmpty();
     }
 

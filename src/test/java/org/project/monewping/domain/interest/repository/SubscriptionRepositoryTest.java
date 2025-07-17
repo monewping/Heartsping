@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Subscription;
 import org.project.monewping.domain.interest.mapper.InterestMapperImpl;
-import org.project.monewping.domain.user.entity.User;
+import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.project.monewping.global.config.QuerydslConfig;

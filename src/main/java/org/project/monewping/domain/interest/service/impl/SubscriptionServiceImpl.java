@@ -7,7 +7,7 @@ import org.project.monewping.domain.interest.entity.Subscription;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.interest.service.SubscriptionService;
-import org.project.monewping.domain.user.entity.User;
+import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
