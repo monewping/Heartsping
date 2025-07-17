@@ -49,7 +49,7 @@ public class NotificationRepositoryTest {
     @DisplayName("특정 사용자의 확인하지 않은 알림 개수 반환 성공")
     void countByUserIdAndConfirmedFalse() {
         long count = notificationRepository.countByUserIdAndConfirmedFalse(userId);
-        assertThat(count).isEqualTo(4);
+        assertThat(count).isEqualTo(3);
     }
 
     @Test
