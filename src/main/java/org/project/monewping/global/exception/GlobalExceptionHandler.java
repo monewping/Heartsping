@@ -10,6 +10,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
+import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 
 import java.util.stream.Collectors;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -62,7 +64,30 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.BAD_REQUEST,
             "유효성 검사 실패",
-            errors);
+            errors
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * 지원하지 않는 리소스 타입 예외를 처리합니다.
+     *
+     * <p>UnsupportedResourceTypeException이 발생하면 이 메서드가 호출되어
+     * HTTP 400 Bad Request 상태 코드와 함께 에러 정보를 담은 ErrorResponse를 반환합니다.</p>
+     *
+     * @param ex 발생한 UnsupportedResourceTypeException
+     * @return HTTP 400 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+     */
+    @ExceptionHandler(UnsupportedResourceTypeException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedResourceTypeException(
+        UnsupportedResourceTypeException ex
+    ) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            ex.getMessage(),
+            null
+        );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -85,7 +110,8 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.CONFLICT,
             ex.getMessage(),
-            null);
+            null
+        );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
@@ -113,12 +139,35 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.BAD_REQUEST,
             message,
-            ex.getMessage());
+            ex.getMessage()
+        );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**
+     * 알림을 찾을 수 없을 때 발생하는 예외를 처리합니다.
+     *
+     * <p>NotificationNotFoundException이 발생하면 이 메서드가 호출되어
+     * HTTP 404 Not Found 상태 코드와 함께 에러 정보를 담은 ErrorResponse를 반환합니다.</p>
+     *
+     * @param ex 발생한 NotificationNotFoundException
+     * @return HTTP 404 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+     */
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationNotFoundException(
+        NotificationNotFoundException ex
+    ) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /*
      * 기타 예외를 처리합니다.
      *
      * <p>
@@ -134,7 +183,8 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "서버 내부 오류가 발생했습니다.",
-            ex.getMessage());
+            ex.getMessage()
+        );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
