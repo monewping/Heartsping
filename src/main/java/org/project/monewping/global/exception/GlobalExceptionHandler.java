@@ -1,15 +1,18 @@
 package org.project.monewping.global.exception;
 
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 전역 예외 처리를 담당하는 컨트롤러 어드바이스
@@ -134,5 +137,47 @@ public class GlobalExceptionHandler {
             ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * 중복 기사 조회 예외 처리 (409 Conflict).
+     */
+    @ExceptionHandler(DuplicateArticleViewsException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateArticleView(DuplicateArticleViewsException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.CONFLICT,
+            "이미 조회한 기사입니다.",
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    /**
+     * UUID 형식 오류 등 잘못된 요청 파라미터 예외 처리 (400 Bad Request).
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            "잘못된 요청 형식입니다.",
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * 필수 요청 헤더 누락 예외 처리 (400 Bad Request).
+     */
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            "필수 요청 헤더가 누락되었습니다.",
+            "누락된 헤더 이름: " + ex.getHeaderName()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
