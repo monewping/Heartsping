@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.MonewpingApplication;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
+import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -45,20 +47,31 @@ public class NotificationIntegrationTest {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private UUID userId;
     private UUID resourceId;
 
     @BeforeEach
     void setUp() {
         notificationRepository.deleteAll();
-        userId = UUID.randomUUID();
+        User user = User.builder()
+            .email("binu@google.com")
+            .nickname("binu")
+            .password("pw123456")
+            .build();
+
+        userRepository.saveAndFlush(user);
+
+        userId = user.getId();
         resourceId = UUID.randomUUID();
     }
 
     @Test
     void testCreateAndGetNotifications() throws Exception {
         mockMvc.perform(post("/api/notifications")
-                .param("userId",     userId.toString())
+                .param("userId", userId.toString())
                 .param("resourceId", resourceId.toString())
                 .param("resourceType", "Comment")
                 .contentType(MediaType.APPLICATION_JSON)
