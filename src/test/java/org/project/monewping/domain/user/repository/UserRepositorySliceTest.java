@@ -32,7 +32,6 @@ import org.hibernate.exception.ConstraintViolationException;
 @EntityScan(basePackages = "org.project.monewping.domain.user.domain")
 @EnableJpaRepositories(basePackages = "org.project.monewping.domain.user.repository")
 @Import(JpaAuditingConfig.class)
-@EnableJpaAuditing
 @DisplayName("UserRepository 슬라이스 테스트")
 class UserRepositorySliceTest {
 

@@ -40,6 +40,7 @@ public class NotificationRepositoryTest {
         userId    = UUID.randomUUID();
         UUID resourceA = UUID.randomUUID();
         UUID resourceB = UUID.randomUUID();
+        UUID resourceC = UUID.randomUUID();
 
         notificationRepository.save(Notification.ofForTest(
             userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-06-30T00:00:00Z")));
@@ -47,6 +48,8 @@ public class NotificationRepositoryTest {
             userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-07-03T00:00:10Z")));
         notificationRepository.save(Notification.ofForTest(
             userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment", Instant.parse("2025-07-04T00:00:20Z")));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "새로운 관심사가 등록되었습니다.", resourceC, "Interest", Instant.parse("2025-07-05T00:00:30Z")));
 
         notificationRepository.flush();
     }
@@ -55,7 +58,7 @@ public class NotificationRepositoryTest {
     @DisplayName("특정 사용자의 확인하지 않은 알림 개수 반환 성공")
     void countByUserIdAndConfirmedFalse() {
         long count = notificationRepository.countByUserIdAndConfirmedFalse(userId);
-        assertThat(count).isEqualTo(3);
+        assertThat(count).isEqualTo(4);
     }
 
     @Test
@@ -73,11 +76,14 @@ public class NotificationRepositoryTest {
     @Test
     @DisplayName("알림 목록 조회 기능의 cursor를 이용한 페이징 처리 성공")
     void findPageAfter() {
-        Pageable pageable = PageRequest.of(0, 2, Sort.by("createdAt").ascending());
+        // 정렬 기준을 일치시킴 (Repository의 실제 정렬 기준과 동일하게)
+        Pageable pageable = PageRequest.of(0, 2, 
+            Sort.by("createdAt").ascending().and(Sort.by("id").ascending()));
 
         List<Notification> firstPage = notificationRepository.findPageFirst(userId, pageable);
         assertThat(firstPage).hasSize(2);
 
+        // 첫 페이지의 마지막 알림을 커서로 사용
         Notification cursorNotification = firstPage.get(1);
         Instant cursorCreatedAt = cursorNotification.getCreatedAt();
 
@@ -89,6 +95,7 @@ public class NotificationRepositoryTest {
             pageable
         );
 
+        // 다음 페이지에 "Binu님이 나의 댓글을 좋아합니다."가 포함되어야 함
         assertThat(nextPage).extracting("content").contains("Binu님이 나의 댓글을 좋아합니다.");
     }
 }
