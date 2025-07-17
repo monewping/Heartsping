@@ -68,27 +68,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
-
-  /**
-   * 기타 예외를 처리합니다.
-   * 
-   * <p>
-   * 명시적으로 처리되지 않은 모든 예외를 처리하여
-   * 500 Internal Server Error 상태 코드와 함께 일반적인 오류 메시지를 반환합니다.
-   * </p>
-   * 
-   * @param ex 처리되지 않은 예외
-   * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
-   */
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "서버 내부 오류가 발생했습니다.",
-        ex.getMessage());
-
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-  }
   
     /**
      * 지원하지 않는 리소스 타입 예외를 처리합니다.
