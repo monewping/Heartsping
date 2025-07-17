@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -288,6 +289,71 @@ class CommentControllerTest {
 
         mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
                 .param("userId", userId.toString()))
+            .andExpect(status().isForbidden());
+    }
+
+    @DisplayName("댓글 수정 성공")
+    @Test
+    void updateComment_Success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doNothing().when(commentService).updateComment(eq(commentId), eq(userId), any());
+
+        String requestBody = """
+        {
+            "content": "수정된 댓글입니다."
+        }
+        """;
+
+        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk());
+    }
+
+    @DisplayName("댓글 수정 실패 - 본인 아님")
+    @Test
+    void updateComment_Fail_NotOwner() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("본인의 댓글만 수정할 수 있습니다."))
+            .when(commentService).updateComment(eq(commentId), eq(userId), any());
+
+        String requestBody = """
+        {
+            "content": "수정된 댓글입니다."
+        }
+        """;
+
+        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isForbidden());
+    }
+
+    @DisplayName("댓글 수정 실패 - 삭제된 댓글")
+    @Test
+    void updateComment_Fail_Deleted() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("삭제된 댓글은 수정할 수 없습니다."))
+            .when(commentService).updateComment(eq(commentId), eq(userId), any());
+
+        String requestBody = """
+        {
+            "content": "수정된 댓글입니다."
+        }
+        """;
+
+        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
             .andExpect(status().isForbidden());
     }
 }
