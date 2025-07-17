@@ -8,6 +8,7 @@ import org.project.monewping.domain.interest.service.InterestService;
 import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,12 +18,14 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InterestController.class)
 @TestPropertySource(properties = "auditing.enabled=false")
+@WithMockUser
 class InterestControllerTest {
 
     @Autowired
@@ -77,6 +80,7 @@ class InterestControllerTest {
 
         mockMvc.perform(
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/interests")
+                        .with(csrf()) // CSRF 토큰 추가
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(requestBody)
         )

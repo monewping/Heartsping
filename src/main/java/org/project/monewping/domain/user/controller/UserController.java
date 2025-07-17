@@ -51,37 +51,9 @@ public class UserController {
      *                                                                            시
      *
      */
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<UserRegisterResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserRegisterResponse response = userService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-    // ===================== [임시] 로그인 메서드 =====================
-    /**
-     * [임시] 사용자 로그인 API
-     *
-     * <p>
-     * 이메일과 비밀번호가 일치하면 200 OK와 사용자 정보를 반환합니다.
-     * 일치하지 않으면 400 Bad Request와 에러 메시지를 반환합니다.
-     * (실무에서는 반드시 비밀번호 암호화/토큰 발급 등 필요)
-     * </p>
-     *
-     * @param request 로그인 요청 정보 (이메일, 비밀번호)
-     * @return 200 OK + User 정보 or 400 Bad Request
-     */
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        // [임시] 실제로는 DTO를 사용하는 것이 좋음
-        String email = request.get("email");
-        String password = request.get("password");
-        try {
-            // [임시] UserService의 login도 임시임을 명시
-            var user = userService.login(email, password); // [임시]
-            return ResponseEntity.ok(user);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-    // ===================== [임시] 로그인 메서드 끝 =====================
 }

@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@Lazy
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class InterestServiceImpl implements InterestService {

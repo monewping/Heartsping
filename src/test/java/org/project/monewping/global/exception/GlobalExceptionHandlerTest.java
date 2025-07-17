@@ -14,6 +14,7 @@ import java.util.Collections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 /**
  * {@link GlobalExceptionHandler}의 예외 처리 로직을 테스트하는 클래스
@@ -106,8 +107,8 @@ class GlobalExceptionHandlerTest {
     ResponseEntity<ErrorResponse> response = exceptionHandler.handleGenericException(exception);
 
     // then
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-    assertThat(response.getBody().message()).isEqualTo("INTERNAL_SERVER_ERROR");
-    assertThat(response.getBody().details()).isEqualTo("서버 내부 오류가 발생했습니다.");
+    assertThat(response.getStatusCode()).isEqualTo(INTERNAL_SERVER_ERROR);
+    assertThat(response.getBody().message()).isEqualTo("서버 내부 오류가 발생했습니다.");
+    assertThat(response.getBody().details()).isEqualTo("서버 오류");
   }
 }

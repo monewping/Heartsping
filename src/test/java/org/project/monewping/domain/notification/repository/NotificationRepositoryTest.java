@@ -9,17 +9,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.global.config.JpaAuditingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
 @Transactional
 @ActiveProfiles("test")
+@Import(JpaAuditingConfig.class)  // 추가
+@EntityScan(basePackages = "org.project.monewping.domain.notification.entity")  // 추가
+@EnableJpaRepositories(basePackages = "org.project.monewping.domain.notification.repository")  // 추가
 @DisplayName("Notification Repository 슬라이스 테스트")
 public class NotificationRepositoryTest {
 

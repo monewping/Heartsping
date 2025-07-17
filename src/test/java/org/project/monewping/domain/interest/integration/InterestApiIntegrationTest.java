@@ -6,14 +6,14 @@ import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearch
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
+import org.project.monewping.domain.interest.entity.Subscription;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
+import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.interest.service.InterestService;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
-import org.project.monewping.domain.interest.entity.Subscription;
-import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,7 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -39,6 +40,7 @@ class InterestApiIntegrationTest {
 
     @Autowired
     UserRepository userRepository;
+
     @Autowired
     SubscriptionRepository subscriptionRepository;
 

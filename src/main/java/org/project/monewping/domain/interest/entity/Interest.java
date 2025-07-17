@@ -27,8 +27,9 @@ public class Interest extends BaseUpdatableEntity {
     @Column(length = 100, nullable = false, unique = true)
     private String name;
 
+    @Builder.Default
     @Column(nullable = false, name = "subscriber_count")
-    private Long subscriberCount;
+    private Long subscriberCount = 0L;
 
     @OneToMany(mappedBy = "interest", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
