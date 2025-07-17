@@ -9,10 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 전역 예외 처리를 담당하는 컨트롤러 어드바이스
@@ -69,7 +71,7 @@ public class GlobalExceptionHandler {
 
   /**
    * 이메일 중복 예외를 처리합니다.
-   * 
+   *
    * <p>
    * 회원가입 시 동일한 이메일을 가진 사용자가 이미 존재하는 경우 발생하는 예외를 처리하여
    * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.
@@ -179,4 +181,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    /**
+     * 잘못된 요청 파라미터 타입 예외 처리
+     * <p>
+     * 예: UUID 등 타입이 맞지 않는 경우 400 Bad Request 반환
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleTypeMismatchException(
+            MethodArgumentTypeMismatchException ex) {
+            ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST,
+                "요청 파라미터 타입이 올바르지 않습니다.",
+                ex.getMessage()
+            );
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
+        MissingServletRequestParameterException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            "필수 요청 파라미터가 누락되었습니다: " + ex.getParameterName(),
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 }
