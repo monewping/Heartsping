@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.repository.InterestRepository;
+import org.project.monewping.global.dto.CursorPageResponse;
 
 @DisplayName("ArticlesService 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -278,5 +281,101 @@ public class ArticlesServiceTest {
 
         // Then
         verify(articlesRepository).save(article);
+    }
+
+    @Test
+    @DisplayName("검색어로 제목 또는 요약에 일치하는 기사들을 조회할 수 있다")
+    void findArticles_ByKeywordOnly() {
+        // Given
+        String keyword = "인공지능";
+        UUID cursorId = null;
+        String sortBy = "publishedAt";
+        UUID interestId = null;
+        String source = null;
+        LocalDate fromDate = null;
+        LocalDate toDate = null;
+        int size = 10;
+
+        given(articlesRepository.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        )).willReturn(List.of());
+
+        // When
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        );
+
+        // Then
+        assertThat(result.content()).isEmpty();
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.totalElements()).isZero();
+    }
+
+    @Test
+    @DisplayName("관심사, 출처, 날짜 범위 필터와 함께 기사 목록을 조회할 수 있다")
+    void findArticles_WithAllFilters() {
+        // Given
+        String keyword = "AI";
+        UUID interestId = UUID.randomUUID();
+        String source = "연합뉴스";
+        LocalDate fromDate = LocalDate.now().minusDays(7);
+        LocalDate toDate = LocalDate.now();
+        UUID cursorId = null;
+        String sortBy = "viewCount";
+        int size = 2;
+
+        Articles article = Articles.builder()
+            .id(UUID.randomUUID())
+            .source(source)
+            .title("AI 산업 동향")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now().minusDays(1))
+            .build();
+
+        given(articlesRepository.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        )).willReturn(List.of(article));
+
+        given(articlesMapper.toDto(article)).willReturn(new ArticleDto(
+            article.getId(), article.getSource(), article.getOriginalLink(),
+            article.getTitle(), article.getPublishedAt(), article.getSummary(),
+            0L, 0L, false
+        ));
+
+        // When
+        CursorPageResponse<ArticleDto> result = articlesService.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        );
+
+        // Then
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("정렬 기준에 따라 다른 방식으로 커서 페이징을 수행할 수 있다")
+    void findArticles_SortedByCommentCount_WithCursor() {
+        // Given
+        String keyword = null;
+        UUID interestId = null;
+        String source = null;
+        LocalDate fromDate = null;
+        LocalDate toDate = null;
+        String sortBy = "commentCount";
+        UUID cursorId = UUID.randomUUID();
+        int size = 5;
+
+        given(articlesRepository.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        )).willReturn(List.of());
+
+        // When
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(
+            keyword, interestId, source, fromDate, toDate, sortBy, cursorId, size
+        );
+
+        // Then
+        assertThat(result.content()).isEmpty();
+        assertThat(result.totalElements()).isZero();
     }
 }
