@@ -27,20 +27,18 @@ public class NotificationRepositoryTest {
     private NotificationRepository notificationRepository;
 
     private UUID userId;
-    private UUID resourceA;
-    private UUID resourceB;
 
     @BeforeEach
     void setUp() throws InterruptedException {
         notificationRepository.deleteAll();
         userId    = UUID.randomUUID();
-        resourceA = UUID.randomUUID();
-        resourceB = UUID.randomUUID();
+        UUID resourceA = UUID.randomUUID();
+        UUID resourceB = UUID.randomUUID();
 
         notificationRepository.save(new Notification(userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article"));
-        Thread.sleep(50);
+        Thread.sleep(150);
         notificationRepository.save(new Notification(userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article"));
-        Thread.sleep(50);
+        Thread.sleep(150);
         notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment"));
     }
 
