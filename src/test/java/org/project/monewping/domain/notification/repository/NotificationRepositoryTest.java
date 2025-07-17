@@ -30,7 +30,7 @@ public class NotificationRepositoryTest {
     private UUID userId;
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp() {
         userId    = UUID.randomUUID();
         UUID resourceA = UUID.randomUUID();
         UUID resourceB = UUID.randomUUID();
