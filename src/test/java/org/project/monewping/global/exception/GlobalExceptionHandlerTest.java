@@ -107,7 +107,7 @@ class GlobalExceptionHandlerTest {
 
     // then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-    assertThat(response.getBody().message()).isEqualTo("서버 내부 오류가 발생했습니다.");
-    assertThat(response.getBody().details()).isEqualTo("서버 오류");
+    assertThat(response.getBody().message()).isEqualTo("INTERNAL_SERVER_ERROR");
+    assertThat(response.getBody().details()).isEqualTo("서버 내부 오류가 발생했습니다.");
   }
 }

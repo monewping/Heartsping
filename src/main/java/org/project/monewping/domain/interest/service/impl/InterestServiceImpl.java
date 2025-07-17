@@ -88,7 +88,7 @@ public class InterestServiceImpl implements InterestService {
             Interest savedInterest = interestRepository.save(interest);
 
             if (request.keywords() != null && !request.keywords().isEmpty()) {
-                List<Keyword> keywords = createKeywords(savedInterest, request.keywords());
+                List<Keyword> keywords = createKeywords(request.keywords());
                 keywords.forEach(savedInterest::addKeyword);
                 log.info("[InterestService] 관심사 등록 성공: name={}, keywords={}", savedInterest.getName(), request.keywords());
             } else {
@@ -127,11 +127,10 @@ public class InterestServiceImpl implements InterestService {
      * 키워드 이름 리스트를 Keyword 엔티티 리스트로 변환합니다.
      *
      * <p>null, 빈 문자열은 무시하고, 빌더 패턴으로 엔티티를 생성합니다.</p>
-     * @param interest 관심사
      * @param keywordNames 키워드 이름 리스트
      * @return Keyword 엔티티 리스트
      */
-    private List<Keyword> createKeywords(Interest interest, List<String> keywordNames) {
+    private List<Keyword> createKeywords(List<String> keywordNames) {
         List<Keyword> keywords = new ArrayList<>();
         if (keywordNames == null) return keywords;
         
@@ -141,7 +140,6 @@ public class InterestServiceImpl implements InterestService {
             if (!StringUtils.hasText(trimmed)) continue;
             
             Keyword keyword = Keyword.builder()
-                    .interest(interest)
                     .name(trimmed)
                     .build();
             keywords.add(keyword);

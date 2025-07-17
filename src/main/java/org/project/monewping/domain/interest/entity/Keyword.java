@@ -22,7 +22,6 @@ import org.project.monewping.global.base.BaseEntity;
 @SuperBuilder
 public class Keyword extends BaseEntity {
 
-    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
@@ -34,5 +33,14 @@ public class Keyword extends BaseEntity {
         this.interest = interest;
         this.name = name;
     }
+
+    /**
+     * 관심사 설정 - 패키지 내부에서만 접근 가능
+     * Interest.addKeyword() 메서드를 통해서만 호출되어야 합니다.
+     */
+    void setInterest(Interest interest) {
+        this.interest = interest;
+    }
+
 }
 
