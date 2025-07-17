@@ -1,5 +1,8 @@
 package org.project.monewping.global.config;
 
+
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,11 +44,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화 (REST API의 경우)
                 .authorizeHttpRequests(authz -> authz
+//                         .requestMatchers("/api/users/login", "/api/users").permitAll() // 로그인, 회원가입 허용
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll() // 정적 리소스 허용
-                        .requestMatchers("/api/users/login", "/api/users").permitAll() // 로그인, 회원가입 허용
+                        .requestMatchers("/api/**").permitAll() // api 요청 전체 허용 (일시적으로 허용)
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
-                );
-
+                ).httpBasic(withDefaults());
         return http.build();
     }
 }
