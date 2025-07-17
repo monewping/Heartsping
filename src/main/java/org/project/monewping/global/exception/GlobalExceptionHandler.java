@@ -9,10 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 전역 예외 처리를 담당하는 컨트롤러 어드바이스
@@ -179,4 +181,44 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    /**
+     * 잘못된 요청 파라미터 타입 예외 처리 핸들러.
+     * <p>
+     * 예를 들어, UUID와 같은 파라미터가 잘못된 형식일 때 발생하는
+     * {@link MethodArgumentTypeMismatchException}을 처리하여
+     * HTTP 400 Bad Request 응답을 반환합니다.
+     *
+     * @param ex MethodArgumentTypeMismatchException 예외
+     * @return 400 Bad Request와 에러 응답 본문
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            400,
+            "잘못된 요청입니다. (파라미터 타입 오류)",
+            ex.getMessage()
+        );
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    /**
+     * 요청 파라미터 누락 예외 처리 핸들러.
+     * <p>
+     * 필수 요청 파라미터가 누락된 경우 {@link MissingServletRequestParameterException}을 처리하여
+     * HTTP 400 Bad Request 응답을 반환합니다.
+     *
+     * @param ex MissingServletRequestParameterException 예외
+     * @return 400 Bad Request와 에러 응답 본문
+     */
+      @ExceptionHandler(MissingServletRequestParameterException.class)
+      public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+          ErrorResponse response = new ErrorResponse(
+              Instant.now(),
+              400,
+              "잘못된 요청입니다. (필수 파라미터 누락)",
+              ex.getMessage()
+          );
+          return ResponseEntity.badRequest().body(response);
+      }
 }
