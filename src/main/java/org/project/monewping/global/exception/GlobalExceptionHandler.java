@@ -69,15 +69,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-
-    ErrorResponse errorResponse = ErrorResponse.of(
-        HttpStatus.BAD_REQUEST,
-        message,
-        ex.getMessage());
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-  }
-
   /**
    * 기타 예외를 처리합니다.
    * 
@@ -99,7 +90,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
   }
   
-  /**
+    /**
      * 지원하지 않는 리소스 타입 예외를 처리합니다.
      *
      * <p>UnsupportedResourceTypeException이 발생하면 이 메서드가 호출되어
@@ -117,6 +108,9 @@ public class GlobalExceptionHandler {
             ex.getMessage(),
             null
         );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     /**
      * 이메일 중복 예외를 처리합니다.
@@ -166,12 +160,10 @@ public class GlobalExceptionHandler {
             message,
             ex.getMessage());
 
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**
-
      * 알림을 찾을 수 없을 때 발생하는 예외를 처리합니다.
      *
      * <p>NotificationNotFoundException이 발생하면 이 메서드가 호출되어
@@ -194,6 +186,7 @@ public class GlobalExceptionHandler {
     }
 }
 
+    /*
      * 기타 예외를 처리합니다.
      *
      * <p>
