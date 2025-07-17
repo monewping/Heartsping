@@ -1,5 +1,7 @@
 package org.project.monewping.global.exception;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -8,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -180,4 +183,24 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    /**
+     * 필수 요청 파라미터가 누락되었을 때 발생하는 예외를 처리합니다.
+     * 클라이언트에 누락된 파라미터 이름과 함께 400 Bad Request 상태 코드를 반환합니다.
+     *
+     * @param ex 누락된 요청 파라미터 정보를 담은 예외 객체
+     * @return 누락된 파라미터 정보를 포함한 에러 응답과 400 상태 코드
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
+        String paramName = ex.getParameterName();
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),               // 타임스탬프
+            HttpStatus.BAD_REQUEST.value(),    // 상태 코드 400
+            "필수 요청 파라미터 '" + paramName + "'가 누락되었습니다.",  // 메시지
+            ex.getMessage()                    // 상세 정보
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
 }
