@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("api/notifications")
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
 
