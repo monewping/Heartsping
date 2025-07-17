@@ -12,6 +12,8 @@ import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,7 +30,7 @@ public class BasicNotificationService implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
-    //private final UserRepository userRepository;
+    private final UserRepository userRepository;
     //private final ArticleRepository articleRepository;
     //private final InterestRepository interestRepository;
     //private final InterestSubscriptionRepository interestSubscriptionRepository;
@@ -158,10 +160,9 @@ public class BasicNotificationService implements NotificationService {
     @Override
     @Transactional
     public void confirmAll(UUID userId) {
-//        boolean userExists = userRepository.existsById(userId);
-//        if (!userExists) {
-//            //UserNotFoundException 추가
-//        }
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("userId: " + userId);
+        }
 
         int updatedCount = notificationRepository.confirmAllByUserId(userId);
         log.info("총 {}개의 알림이 확인 처리되었습니다. (userId: {})", updatedCount, userId);
