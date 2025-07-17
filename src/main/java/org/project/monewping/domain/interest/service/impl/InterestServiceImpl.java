@@ -11,6 +11,7 @@ import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
@@ -192,5 +193,33 @@ public class InterestServiceImpl implements InterestService {
     @Transactional
     public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID) {
         return interestRepository.searchWithCursor(request, monewRequestUserID);
+    }
+
+    /**
+     * 관심사를 삭제합니다.
+     *
+     * <p>관심사가 존재하는지 확인한 후 물리적으로 삭제합니다.
+     * 관심사와 연관된 키워드도 함께 삭제됩니다.</p>
+     * @param interestId 삭제할 관심사 ID
+     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
+     */
+    @Override
+    @Transactional
+    public void delete(UUID interestId) {
+        log.info("[InterestService] 관심사 삭제 요청: interestId={}", interestId);
+
+        Interest interest = interestRepository.findById(interestId)
+                .orElseThrow(() -> {
+                    log.warn("[InterestService] 관심사를 찾을 수 없음: interestId={}", interestId);
+                    return new InterestNotFoundException(interestId);
+                });
+
+        try {
+            interestRepository.delete(interest);
+            log.info("[InterestService] 관심사 삭제 성공: interestId={}, name={}", interestId, interest.getName());
+        } catch (Exception e) {
+            log.error("[InterestService] 관심사 삭제 실패: interestId={}, error={}", interestId, e.getMessage(), e);
+            throw new InterestCreationException("관심사 삭제 중 오류가 발생했습니다.", e);
+        }
     }
 }
