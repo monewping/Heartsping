@@ -1,6 +1,5 @@
 package org.project.monewping.global.config;
 
-
 import static org.springframework.security.config.Customizer.withDefaults;
 
 import org.springframework.context.annotation.Bean;
@@ -14,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Spring Security 설정 클래스
- * 
+ *
  * <p>
  * 비밀번호 인코딩과 보안 설정을 담당합니다.
  * </p>
@@ -25,7 +24,7 @@ public class SecurityConfig {
 
     /**
      * 비밀번호 인코더 Bean을 정의합니다.
-     * 
+     *
      * @return BCryptPasswordEncoder 인스턴스
      */
     @Bean
@@ -35,7 +34,7 @@ public class SecurityConfig {
 
     /**
      * Spring Security 필터 체인을 설정합니다.
-     * 
+     *
      * @param http HttpSecurity 객체
      * @return SecurityFilterChain
      * @throws Exception 설정 중 발생할 수 있는 예외
