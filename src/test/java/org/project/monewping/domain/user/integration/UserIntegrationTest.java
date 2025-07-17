@@ -1,6 +1,8 @@
 package org.project.monewping.domain.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -12,16 +14,17 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.user.domain.User;
-import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.project.monewping.domain.user.dto.request.LoginRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * 사용자 기능의 통합 테스트
  *
  * <p>
- * 
+ *
  * @SpringBootTest를 사용하여 전체 애플리케이션 컨텍스트를 로드하고
  *                  Controller → Service → Repository의 전체 플로우를 테스트합니다.
  *                  </p>
@@ -52,12 +55,12 @@ class UserIntegrationTest {
 
     @Test
     @DisplayName("정상적인 회원가입이 성공하고 데이터베이스에 저장된다")
-    void testSuccessfulUserRegistrationIntegration() throws Exception {
-        // given
-        UserRegisterRequest request = createUserRequest(
+    void testSuccessfulUserRegistrationIntegration() thr
+                iven
+                RegisterRequest re
                 "integration@example.com",
-                "integrationuser",
-                "password123");
+            "integrationuser",
+            "password123");
 
         // when & then - HTTP 요청/응답 검증
         org.springframework.test.web.servlet.ResultActions result = performUserRegistration(request);
@@ -78,20 +81,20 @@ class UserIntegrationTest {
     @Test
     @DisplayName("이메일 중복 시 409 Conflict를 반환하고 데이터베이스에 중복 저장되지 않는다")
     void testEmailDuplicationIntegration() throws Exception {
-        // given - 첫 번째 사용자 등록
-        UserRegisterRequest firstRequest = createUserRequest(
+                iven - 첫 번째 사용자 등록
+                RegisterRequ
                 "duplicate@example.com",
-                "firstuser",
-                "password123");
-
+            "firstuser",
+            "password123");
+                
         performUserRegistration(firstRequest)
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated());
 
-        // when - 같은 이메일로 두 번째 사용자 등록 시도
-        UserRegisterRequest duplicateRequest = createUserRequest(
+                hen - 같은 이메일로 두 번째 사용자 등
+                RegisterReque
                 "duplicate@example.com",
-                "seconduser",
-                "password456");
+            "seconduser",
+            "password456");
 
         // then - HTTP 응답 검증
         org.springframework.test.web.servlet.ResultActions result = performUserRegistration(duplicateRequest);
@@ -105,11 +108,11 @@ class UserIntegrationTest {
     @Test
     @DisplayName("유효성 검사 실패 시 400 Bad Request를 반환하고 데이터베이스에 저장되지 않는다")
     void testValidationFailureIntegration() throws Exception {
-        // given - 유효하지 않은 요청 (이메일 형식 오류)
-        UserRegisterRequest invalidRequest = createUserRequest(
+                iven - 유효하지 않은 요
+                RegisterReq
                 "invalid-email",
-                "testuser",
-                "password123");
+            "testuser",
+            "password123");
 
         long initialUserCount = userRepository.count();
 
@@ -123,12 +126,12 @@ class UserIntegrationTest {
 
     @Test
     @DisplayName("비밀번호가 8자 미만일 때 유효성 검사 실패")
-    void testPasswordTooShortValidationIntegration() throws Exception {
-        // given
-        UserRegisterRequest request = createUserRequest(
+    void testPasswordTooShortValidationIntegration() thr
+                iven
+                RegisterReq
                 "short@example.com",
-                "testuser",
-                "short");
+            "testuser",
+            "short");
 
         long initialUserCount = userRepository.count();
 
@@ -142,12 +145,12 @@ class UserIntegrationTest {
 
     @Test
     @DisplayName("닉네임이 비어있을 때 유효성 검사 실패")
-    void testEmptyNicknameValidationIntegration() throws Exception {
-        // given
-        UserRegisterRequest request = createUserRequest(
+    void testEmptyNicknameValidationIntegration() throws
+                iven
+                Reg
                 "empty@example.com",
-                "",
-                "password123");
+            "",
+            "password123");
 
         long initialUserCount = userRepository.count();
 
@@ -185,15 +188,15 @@ class UserIntegrationTest {
 
     @Test
     @DisplayName("회원가입 후 로그인이 정상적으로 성공한다")
-    void testSuccessfulLoginAfterRegistrationIntegration() throws Exception {
-        // given - 사용자 등록
-        UserRegisterRequest registerRequest = createUserRequest(
+    void testSuccessfulLoginAfterRegistrationIntegration() throw
+                iven - 사용자 등록
+                RegisterRequ
                 "login@example.com",
-                "loginuser",
-                "password123");
-
+            "loginuser",
+            "password123");
+                
         performUserRegistration(registerRequest)
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated());
 
         // when - 로그인 시도
         LoginRequest loginRequest = new LoginRequest("login@example.com", "password123");
@@ -216,15 +219,15 @@ class UserIntegrationTest {
 
     @Test
     @DisplayName("잘못된 비밀번호로 로그인 시 401 Unauthorized를 반환한다")
-    void testLoginWithWrongPasswordIntegration() throws Exception {
-        // given - 사용자 등록
-        UserRegisterRequest registerRequest = createUserRequest(
+    void testLoginWithWrongPasswordIntegration() throws Exceptio
+                iven - 사용자 등록
+                RegisterRequest 
                 "wrongpass@example.com",
-                "wrongpassuser",
-                "password123");
-
+            "wrongpassuser",
+            "password123");
+                
         performUserRegistration(registerRequest)
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated());
 
         // when - 잘못된 비밀번호로 로그인 시도
         LoginRequest loginRequest = new LoginRequest("wrongpass@example.com", "wrongpassword");
@@ -281,27 +284,29 @@ class UserIntegrationTest {
     // ===== Private Helper Methods =====
 
     /**
-     * 사용자 등록 POST 요청을 수행합니다.
-     */
-    private org.springframework.test.web.servlet.ResultActions performUserRegistration(UserRegisterRequest request)
-            throws Exception {
-        return mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andDo(print());
-    }
-
+     * 
+     *         
+     * 
+     * ate org.springfram
+     * throws Exception {
+     * vc.perform(post("/api/users")
+     *     .contentType(MediaType.APPLICATION_JSON)
+     *     .content(obj
+     *  
+     * 
+     * 
     /**
-     * 로그인 POST 요청을 수행합니다.
-     */
-    private org.springframework.test.web.servlet.ResultActions performLogin(LoginRequest request)
-            throws Exception {
-        return mockMvc.perform(post("/api/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andDo(print());
-    }
-
+     * 
+     *         
+     * 
+     * ate org.springfram
+     * throws Exception {
+     * vc.perform(post("/api/users/login")
+     *     .contentType(MediaType.APPLICATION_JSON)
+     *     .content(obj
+     *  
+     * 
+     * 
     /**
      * UserRegisterRequest 객체를 생성합니다.
      */
@@ -327,64 +332,64 @@ class UserIntegrationTest {
 
     /**
      * 성공적인 회원가입 응답을 검증합니다.
-     */
-    private void assertSuccessfulRegistration(org.springframework.test.web.servlet.ResultActions result,
-            String email, String nickname) throws Exception {
-        result.andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.nickname").value(nickname))
+            
+    private void assertSuccessfulRegistration(
+                ng email, String nickname) throws Exception {
+                lt.andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICA
+                .andExpect(jsonPath("$.email").value(
+                .andExpect(jsonPath("$.nickname").value(nick
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.password").doesNotExist());
+            .andExpect(jsonPath("$.createdAt").exists())
+            .andExpect(jsonPath("$.password").doesNotExist());
     }
 
     /**
      * 유효성 검사 실패 응답을 검증합니다.
      */
-    private void assertValidationFailure(org.springframework.test.web.servlet.ResultActions result) throws Exception {
-        result.andExpect(status().isBadRequest())
+                void assertValidationFailure(org.springframework.test.web.ser
+                lt.andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("유효성 검사 실패"));
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("유효성 검사 실패"));
     }
 
     /**
-     * 이메일 중복 오류 응답을 검증합니다.
-     */
-    private void assertEmailDuplicationFailure(org.springframework.test.web.servlet.ResultActions result)
-            throws Exception {
-        result.andExpect(status().isConflict())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("이미 존재하는 이메일입니다."));
-    }
-
+     * 
+     *         
+     *  assertEmailDu
+     * ws Exception {
+     * lt.andExpect(status().isConflict())
+     *     .andExpect(content().contentType(MediaT
+     * .andExpect(jsonPath("$.status").value(409))
+     *  
+     * 
+     * 
     /**
-     * 성공적인 로그인 응답을 검증합니다.
-     */
-    private void assertSuccessfulLogin(org.springframework.test.web.servlet.ResultActions result,
-            String email, String nickname) throws Exception {
-        result.andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.nickname").value(nickname))
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.password").doesNotExist());
-    }
-
+     * 
+     *         
+     *  assertSuccessfulLogin(or
+     * ng email, String nickname) th
+     * lt.andExpect(status().isOk())
+     * .andExpect(content().contentType(Medi
+     * .andExpect(jsonPath("$.email").value(
+     * .andExpect(jsonPath("$.nickname").val
+     *     .andExpect(jsonPath("$.id").exists())
+     * .andExpect(jsonPath("$.createdAt").exists())
+     *  
+     * 
+     * 
     /**
-     * 로그인 실패 응답을 검증합니다.
-     */
-    private void assertLoginFailure(org.springframework.test.web.servlet.ResultActions result, String expectedMessage)
-            throws Exception {
-        result.andExpect(status().isUnauthorized())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.message").value(expectedMessage));
-    }
-
+     * 
+     *         
+     *  assertLoginFa
+     * ws Exception {
+     * lt.andExpect(status().isUnauthorized())
+     *     .andExpect(content().contentType(MediaT
+     * .andExpect(jsonPath("$.status").value(401))
+     *  
+     * 
+     * 
     /**
      * 사용자 존재 여부를 boolean으로 확인합니다.
      */
