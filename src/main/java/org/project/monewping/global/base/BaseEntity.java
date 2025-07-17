@@ -22,7 +22,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public abstract class BaseEntity {
 
     @Id
-    @Column(name = "id", nullable = false, unique = true)
+    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
