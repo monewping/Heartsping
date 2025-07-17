@@ -3,6 +3,7 @@ package org.project.monewping.domain.user.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,8 @@ import org.project.monewping.domain.user.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.hibernate.exception.ConstraintViolationException;
 
 /**
@@ -23,6 +26,7 @@ import org.hibernate.exception.ConstraintViolationException;
  *               </p>
  */
 @DataJpaTest
+@EnableJpaAuditing
 @DisplayName("UserRepository 슬라이스 테스트")
 class UserRepositorySliceTest {
 
@@ -129,10 +133,13 @@ class UserRepositorySliceTest {
      * 테스트용 User 객체를 생성하는 헬퍼 메서드
      */
     private User createTestUser(String email, String nickname, String password) {
+        Instant now = Instant.now();
         return User.builder()
                 .email(email)
                 .nickname(nickname)
                 .password(password)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 }
