@@ -42,11 +42,21 @@ public class Comment {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Getter
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted;
 
     public void delete() {
         this.isDeleted = true;
         this.updatedAt = Instant.now();
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+        this.updatedAt = Instant.now();
+    }
+
+    public Boolean isDeleted() {
+        return this.isDeleted;
     }
 }
