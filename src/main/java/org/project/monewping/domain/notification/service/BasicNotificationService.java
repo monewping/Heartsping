@@ -1,6 +1,7 @@
 package org.project.monewping.domain.notification.service;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
@@ -100,7 +102,11 @@ public class BasicNotificationService implements NotificationService {
     public CursorPageResponseNotificationDto findNotifications(UUID userId, String cursor, Instant after, int limit) {
         Instant parsedCursor;
         if (cursor != null && !cursor.isBlank()) {
-            parsedCursor = Instant.parse(cursor);
+            try {
+                parsedCursor = Instant.parse(cursor);
+            } catch (DateTimeParseException e) {
+                throw new InvalidCursorFormatException(cursor, e);
+            }
         } else {
             parsedCursor = after;
         }
@@ -167,6 +173,33 @@ public class BasicNotificationService implements NotificationService {
 
         int updatedCount = notificationRepository.confirmAllByUserId(userId);
         log.info("총 {}개의 알림이 확인 처리되었습니다. (userId: {})", updatedCount, userId);
+    }
+
+    /**
+     * 주어진 userId와 notificationId에 해당하는 알림을 확인된 상태로 변경합니다.
+     *
+     * <p>
+     *     트랜잭션 내에서 Dirty Checking으로 변경된 confirmed 필드를
+     *     커밋 시점에 자동으로 DB에 반영합니다.
+     * </p>
+     *
+     * @param userId 조회할 대상 사용자의 ID
+     * @param notificationId 확인 처리할 알림의 ID
+     * @throws NotificationNotFoundException 알림을 찾을 수 없거나 권한이 없는 경우
+     */
+    @Override
+    @Transactional
+    public void confirmNotification(UUID userId, UUID notificationId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("userId=" + userId);
+        }
+
+        Notification notification = notificationRepository
+            .findByIdAndUserId(notificationId, userId)
+            .orElseThrow(() -> new NotificationNotFoundException(userId, notificationId));
+
+        notification.confirm();
+        log.debug("notification confirmed: {}", notification);
     }
 
     /**
@@ -241,28 +274,5 @@ public class BasicNotificationService implements NotificationService {
         Notification notification = new Notification(userId, content, commentUserId, "Comment");
         notificationRepository.save(notification);
         return List.of(notification);
-    }
-
-    /**
-     * 주어진 userId와 notificationId에 해당하는 알림을 확인된 상태로 변경합니다.
-     *
-     * <p>
-     *     트랜잭션 내에서 Dirty Checking으로 변경된 confirmed 필드를
-     *     커밋 시점에 자동으로 DB에 반영합니다.
-     * </p>
-     *
-     * @param userId 조회할 대상 사용자의 ID
-     * @param notificationId 확인 처리할 알림의 ID
-     * @throws NotificationNotFoundException 알림을 찾을 수 없거나 권한이 없는 경우
-     */
-    @Override
-    @Transactional
-    public void confirmNotification(UUID userId, UUID notificationId) {
-        Notification notification = notificationRepository
-            .findByIdAndUserId(notificationId, userId)
-            .orElseThrow(() -> new NotificationNotFoundException(userId, notificationId));
-
-        notification.confirm();
-        log.debug("notification confirmed: {}", notification);
     }
 }
