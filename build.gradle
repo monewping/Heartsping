@@ -136,11 +136,6 @@ sourceSets {
     }
 }
 
-tasks.withType(JavaCompile) {
-    options.generatedSourceOutputDirectory = file(querydslDir)
-    options.compilerArgs += ["-Amapstruct.verbose=true"]
-}
-
 clean {
     delete file(querydslDir)
 }

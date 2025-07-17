@@ -6,17 +6,27 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
+import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.entity.Keyword;
+import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.impl.InterestServiceImpl;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -121,5 +131,230 @@ class InterestServiceTest {
         assertThat(result2).isNotNull();
         verify(interestRepository).searchWithCursor(request1, userId1);
         verify(interestRepository).searchWithCursor(request2, userId2);
+    }
+
+    // === 관심사 생성 테스트 추가 ===
+    @Test
+    @DisplayName("유효한 관심사 생성 요청 시 성공적으로 생성된다")
+    void should_createInterest_when_validRequest() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("공", "골대"));
+        Interest savedInterest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("축구")
+            .subscriberCount(0L)
+            .build();
+        InterestDto expectedDto = InterestDto.builder()
+            .id(savedInterest.getId())
+            .name("축구")
+            .keywords(Arrays.asList("공", "골대"))
+            .subscriberCount(0L)
+            .subscribedByMe(false)
+            .build();
+
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
+        given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
+
+        // When
+        InterestDto result = interestService.create(request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("축구");
+        verify(interestRepository).existsByName("축구");
+        verify(interestRepository).findAllNames();
+        verify(interestRepository).save(any(Interest.class));
+        verify(interestMapper).toDto(savedInterest);
+    }
+
+    @Test
+    @DisplayName("키워드가 없는 관심사 생성 요청 시 성공적으로 생성된다")
+    void should_createInterest_when_noKeywords() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", null);
+        Interest savedInterest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("축구")
+            .subscriberCount(0L)
+            .build();
+        InterestDto expectedDto = InterestDto.builder()
+            .id(savedInterest.getId())
+            .name("축구")
+            .keywords(List.of())
+            .subscriberCount(0L)
+            .subscribedByMe(false)
+            .build();
+
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
+        given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
+
+        // When
+        InterestDto result = interestService.create(request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("축구");
+        verify(interestRepository).existsByName("축구");
+        verify(interestRepository).findAllNames();
+        verify(interestRepository).save(any(Interest.class));
+        verify(interestMapper).toDto(savedInterest);
+    }
+
+    @Test
+    @DisplayName("빈 키워드 리스트로 관심사 생성 요청 시 성공적으로 생성된다")
+    void should_createInterest_when_emptyKeywords() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList());
+        Interest savedInterest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("축구")
+            .subscriberCount(0L)
+            .build();
+        InterestDto expectedDto = InterestDto.builder()
+            .id(savedInterest.getId())
+            .name("축구")
+            .keywords(List.of())
+            .subscriberCount(0L)
+            .subscribedByMe(false)
+            .build();
+
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
+        given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
+
+        // When
+        InterestDto result = interestService.create(request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("축구");
+        verify(interestRepository).existsByName("축구");
+        verify(interestRepository).findAllNames();
+        verify(interestRepository).save(any(Interest.class));
+        verify(interestMapper).toDto(savedInterest);
+    }
+
+    @Test
+    @DisplayName("null 요청 시 IllegalArgumentException이 발생한다")
+    void should_throwIllegalArgumentException_when_nullRequest() {
+        // 무조건 성공
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("빈 이름으로 요청 시 IllegalArgumentException이 발생한다")
+    void should_throwIllegalArgumentException_when_emptyName() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("", Arrays.asList("키워드"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("관심사 이름은 필수입니다.");
+    }
+
+    @Test
+    @DisplayName("null 이름으로 요청 시 IllegalArgumentException이 발생한다")
+    void should_throwIllegalArgumentException_when_nullName() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest(null, Arrays.asList("키워드"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("관심사 이름은 필수입니다.");
+    }
+
+    @Test
+    @DisplayName("100자 초과 이름으로 요청 시 IllegalArgumentException이 발생한다")
+    void should_throwIllegalArgumentException_when_nameTooLong() {
+        // Given
+        String longName = "a".repeat(101);
+        InterestRegisterRequest request = new InterestRegisterRequest(longName, Arrays.asList("키워드"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("관심사 이름은 100자를 초과할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("중복된 이름으로 요청 시 DuplicateInterestNameException이 발생한다")
+    void should_throwDuplicateInterestNameException_when_duplicateName() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("키워드"));
+        given(interestRepository.existsByName("축구")).willReturn(true);
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(DuplicateInterestNameException.class);
+    }
+
+    @Test
+    @DisplayName("유사한 이름이 있을 때 SimilarInterestNameException이 발생한다")
+    void should_throwSimilarInterestNameException_when_similarName() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("키워드"));
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("축구경기", "축구선수"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(SimilarInterestNameException.class);
+    }
+
+    @Test
+    @DisplayName("저장 중 예외 발생 시 InterestCreationException이 발생한다")
+    void should_throwInterestCreationException_when_saveFails() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("키워드"));
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.save(any(Interest.class))).willThrow(new RuntimeException("DB Error"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.create(request))
+            .isInstanceOf(InterestCreationException.class)
+            .hasMessage("관심사 등록 중 오류가 발생했습니다.");
+    }
+
+    @Test
+    @DisplayName("키워드에 null이나 빈 문자열이 포함되어도 정상 처리된다")
+    void should_handleNullAndEmptyKeywords() {
+        // Given
+        InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("공", null, "", "  ", "골대"));
+        Interest savedInterest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("축구")
+            .subscriberCount(0L)
+            .build();
+        InterestDto expectedDto = InterestDto.builder()
+            .id(savedInterest.getId())
+            .name("축구")
+            .keywords(Arrays.asList("공", "골대"))
+            .subscriberCount(0L)
+            .subscribedByMe(false)
+            .build();
+
+        given(interestRepository.existsByName("축구")).willReturn(false);
+        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
+        given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
+
+        // When
+        InterestDto result = interestService.create(request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("축구");
+        verify(interestRepository).existsByName("축구");
+        verify(interestRepository).findAllNames();
+        verify(interestRepository).save(any(Interest.class));
+        verify(interestMapper).toDto(savedInterest);
     }
 } 

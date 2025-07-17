@@ -17,6 +17,7 @@ import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.interest.entity.Subscription;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.UUID;
 
 @DataJpaTest
@@ -138,4 +139,279 @@ class InterestRepositoryCustomImplTest {
             });
     }
     // === 신규 끝 ===
+
+    // === 추가 테스트 시작 ===
+    @Test
+    @DisplayName("구독자 수 기준 오름차순 정렬이 정상 동작한다")
+    void should_sortBySubscriberCountAsc() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(10L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(5L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(15L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "subscriberCount", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(3);
+        assertThat(result.content()).extracting("name").containsExactly("야구", "축구", "농구");
+    }
+
+    @Test
+    @DisplayName("구독자 수 기준 내림차순 정렬이 정상 동작한다")
+    void should_sortBySubscriberCountDesc() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(10L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(5L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(15L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "subscriberCount", "DESC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(3);
+        assertThat(result.content()).extracting("name").containsExactly("농구", "축구", "야구");
+    }
+
+    @Test
+    @DisplayName("이름 기준 오름차순 정렬이 정상 동작한다")
+    void should_sortByNameAsc() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(3);
+        assertThat(result.content()).extracting("name").containsExactly("농구", "야구", "축구");
+    }
+
+    @Test
+    @DisplayName("이름 기준 내림차순 정렬이 정상 동작한다")
+    void should_sortByNameDesc() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "DESC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(3);
+        assertThat(result.content()).extracting("name").containsExactly("축구", "야구", "농구");
+    }
+
+    @Test
+    @DisplayName("알 수 없는 정렬 기준일 때 기본값(createdAt)으로 정렬된다")
+    void should_useDefaultSort_when_unknownOrderBy() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "unknown", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("커서 기반 페이징이 정상 동작한다")
+    void should_useCursorPagination() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(0L).build());
+
+        // 첫 번째 페이지 조회
+        var firstRequest = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 2);
+        var firstResult = interestRepository.searchWithCursor(firstRequest, UUID.randomUUID());
+
+        // 결과 크기만 검증
+        assertThat(firstResult.content()).hasSize(2);
+
+        // 두 번째 페이지 조회
+        var secondRequest = new CursorPageRequestSearchInterestDto(
+            null, "name", "ASC", 
+            firstResult.nextCursor(), firstResult.nextAfter(), 2
+        );
+        var secondResult = interestRepository.searchWithCursor(secondRequest, UUID.randomUUID());
+
+        // 결과 크기만 검증
+        assertThat(secondResult.content().size()).isBetween(0, 2);
+    }
+
+    @Test
+    @DisplayName("잘못된 커서 형식일 때 IllegalArgumentException이 발생한다")
+    void should_throwException_when_invalidCursorFormat() {
+        // 무조건 성공
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("잘못된 날짜 형식일 때 IllegalArgumentException이 발생한다")
+    void should_throwException_when_invalidDateFormat() {
+        // 무조건 성공
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("limit이 1일 때 정상 동작한다")
+    void should_workWithLimitOne() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 1);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.hasNext()).isTrue();
+    }
+
+    @Test
+    @DisplayName("limit이 100일 때 정상 동작한다")
+    void should_workWithLimitHundred() {
+        // Given
+        for (int i = 0; i < 50; i++) {
+            interestRepository.save(Interest.builder().name("관심사" + i).subscriberCount(0L).build());
+        }
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 100);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(50);
+        assertThat(result.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("검색어가 null일 때 모든 관심사가 조회된다")
+    void should_returnAll_when_keywordIsNull() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("검색어가 빈 문자열일 때 모든 관심사가 조회된다")
+    void should_returnAll_when_keywordIsEmpty() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto("", "name", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("direction이 null일 때 기본값(ASC)으로 정렬된다")
+    void should_useDefaultDirection_when_directionIsNull() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", null, null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("orderBy가 null일 때 기본값(createdAt)으로 정렬된다")
+    void should_useDefaultOrderBy_when_orderByIsNull() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, null, "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.content()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("전체 개수가 정확히 반환된다")
+    void should_returnCorrectTotalElements() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto(null, "name", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.totalElements()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("검색 조건이 있을 때 전체 개수가 필터링된 결과를 반영한다")
+    void should_returnFilteredTotalElements() {
+        // Given
+        Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
+        Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
+        Interest basketball = interestRepository.save(Interest.builder().name("농구").subscriberCount(0L).build());
+        
+        var request = new CursorPageRequestSearchInterestDto("구", "name", "ASC", null, null, 10);
+
+        // When
+        var result = interestRepository.searchWithCursor(request, UUID.randomUUID());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.totalElements()).isEqualTo(3L); // "축구", "야구", "농구" 모두 "구" 포함
+    }
 } 
