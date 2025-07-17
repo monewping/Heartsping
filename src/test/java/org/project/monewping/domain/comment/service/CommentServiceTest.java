@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
@@ -415,4 +416,74 @@ class CommentServiceTest {
             .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
     }
 
+    @DisplayName("댓글 수정 성공")
+    @Test
+    void updateComment_Success() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .content("기존 댓글입니다.")
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
+
+        commentService.updateComment(commentId, userId, request);
+
+        assertThat(comment.getContent()).isEqualTo("수정된 댓글입니다.");
+        verify(commentRepository).findById(commentId);
+    }
+
+    @DisplayName("댓글 수정 실패 - 본인 아님")
+    @Test
+    void updateComment_Fail_NotOwner() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID attackerId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(ownerId)
+            .content("기존 댓글입니다.")
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
+
+        assertThatThrownBy(() -> commentService.updateComment(commentId, attackerId, request))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 수정할 수 있습니다.");
+    }
+
+    @DisplayName("댓글 수정 실패 - 삭제된 댓글")
+    @Test
+    void updateComment_Fail_Deleted() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .content("기존 댓글입니다.")
+            .isDeleted(true)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
+
+        assertThatThrownBy(() -> commentService.updateComment(commentId, userId, request))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("삭제된 댓글은 수정할 수 없습니다.");
+    }
 }
