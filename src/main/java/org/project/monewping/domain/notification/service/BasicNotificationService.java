@@ -151,11 +151,11 @@ public class BasicNotificationService implements NotificationService {
      * <p>
      *     이 메서드는 Notification 엔티티에서 {@code confirmed = false}인 레코드를 찾아
      *     {@code confirmed = true}로 업데이트하며, 처리된 알림의 개수를 로그로 기록합니다.
-     *     사용자 정보가 존재하지 않는 경우 (TODO: 예외 처리 추가 예정)
+     *     사용자 정보가 존재하지 않는 경우
      * </p>
      *
      * @param userId 확인 처리를 수행할 사용자의 ID
-     * @throws IllegalArgumentException 사용자 ID가 {@code null}인 경우
+     * @throws UserNotFoundException 사용자를 조회할 수 없는 경우
      */
     @Override
     @Transactional
