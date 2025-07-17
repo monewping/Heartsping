@@ -23,7 +23,6 @@ spring:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 logging:
   level:
@@ -51,3 +50,8 @@ management:
 server:
   port: ${PORT:8080}
   address: 0.0.0.0
+
+naver:
+  api:
+    client-id: w77BI41SmIuc2Nfm3L4d
+    client-secret: nDx6IuyH3i
