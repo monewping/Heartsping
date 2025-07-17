@@ -43,7 +43,7 @@ public class CommentServiceImpl implements CommentService {
         String nextCursor = lastId == null ? null : lastId.toString();
 
         int size = comments.size();
-        long totalElements = size;
+        long totalElements = commentRepository.countByArticleId(articleId);
         boolean hasNext = size == limit;
 
         return new CursorPageResponse<>(
