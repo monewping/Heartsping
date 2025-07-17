@@ -2,6 +2,7 @@ package org.project.monewping.domain.article.service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
@@ -191,6 +192,12 @@ public class ArticlesServiceImpl implements ArticlesService {
             .filter(req -> !existingLinks.contains(req.originalLink()))
             .map(req -> articlesMapper.toEntity(req, interest))
             .toList();
+    }
+
+    public List<String> getAllSources() {
+        List<String> sources = articlesRepository.findDistinctSources();
+        // 중복 제거
+        return sources.stream().distinct().collect(Collectors.toList());
     }
 
 }

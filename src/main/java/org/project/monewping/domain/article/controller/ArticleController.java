@@ -119,4 +119,15 @@ public class ArticleController {
         return articlesService.findArticles(searchRequest);
     }
 
+    /**
+     * 뉴스 기사 출처 목록을 조회합니다.
+     *
+     * @return 출처 문자열 목록
+     */
+    @GetMapping("/sources")
+    public ResponseEntity<List<String>> getAllSources() {
+        List<String> sources = articlesService.getAllSources();
+        return ResponseEntity.ok(sources);
+    }
+
 }

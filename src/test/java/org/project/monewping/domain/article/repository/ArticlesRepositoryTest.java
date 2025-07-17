@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 
 @DataJpaTest
 @Import({QuerydslConfig.class, JpaAuditingConfig.class})
-@DisplayName("ArticlesRepositoryCustom 쿼리 테스트")
+@DisplayName("ArticlesRepository 테스트")
 public class ArticlesRepositoryTest {
 
     @Autowired
@@ -281,5 +281,108 @@ public class ArticlesRepositoryTest {
         assertThat(results.get(0).getId()).isEqualTo(a1.getId());
     }
 
+    @Test
+    @DisplayName("삭제되지 않은 기사들의 출처 목록만 조회된다")
+    void findDistinctSources_excludesDeletedArticles() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder()
+                .name("정치")
+                .subscriberCount(0)
+                .build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("중앙일보")
+            .originalLink("https://news.com/1")
+            .title("뉴스1")
+            .summary("요약1")
+            .publishedAt(LocalDateTime.now())
+            .deleted(false)
+            .build());
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("한겨레")
+            .originalLink("https://news.com/2")
+            .title("뉴스2")
+            .summary("요약2")
+            .publishedAt(LocalDateTime.now())
+            .deleted(true) // 삭제된 기사
+            .build());
+
+        // when
+        List<String> sources = articlesRepository.findDistinctSources();
+
+        // then
+        assertThat(sources).containsExactly("중앙일보");
+    }
+
+    @Test
+    @DisplayName("중복된 출처는 하나만 반환된다")
+    void findDistinctSources_returnsUniqueSources() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder()
+                .name("경제")
+                .subscriberCount(0)
+                .build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("연합뉴스")
+            .originalLink("https://news.com/a")
+            .title("뉴스A")
+            .summary("요약A")
+            .publishedAt(LocalDateTime.now())
+            .deleted(false)
+            .build());
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("연합뉴스") // 중복 출처
+            .originalLink("https://news.com/b")
+            .title("뉴스B")
+            .summary("요약B")
+            .publishedAt(LocalDateTime.now())
+            .deleted(false)
+            .build());
+
+        // when
+        List<String> sources = articlesRepository.findDistinctSources();
+
+        // then
+        assertThat(sources).containsExactly("연합뉴스");
+    }
+
+    @Test
+    @DisplayName("삭제되지 않은 기사가 없는 경우 빈 리스트를 반환한다")
+    void findDistinctSources_returnsEmptyListIfNoArticles() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder()
+                .name("스포츠")
+                .subscriberCount(0)
+                .build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("KBS")
+            .originalLink("https://news.com/z")
+            .title("뉴스Z")
+            .summary("요약Z")
+            .publishedAt(LocalDateTime.now())
+            .deleted(true) // 모두 삭제된 상태
+            .build());
+
+        // when
+        List<String> sources = articlesRepository.findDistinctSources();
+
+        // then
+        assertThat(sources).isEmpty();
+    }
 
 }

@@ -201,4 +201,32 @@ public class ArticlesControllerTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("출처 목록 조회 성공 - 삭제된 기사 제외, 중복 없이 반환")
+    void getAllSources_Success() throws Exception {
+        List<String> mockSources = List.of("NAVER", "중앙일보", "연합뉴스");
+
+        // articlesService.getAllSources()가 mockSources를 반환하도록 설정
+        doReturn(mockSources).when(articlesService).getAllSources();
+
+        mockMvc.perform(get("/api/articles/sources")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(mockSources.size()))
+            .andExpect(jsonPath("$[0]").value("NAVER"))
+            .andExpect(jsonPath("$[1]").value("중앙일보"))
+            .andExpect(jsonPath("$[2]").value("연합뉴스"));
+    }
+
+    @Test
+    @DisplayName("출처 목록 조회 실패 - 서버 내부 오류 발생 시 500 반환")
+    void getAllSources_InternalServerError() throws Exception {
+        // articlesService.getAllSources() 호출 시 예외 발생하도록 설정
+        when(articlesService.getAllSources()).thenThrow(new RuntimeException("DB error"));
+
+        mockMvc.perform(get("/api/articles/sources")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isInternalServerError());
+    }
+
 }

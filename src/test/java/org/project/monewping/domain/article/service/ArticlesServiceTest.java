@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -398,4 +400,27 @@ public class ArticlesServiceTest {
         assertThat(result.totalElements()).isZero();
     }
 
+    @Test
+    @DisplayName("출처 목록 조회 - 삭제된 기사 제외하고 중복 없이 반환")
+    void getAllSources_ReturnsUniqueNonDeletedSources() {
+        // given - repository가 중복, 삭제된 출처 포함 리스트 반환
+        List<String> mockSources = Arrays.asList("NAVER", "중앙일보", "NAVER", "한겨레");
+        when(articlesRepository.findDistinctSources()).thenReturn(mockSources);
+
+        // when
+        List<String> result = articleService.getAllSources();
+
+        // then - 중복 제거 로직이 서비스에 있으면 검증
+        assertThat(result).containsExactlyInAnyOrder("NAVER", "중앙일보", "한겨레");
+    }
+
+    @Test
+    @DisplayName("출처 목록 조회 - 결과가 없으면 빈 리스트 반환")
+    void getAllSources_ReturnsEmptyListWhenNoSources() {
+        when(articlesRepository.findDistinctSources()).thenReturn(Collections.emptyList());
+
+        List<String> result = articleService.getAllSources();
+
+        assertThat(result).isEmpty();
+    }
 }

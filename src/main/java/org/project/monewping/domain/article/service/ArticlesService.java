@@ -16,4 +16,6 @@ public interface ArticlesService {
 
     CursorPageResponse<ArticleDto> findArticles(ArticleSearchRequest request);
 
+    List<String> getAllSources();
+
 }
