@@ -228,13 +228,15 @@ public class ArticlesRepositoryTest {
             Interest.builder().name("정치").subscriberCount(0).build()
         );
 
+        LocalDateTime baseTime = LocalDateTime.of(2025, 7, 17, 12, 0);
+
         Articles a1 = articlesRepository.save(Articles.builder()
             .interest(interest)
             .source("중앙일보")
             .originalLink("https://news.com/p1")
             .title("정치 개혁")
             .summary("요약1")
-            .publishedAt(LocalDateTime.now().minusMinutes(3))
+            .publishedAt(baseTime.minusMinutes(3))  // 11:57
             .build());
 
         Articles a2 = articlesRepository.save(Articles.builder()
@@ -243,7 +245,7 @@ public class ArticlesRepositoryTest {
             .originalLink("https://news.com/p2")
             .title("총선 결과")
             .summary("요약2")
-            .publishedAt(LocalDateTime.now().minusMinutes(2))
+            .publishedAt(baseTime.minusMinutes(2))  // 11:58
             .build());
 
         Articles a3 = articlesRepository.save(Articles.builder()
@@ -252,7 +254,7 @@ public class ArticlesRepositoryTest {
             .originalLink("https://news.com/p3")
             .title("여야 협상")
             .summary("요약3")
-            .publishedAt(LocalDateTime.now().minusMinutes(1))
+            .publishedAt(baseTime.minusMinutes(1))  // 11:59
             .build());
 
         articlesRepository.flush();
@@ -278,5 +280,6 @@ public class ArticlesRepositoryTest {
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getId()).isEqualTo(a1.getId());
     }
+
 
 }

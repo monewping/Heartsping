@@ -25,13 +25,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 뉴스 기사 조회 기록 등록 관련 REST API 컨트롤러.
+ * 뉴스 기사 조회 기록 등록 및 뉴스 기사 목록 조회를 위한 REST API 컨트롤러.
  * <p>
- * 클라이언트로부터 사용자 ID와 기사 ID를 받아
- * 조회 기록 등록 요청을 처리한다.
+ * 사용자의 뉴스 기사 조회 기록 등록과 조건 기반 뉴스 기사 목록 조회 기능을 제공합니다.
  * </p>
  */
-
 @RestController
 @RequestMapping("/api/articles")
 @RequiredArgsConstructor
