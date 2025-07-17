@@ -6,18 +6,17 @@ import org.springframework.http.HttpStatus;
 
 @Builder
 public record ErrorResponse(
-    Instant timestamp,
-    int status,
-    String message,
-    String details
-) {
+        Instant timestamp,
+        int status,
+        String message,
+        String details) {
 
     public static ErrorResponse of(HttpStatus status, String message, String details) {
         return ErrorResponse.builder()
-            .timestamp(Instant.now())
-            .status(status.value())
-            .message(message)
-            .details(details)
-            .build();
+                .timestamp(Instant.now())
+                .status(status.value())
+                .message(message)
+                .details(details)
+                .build();
     }
 }
