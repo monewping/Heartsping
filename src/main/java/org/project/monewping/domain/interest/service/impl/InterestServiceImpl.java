@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.project.monewping.domain.interest.dto.InterestDto;
+import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
@@ -14,15 +15,15 @@ import org.project.monewping.domain.interest.exception.SimilarInterestNameExcept
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.InterestService;
-import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -33,6 +34,7 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
+@Lazy
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class InterestServiceImpl implements InterestService {
