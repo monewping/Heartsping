@@ -37,6 +37,10 @@ public class ArticlesServiceImpl implements ArticlesService {
     public void save(ArticleSaveRequest request) {
         log.info("뉴스 기사 저장 시도 = originalLink : {}, interestId : {}", request.originalLink(), request.interestId());
 
+        if (request.originalLink() == null || request.originalLink().isBlank()) {
+            throw new IllegalArgumentException("originalLink는 필수입니다");
+        }
+
         if (articlesRepository.existsByOriginalLink(request.originalLink())) {
             log.warn("중복된 뉴스 기사 발견 = originalLink : {}", request.originalLink());
             throw new DuplicateArticleException(request.originalLink());

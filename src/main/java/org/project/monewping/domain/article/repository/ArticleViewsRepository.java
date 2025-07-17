@@ -9,4 +9,6 @@ public interface ArticleViewsRepository extends JpaRepository<ArticleViews, UUID
 
     Optional<ArticleViews> findByViewedByAndArticleId(UUID userId, UUID articleId);
 
+    boolean existsByViewedByAndArticleId(UUID viewedBy, UUID articleId);
+
 }

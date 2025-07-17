@@ -14,9 +14,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.project.monewping.domain.article.dto.data.NaverNewsItem;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
-import org.project.monewping.domain.article.fetcher.naver.dto.NaverNewsItem;
-import org.project.monewping.domain.article.fetcher.naver.dto.NaverNewsResponse;
+import org.project.monewping.domain.article.dto.response.NaverNewsResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -24,15 +24,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 @DisplayName("NaverArticleFetcher 테스트")
-public class NaverArticleFetcher {
+public class NaverArticleFetcherTest {
 
     private RestTemplate restTemplate;
-    private org.project.monewping.domain.article.fetcher.naver.NaverArticleFetcher naverArticleFetcher;
+    private NaverArticleFetcher naverArticleFetcher;
 
     @BeforeEach
     void setUp() throws Exception {
         restTemplate = mock(RestTemplate.class);
-        naverArticleFetcher = new org.project.monewping.domain.article.fetcher.naver.NaverArticleFetcher(restTemplate);
+        naverArticleFetcher = new NaverArticleFetcher(restTemplate);
         setPrivateField(naverArticleFetcher, "clientId", "test-client-id");
         setPrivateField(naverArticleFetcher, "clientSecret", "test-client-secret");
     }

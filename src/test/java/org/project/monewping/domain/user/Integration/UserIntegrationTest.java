@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @DisplayName("User 통합 테스트")
 class UserIntegrationTest {
 
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -60,6 +61,7 @@ class UserIntegrationTest {
         "integration@example.com",
         "integrationuser",
         "password123");
+
 
         // when & then - HTTP 요청/응답 검증
         org.springframework.test.web.servlet.ResultActions result = performUserRegistration(request);

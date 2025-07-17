@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -21,11 +23,13 @@ import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.entity.ArticleViews;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@DisplayName("ArticleViewsService 테스트")
 @ExtendWith(MockitoExtension.class)
 public class ArticleViewsServiceTest {
 
@@ -71,10 +75,8 @@ public class ArticleViewsServiceTest {
         // given - 기존에 동일한 조회 기록이 없고, 해당 기사도 존재하는 경우
         given(articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId))
             .willReturn(Optional.empty());
-
         given(articlesRepository.findById(articleId))
             .willReturn(Optional.of(articles));
-
         given(articleViewsRepository.save(any(ArticleViews.class)))
             .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -119,4 +121,50 @@ public class ArticleViewsServiceTest {
             .hasMessageContaining("이미 조회한 기사");
     }
 
+    @Test
+    @DisplayName("조회 기록 저장 시 해당 기사가 존재하지 않으면 예외 발생")
+    void registerView_shouldThrowException_whenArticleNotFound() {
+        // given
+        given(articleViewsRepository.findByViewedByAndArticleId(viewedBy, articleId))
+            .willReturn(Optional.empty());
+        given(articlesRepository.findById(articleId))
+            .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> articleViewsService.registerView(viewedBy, articleId))
+            .isInstanceOf(ArticleNotFoundException.class)
+            .hasMessageContaining("해당 뉴스 기사를 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("정상적인 기사 조회 시 기록이 저장된다")
+    void registerView_ShouldSaveView_WhenValidRequest() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID articleId = UUID.randomUUID();
+
+        Articles article = Articles.builder()
+            .id(articleId)
+            .title("뉴스")
+            .originalLink("https://news.com")
+            .publishedAt(LocalDateTime.now())
+            .viewCount(0L)
+            .deleted(false)
+            .build();
+
+        given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
+        lenient().when(articleViewsRepository.existsByViewedByAndArticleId(userId, articleId))
+            .thenReturn(false);
+        given(articleViewsRepository.save(any(ArticleViews.class)))
+            .willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        ArticleViewDto result = articleViewsService.registerView(userId, articleId);
+
+        // then
+        verify(articleViewsRepository).save(any(ArticleViews.class));
+        assertThat(result).isNotNull();
+        assertThat(result.articleId()).isEqualTo(articleId);
+        assertThat(result.viewedBy()).isEqualTo(userId);
+    }
 }

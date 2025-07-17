@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.fetcher.naver.dto;
+package org.project.monewping.domain.article.dto.data;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;

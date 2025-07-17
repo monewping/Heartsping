@@ -1,11 +1,10 @@
-package org.project.monewping.domain.article.fetcher.naver;
+package org.project.monewping.domain.article.fetcher;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
-import org.project.monewping.domain.article.fetcher.ArticleFetcher;
-import org.project.monewping.domain.article.fetcher.naver.dto.NaverNewsResponse;
+import org.project.monewping.domain.article.dto.response.NaverNewsResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
