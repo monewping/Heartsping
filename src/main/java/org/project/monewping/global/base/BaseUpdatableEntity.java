@@ -14,7 +14,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @NoArgsConstructor
 public abstract class BaseUpdatableEntity extends BaseEntity {
 
-  @Column(name = "updated_at")
-  @LastModifiedDate
-  private Instant updatedAt;
+    @Column(name = "updated_at")
+    @LastModifiedDate
+    private Instant updatedAt;
 }

@@ -1,0 +1,87 @@
+package org.project.monewping.domain.notification.repository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.project.monewping.domain.notification.entity.Notification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
+@DataJpaTest
+@Transactional
+@ActiveProfiles("test")
+@DisplayName("Notification Repository 슬라이스 테스트")
+public class NotificationRepositoryTest {
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    private UUID userId;
+
+    @BeforeEach
+    void setUp() throws InterruptedException {
+        userId    = UUID.randomUUID();
+        UUID resourceA = UUID.randomUUID();
+        UUID resourceB = UUID.randomUUID();
+
+        notificationRepository.save(Notification.ofForTest(
+            userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-06-30T00:00:00Z")));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article", Instant.parse("2025-07-03T00:00:10Z")));
+        notificationRepository.save(Notification.ofForTest(
+            userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment", Instant.parse("2025-07-04T00:00:20Z")));
+
+        notificationRepository.flush();
+    }
+
+    @Test
+    @DisplayName("특정 사용자의 확인하지 않은 알림 개수 반환 성공")
+    void countByUserIdAndConfirmedFalse() {
+        long count = notificationRepository.countByUserIdAndConfirmedFalse(userId);
+        assertThat(count).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("첫 페이지 조회 성공")
+    void findPageFirst() {
+        Pageable page2 = PageRequest.of(
+            0, 2,
+            Sort.by("createdAt").ascending().and(Sort.by("id").ascending())
+        );
+
+        List<Notification> page = notificationRepository.findPageFirst(userId, page2);
+        assertThat(page).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("알림 목록 조회 기능의 cursor를 이용한 페이징 처리 성공")
+    void findPageAfter() {
+        Pageable pageable = PageRequest.of(0, 2, Sort.by("createdAt").ascending());
+
+        List<Notification> firstPage = notificationRepository.findPageFirst(userId, pageable);
+        assertThat(firstPage).hasSize(2);
+
+        Notification cursorNotification = firstPage.get(1);
+        Instant cursorCreatedAt = cursorNotification.getCreatedAt();
+
+        System.out.println("Cursor → createdAt: " + cursorCreatedAt);
+
+        List<Notification> nextPage = notificationRepository.findPageAfter(
+            userId,
+            cursorCreatedAt,
+            pageable
+        );
+
+        assertThat(nextPage).extracting("content").contains("Binu님이 나의 댓글을 좋아합니다.");
+    }
+}
