@@ -103,4 +103,75 @@ public class HankyungRssFetcherTest {
         assertTrue(articles.isEmpty());
     }
 
+    @Test
+    @DisplayName("fetch() : 빈 키워드일 경우 모든 기사 반환 또는 필터링 없이 동작")
+    void fetch_ShouldHandleEmptyKeyword() {
+        // Given
+        String keyword = "";
+
+        // When
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch(keyword);
+
+        // Then
+        assertNotNull(articles);
+    }
+
+    @Test
+    @DisplayName("fetch() : 키워드가 포함되지 않은 기사는 필터링 된다")
+    void fetch_ShouldFilterOutNonMatchingArticles() {
+        // Given
+        String keyword = "키워드3"; // MOCK_RSS_XML에는 없음
+
+        // When
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch(keyword);
+
+        // Then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : RSS에 기사 아이템이 없으면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyListWhenNoItems() throws Exception {
+        // Given
+        String emptyRss = "<rss><channel></channel></rss>";
+        when(httpResponseMock.body()).thenReturn(emptyRss);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        // When
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch("키워드1");
+
+        // Then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : pubDate 파싱 실패 시에도 예외 없이 처리")
+    void fetch_ShouldHandleInvalidPubDateFormat() throws Exception {
+        // Given
+        String invalidDateRss = """
+        <rss>
+          <channel>
+            <item>
+              <title>키워드1 포함 기사</title>
+              <link>http://example.com/1</link>
+              <description>요약</description>
+              <pubDate>잘못된 날짜 포맷</pubDate>
+            </item>
+          </channel>
+        </rss>
+        """;
+
+        when(httpResponseMock.body()).thenReturn(invalidDateRss);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        // When
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch("키워드1");
+
+        // Then
+        assertNotNull(articles);
+        assertEquals(1, articles.size());  // 날짜 파싱 실패해도 기사 수집은 됨
+    }
+
 }

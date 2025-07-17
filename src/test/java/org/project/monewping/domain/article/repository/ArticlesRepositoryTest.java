@@ -2,6 +2,9 @@ package org.project.monewping.domain.article.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -9,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
+import org.project.monewping.domain.article.entity.QArticles;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.project.monewping.global.config.QuerydslConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,9 @@ import org.springframework.context.annotation.Import;
 @Import({QuerydslConfig.class, JpaAuditingConfig.class})
 @DisplayName("ArticlesRepository 테스트")
 public class ArticlesRepositoryTest {
+
+    @PersistenceContext
+    private EntityManager em;
 
     @Autowired
     private ArticlesRepository articlesRepository;
@@ -384,5 +391,124 @@ public class ArticlesRepositoryTest {
         // then
         assertThat(sources).isEmpty();
     }
+
+    @Test
+    @DisplayName("필터 조건에 맞는 기사가 없을 때 빈 리스트를 반환한다")
+    void searchArticles_noResults() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("없는관심사").subscriberCount(0).build()
+        );
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            "없는검색어",
+            interest.getId(),
+            List.of("없는출처"),
+            LocalDateTime.now().minusYears(1),
+            LocalDateTime.now().minusYears(1),
+            "publishDate",
+            "DESC",
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("after 파라미터로 커서 페이지네이션 조회가 가능하다")
+    void searchArticles_withCursorAfterId() {
+        Interest interest = interestRepository.save(
+            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+        );
+
+        LocalDateTime baseTime = LocalDateTime.of(2025, 7, 17, 12, 0);
+
+        Articles a1 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("테스트출처")
+            .originalLink("https://news.com/a1")
+            .title("기사1")
+            .summary("요약1")
+            .publishedAt(baseTime.minusMinutes(3))
+            .build());
+
+        Articles a2 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("테스트출처")
+            .originalLink("https://news.com/a2")
+            .title("기사2")
+            .summary("요약2")
+            .publishedAt(baseTime.minusMinutes(2))
+            .build());
+
+        Articles a3 = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("테스트출처")
+            .originalLink("https://news.com/a3")
+            .title("기사3")
+            .summary("요약3")
+            .publishedAt(baseTime.minusMinutes(1))
+            .build());
+
+        articlesRepository.flush();
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            List.of("테스트출처"),
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            a2.getId().toString(),
+            a2.getPublishedAt(),
+            10,
+            null
+        );
+
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo(a1.getId());
+    }
+
+    @Test
+    @DisplayName("QueryDSL Q객체로 관심사 ID로 기사 조회")
+    void queryWithQArticlesAndInterestId() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("과학").subscriberCount(0).build()
+        );
+
+        Articles article = articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("사이언스뉴스")
+            .originalLink("https://sci.com")
+            .title("양자역학 혁신")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now())
+            .build());
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        QArticles qArticles = QArticles.articles;
+
+        // when
+        List<Articles> result = queryFactory
+            .selectFrom(qArticles)
+            .where(qArticles.interest.id.eq(interest.getId()))
+            .fetch();
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).contains("양자역학");
+    }
+
 
 }
