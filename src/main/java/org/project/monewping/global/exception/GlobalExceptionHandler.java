@@ -64,11 +64,12 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.BAD_REQUEST,
             "유효성 검사 실패",
-            errors);
+            errors
+        );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
-  
+
     /**
      * 지원하지 않는 리소스 타입 예외를 처리합니다.
      *
@@ -87,7 +88,7 @@ public class GlobalExceptionHandler {
             ex.getMessage(),
             null
         );
-        
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -109,7 +110,8 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.CONFLICT,
             ex.getMessage(),
-            null);
+            null
+        );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
@@ -137,7 +139,8 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.BAD_REQUEST,
             message,
-            ex.getMessage());
+            ex.getMessage()
+        );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -163,7 +166,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
-}
 
     /*
      * 기타 예외를 처리합니다.
@@ -181,7 +183,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "서버 내부 오류가 발생했습니다.",
-            ex.getMessage());
+            ex.getMessage()
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
