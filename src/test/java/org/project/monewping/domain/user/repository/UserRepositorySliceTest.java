@@ -9,9 +9,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.user.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * UserRepository의 데이터 접근 계층 테스트
@@ -22,6 +24,8 @@ import org.hibernate.exception.ConstraintViolationException;
  * </p>
  */
 @DataJpaTest
+@EnableJpaRepositories(basePackages = "org.project.monewping.domain.user.repository")
+@EntityScan(basePackages = "org.project.monewping.domain.user.domain")
 @DisplayName("UserRepository 슬라이스 테스트")
 class UserRepositorySliceTest {
 
