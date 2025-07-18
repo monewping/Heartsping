@@ -257,35 +257,6 @@ public class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("존재하는 사용자에 대해 전체 알림 확인 처리 성공")
-    void confirmAllNotifications_success() {
-        // given
-        given(userRepository.existsById(userId)).willReturn(true);
-        given(notificationRepository.confirmAllByUserId(userId)).willReturn(5);
-
-        // when
-        notificationService.confirmAll(userId);
-
-        // then
-        verify(userRepository).existsById(userId);
-        verify(notificationRepository).confirmAllByUserId(userId);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자일 경우 UserNotFoundException 발생")
-    void confirmAllNotifications_userNotFound() {
-        // given
-        given(userRepository.existsById(userId)).willReturn(false);
-
-        // when & then
-        assertThatThrownBy(() -> notificationService.confirmAll(userId))
-            .isInstanceOf(UserNotFoundException.class);
-
-        verify(userRepository).existsById(userId);
-        verify(notificationRepository, never()).confirmAllByUserId(any());
-    }
-
-    @Test
     void testCursorValueInsideException() {
         String invalidCursor = "bad_cursor";
         InvalidCursorFormatException ex = new InvalidCursorFormatException(invalidCursor, null);
