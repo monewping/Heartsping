@@ -6,10 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.service.InterestService;
 import org.project.monewping.domain.interest.service.SubscriptionService;
@@ -100,5 +103,39 @@ public class InterestController {
                 .status(HttpStatus.OK)
                 .body(response);
 
+    }
+
+    /**
+     * 관심사의 키워드를 수정합니다.
+     *
+     * <p>관심사 이름은 수정할 수 없고, 키워드만 수정 가능합니다.
+     * 기존 키워드를 모두 제거하고 새로운 키워드 목록으로 교체합니다.</p>
+     * @param interestId 수정할 관심사 ID
+     * @param request 키워드 수정 요청 DTO
+     * @return 수정된 관심사 정보 DTO
+     * @throws InterestNotFoundException 존재하지 않는 관심사 ID인 경우
+     * @throws DuplicateKeywordException 중복된 키워드가 있는 경우
+     * @throws IllegalArgumentException 요청 데이터가 유효하지 않은 경우
+     */
+    @PatchMapping("/{interestId}")
+    public ResponseEntity<InterestDto> update(
+            @PathVariable UUID interestId,
+            @Valid @RequestBody InterestUpdateRequest request
+    ) {
+        log.info("[InterestController] 관심사 키워드 수정 API 호출: interestId={}, keywords={}", 
+                interestId, request.keywords());
+        
+        try {
+            InterestDto responseDto = interestService.update(interestId, request);
+            
+            log.info("[InterestController] 관심사 키워드 수정 API 성공: interestId={}, keywords={}", 
+                    interestId, responseDto.keywords());
+            
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            log.error("[InterestController] 관심사 키워드 수정 API 실패: interestId={}, error={}", 
+                    interestId, e.getMessage(), e);
+            throw e;
+        }
     }
 } 
