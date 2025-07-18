@@ -1,5 +1,6 @@
 package org.project.monewping.domain.notification.repository;
 
+import com.querydsl.core.types.PathMetadata;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +61,20 @@ class NotificationQueryDSLTest {
                 UUID.randomUUID(),
                 "ARTICLE"
         ));
+    }
+
+    @Test
+    @DisplayName("QNotification 생성자 테스트")
+    void testQNotificationConstructors() {
+        QNotification q1 = new QNotification("notificationAlias");
+        QNotification q2 = new QNotification(q1);
+
+        PathMetadata meta = q1.getMetadata();
+        QNotification q3 = new QNotification(meta);
+
+        assertThat(q1).isNotNull();
+        assertThat(q2).isNotNull();
+        assertThat(q3).isNotNull();
     }
 
     @Test
