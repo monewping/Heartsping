@@ -1,16 +1,18 @@
 package org.project.monewping.domain.comment.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,9 +24,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
+
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CommentService 테스트")
@@ -60,7 +64,7 @@ class CommentServiceTest {
                 .likeCount(5)
                 .createdAt(Instant.now().minus(Duration.ofHours(1)))
                 .updatedAt(Instant.now().minus(Duration.ofHours(1)))
-                .deleted(false)
+                .isDeleted(false)
                 .build(),
             Comment.builder()
                 .id(UUID.randomUUID())
@@ -71,10 +75,11 @@ class CommentServiceTest {
                 .likeCount(3)
                 .createdAt(Instant.now().minus(Duration.ofHours(2)))
                 .updatedAt(Instant.now().minus(Duration.ofHours(2)))
-                .deleted(false)
+                .isDeleted(false)
                 .build()
         );
 
+        // 테스트용 CommentResponseDto 생성
         testResponseDtos = Arrays.asList(
             new CommentResponseDto(
                 testComments.get(0).getId(),
@@ -105,8 +110,7 @@ class CommentServiceTest {
             eq(null),
             eq(50)
         )).thenReturn(testComments);
-
-        when(commentRepository.countByArticleId(eq(testArticleId))).thenReturn(2L);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(testComments.get(0))).thenReturn(testResponseDtos.get(0));
         when(commentMapper.toResponseDto(testComments.get(1))).thenReturn(testResponseDtos.get(1));
@@ -147,6 +151,7 @@ class CommentServiceTest {
             eq(after),
             eq(limit)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -175,6 +180,7 @@ class CommentServiceTest {
             any(),
             any(Integer.class)
         )).thenReturn(Arrays.asList());
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(0L);
 
         // When
         CursorPageResponse<CommentResponseDto> result = commentService.getComments(
@@ -204,6 +210,7 @@ class CommentServiceTest {
             eq(null),
             eq(limit)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -216,7 +223,7 @@ class CommentServiceTest {
 
         // Then
         assertThat(result.content()).hasSize(2);
-        assertThat(result.hasNext()).isTrue(); // size == limit이므로 true
+        assertThat(result.hasNext()).isTrue();
     }
 
     @Test
@@ -233,6 +240,7 @@ class CommentServiceTest {
             eq(null),
             eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -263,6 +271,7 @@ class CommentServiceTest {
             eq(after),
             eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -290,6 +299,7 @@ class CommentServiceTest {
             eq(null),
             eq(50)
         )).thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
 
         when(commentMapper.toResponseDto(any(Comment.class)))
             .thenReturn(testResponseDtos.get(0))
@@ -304,6 +314,7 @@ class CommentServiceTest {
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
     }
+
     @Test
     @DisplayName("댓글 등록 성공")
     void registerComment_Success() {
@@ -321,7 +332,7 @@ class CommentServiceTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .likeCount(0)
-            .deleted(false)
+            .isDeleted(false)
             .build();
 
         when(commentMapper.toEntity(any(CommentRegisterRequestDto.class))).thenReturn(mockComment);
@@ -331,4 +342,86 @@ class CommentServiceTest {
         verify(commentRepository).save(any(Comment.class));
     }
 
+    @Test
+    @DisplayName("댓글 논리 삭제 성공")
+    void deleteComment_Success() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        commentService.deleteComment(commentId, userId);
+
+        assertThat(comment.getIsDeleted()).isTrue();
+        verify(commentRepository).save(comment);
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
+    void deleteComment_Fail_NotOwner() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID attackerId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(ownerId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteComment(commentId, attackerId))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공")
+    void deleteCommentPhysically_Success() {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(userId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        commentService.deleteCommentPhysically(commentId, userId);
+
+        verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
+    void deleteCommentPhysically_Fail_NotOwner() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID attackerId = UUID.randomUUID();
+
+        Comment comment = Comment.builder()
+            .id(commentId)
+            .userId(ownerId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteCommentPhysically(commentId, attackerId))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
+    }
 }

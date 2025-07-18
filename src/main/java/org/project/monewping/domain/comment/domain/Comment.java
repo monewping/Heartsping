@@ -1,6 +1,7 @@
 package org.project.monewping.domain.comment.domain;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -35,4 +36,18 @@ public class Comment extends BaseUpdatableEntity {
 
     @Column(nullable = false)
     private Boolean deleted;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted;
+
+    public void delete() {
+        this.isDeleted = true;
+        this.updatedAt = Instant.now();
+    }
 }
