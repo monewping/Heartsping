@@ -257,6 +257,14 @@ public class NotificationServiceTest {
     }
 
     @Test
+    void testCursorValueInsideException() {
+        String invalidCursor = "bad_cursor";
+        InvalidCursorFormatException ex = new InvalidCursorFormatException(invalidCursor, null);
+
+        assertThat(ex.getCursor()).isEqualTo(invalidCursor);
+    }
+
+    @Test
     @DisplayName("존재하는 사용자에 대해 전체 알림 확인 처리 성공")
     void confirmAllNotifications_success() {
         // given
@@ -283,13 +291,5 @@ public class NotificationServiceTest {
 
         verify(userRepository).existsById(userId);
         verify(notificationRepository, never()).confirmAllByUserId(any());
-    }
-
-    @Test
-    void testCursorValueInsideException() {
-        String invalidCursor = "bad_cursor";
-        InvalidCursorFormatException ex = new InvalidCursorFormatException(invalidCursor, null);
-
-        assertThat(ex.getCursor()).isEqualTo(invalidCursor);
     }
 }
