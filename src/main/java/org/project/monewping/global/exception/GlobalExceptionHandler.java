@@ -10,6 +10,7 @@ import org.project.monewping.domain.interest.exception.DuplicateKeywordException
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;

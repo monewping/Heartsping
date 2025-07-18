@@ -158,4 +158,29 @@ public class InterestController {
                 .status(HttpStatus.OK)
                 .body(response);
     }
+
+    /**
+     * 관심사를 삭제합니다.
+     *
+     * <p>관심사가 존재하는지 확인한 후 물리적으로 삭제합니다.
+     * 관심사와 연관된 키워드도 함께 삭제됩니다.</p>
+     * @param interestId 삭제할 관심사 ID
+     * @return 204 No Content 응답
+     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
+     */
+    @DeleteMapping("/{interestId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID interestId) {
+        log.info("[InterestController] 관심사 삭제 API 호출: interestId={}", interestId);
+        
+        try {
+            interestService.delete(interestId);
+            
+            log.info("[InterestController] 관심사 삭제 API 성공: interestId={}", interestId);
+            
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("[InterestController] 관심사 삭제 API 실패: interestId={}, error={}", interestId, e.getMessage(), e);
+            throw e;
+        }
+    }
 } 

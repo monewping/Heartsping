@@ -11,6 +11,10 @@ import java.util.UUID;
 public interface InterestService {
 
     InterestDto create(InterestRegisterRequest request);
+  
     CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID);
+
     InterestDto update(UUID interestId, InterestUpdateRequest request);
+
+    void delete(UUID interestId);
 } 

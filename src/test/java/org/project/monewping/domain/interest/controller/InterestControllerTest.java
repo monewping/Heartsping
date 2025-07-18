@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(InterestController.class)
+@WebMvcTest({InterestController.class, org.project.monewping.global.exception.GlobalExceptionHandler.class})
 @TestPropertySource(properties = "auditing.enabled=false")
 @WithMockUser
 class InterestControllerTest {
@@ -271,5 +271,35 @@ class InterestControllerTest {
                 .andExpect(jsonPath("$.interestSubscriberCount").value(9L))
                 .andExpect(jsonPath("$.interestKeywords[0]").value("대한민국"))
                 .andExpect(jsonPath("$.interestKeywords[1]").value("일본"));
+    }
+
+    @Test
+    @DisplayName("관심사 삭제 API를 호출하면 204 No Content가 반환된다")
+    void should_return204_when_deleteInterest() throws Exception {
+        // Given
+        UUID interestId = UUID.randomUUID();
+
+        // When & Then
+        mockMvc.perform(delete("/api/interests/{interestId}", interestId)
+                .with(csrf()) // CSRF 토큰 추가
+        )
+        .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 관심사 삭제 시도 시 404 Not Found가 반환된다")
+    void should_return404_when_deleteNonExistentInterest() throws Exception {
+        // Given
+        UUID interestId = UUID.randomUUID();
+
+        org.mockito.BDDMockito.willThrow(new org.project.monewping.domain.interest.exception.InterestNotFoundException(interestId))
+                .given(interestService).delete(interestId);
+
+        // When & Then
+        mockMvc.perform(delete("/api/interests/{interestId}", interestId)
+                .with(csrf()) // CSRF 토큰 추가
+        )
+        .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+        .andExpect(status().isNotFound());
     }
 } 
