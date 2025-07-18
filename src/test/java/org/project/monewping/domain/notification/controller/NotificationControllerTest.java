@@ -114,4 +114,21 @@ public class NotificationControllerTest {
 
         verify(notificationService).confirmAll(userId);
     }
+
+    @Test
+    @DisplayName("PATCH /api/notifications/{notificationId} – 알림 확인 처리 성공")
+    void testConfirmNotification() throws Exception {
+        // given
+        UUID notificationId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(patch("/api/notifications/{notificationId}", notificationId)
+                .header("Monew-Request-User-ID", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isOk());
+
+        // verify
+        verify(notificationService).confirmNotification(userId, notificationId);
+    }
 }
