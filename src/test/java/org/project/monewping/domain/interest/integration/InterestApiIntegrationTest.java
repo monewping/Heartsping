@@ -4,10 +4,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.entity.Subscription;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
@@ -349,5 +352,217 @@ class InterestApiIntegrationTest {
                 assertThat(dto.subscribedByMe()).isFalse();
             }
         });
+    }
+
+    /* 관심사 키워드 수정 */
+    @Test
+    @DisplayName("관심사 키워드를 정상적으로 수정할 수 있다")
+    void should_updateInterestKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("수정테스트", List.of("기존키워드1", "기존키워드2"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        List<String> newKeywords = Arrays.asList("새키워드1", "새키워드2", "새키워드3");
+        InterestUpdateRequest updateRequest = new InterestUpdateRequest(newKeywords);
+
+        // When
+        var result = interestService.update(interestId, updateRequest);
+
+        // Then
+        assertThat(result.id()).isEqualTo(interestId);
+        assertThat(result.name()).isEqualTo("수정테스트");
+        assertThat(result.keywords()).containsExactlyInAnyOrder("새키워드1", "새키워드2", "새키워드3");
+        assertThat(result.subscriberCount()).isEqualTo(0L);
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getKeywords()).hasSize(3);
+        assertThat(savedInterest.getKeywords())
+                .extracting(Keyword::getName)
+                .containsExactlyInAnyOrder("새키워드1", "새키워드2", "새키워드3");
+    }
+
+    @Test
+    @DisplayName("키워드를 빈 리스트로 수정하면 예외가 발생한다")
+    void should_throwException_when_emptyList() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("빈리스트테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList());
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("키워드는 1개 이상 10개 이하로 입력해야 합니다");
+    }
+
+    @Test
+    @DisplayName("키워드를 null로 수정하면 예외가 발생한다")
+    void should_throwException_when_nullKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("null테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        InterestUpdateRequest request = new InterestUpdateRequest(null);
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("키워드는 필수입니다");
+    }
+
+    @Test
+    @DisplayName("중복된 키워드가 있으면 예외가 발생한다")
+    void should_throwException_when_duplicateKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("중복테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        List<String> duplicateKeywords = Arrays.asList("키워드1", "키워드1", "키워드2");
+        InterestUpdateRequest request = new InterestUpdateRequest(duplicateKeywords);
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(DuplicateKeywordException.class)
+                .hasMessageContaining("중복된 키워드입니다");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 관심사 ID로 수정 시 예외가 발생한다")
+    void should_throwException_when_nonExistentInterest() {
+        // Given
+        UUID nonExistentId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("키워드1"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(nonExistentId, request))
+                .isInstanceOf(InterestNotFoundException.class)
+                .hasMessageContaining("관심사를 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("빈 문자열이나 null 키워드는 무시된다")
+    void should_ignoreEmptyOrNullKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("무시테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        List<String> mixedKeywords = Arrays.asList("유효키워드1", "", null, "유효키워드2", "   ");
+        InterestUpdateRequest request = new InterestUpdateRequest(mixedKeywords);
+
+        // When
+        var result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result.keywords()).containsExactlyInAnyOrder("유효키워드1", "유효키워드2");
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getKeywords()).hasSize(2);
+        assertThat(savedInterest.getKeywords())
+                .extracting(Keyword::getName)
+                .containsExactlyInAnyOrder("유효키워드1", "유효키워드2");
+    }
+
+    @Test
+    @DisplayName("키워드 수정 시 관심사 이름은 변경되지 않는다")
+    void should_notChangeInterestName_when_updateKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("이름변경방지테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        String originalName = createdDto.name();
+        
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("새키워드"));
+
+        // When
+        var result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result.name()).isEqualTo(originalName);
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getName()).isEqualTo(originalName);
+    }
+
+    @Test
+    @DisplayName("키워드 수정 시 구독자 수는 변경되지 않는다")
+    void should_notChangeSubscriberCount_when_updateKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("구독자수변경방지테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        Long originalSubscriberCount = createdDto.subscriberCount();
+        
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("새키워드"));
+
+        // When
+        var result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result.subscriberCount()).isEqualTo(originalSubscriberCount);
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getSubscriberCount()).isEqualTo(originalSubscriberCount);
+    }
+
+    @Test
+    @DisplayName("키워드 앞뒤 공백이 제거된다")
+    void should_trimKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("공백제거테스트", List.of("키워드1"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        List<String> keywordsWithSpaces = Arrays.asList("  키워드1  ", "키워드2   ", "   키워드3");
+        InterestUpdateRequest request = new InterestUpdateRequest(keywordsWithSpaces);
+
+        // When
+        var result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result.keywords()).containsExactlyInAnyOrder("키워드1", "키워드2", "키워드3");
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getKeywords())
+                .extracting(Keyword::getName)
+                .containsExactlyInAnyOrder("키워드1", "키워드2", "키워드3");
+    }
+
+    @Test
+    @DisplayName("기존 키워드를 완전히 새로운 키워드로 교체할 수 있다")
+    void should_replaceAllKeywords() {
+        // Given
+        InterestRegisterRequest createRequest = new InterestRegisterRequest("교체테스트", List.of("기존키워드1", "기존키워드2"));
+        var createdDto = interestService.create(createRequest);
+        UUID interestId = createdDto.id();
+        
+        List<String> completelyNewKeywords = Arrays.asList("완전히새로운키워드1", "완전히새로운키워드2");
+        InterestUpdateRequest request = new InterestUpdateRequest(completelyNewKeywords);
+
+        // When
+        var result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result.keywords()).containsExactlyInAnyOrder("완전히새로운키워드1", "완전히새로운키워드2");
+        assertThat(result.keywords()).doesNotContain("기존키워드1", "기존키워드2");
+
+        // DB에서도 확인
+        Interest savedInterest = interestRepository.findById(interestId).orElseThrow();
+        assertThat(savedInterest.getKeywords())
+                .extracting(Keyword::getName)
+                .containsExactlyInAnyOrder("완전히새로운키워드1", "완전히새로운키워드2");
+        assertThat(savedInterest.getKeywords())
+                .extracting(Keyword::getName)
+                .doesNotContain("기존키워드1", "기존키워드2");
     }
 }

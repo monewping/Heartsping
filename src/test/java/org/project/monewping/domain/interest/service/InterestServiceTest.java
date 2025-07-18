@@ -9,11 +9,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
@@ -356,5 +359,120 @@ class InterestServiceTest {
         verify(interestRepository).findAllNames();
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
+    }
+
+    // === 관심사 키워드 수정 테스트 ===
+    @Test
+    @DisplayName("유효한 키워드 수정 요청 시 성공적으로 수정된다")
+    void should_updateInterestKeywords_when_validRequest() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("새키워드1", "새키워드2"));
+        Interest existingInterest = Interest.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .subscriberCount(5L)
+                .build();
+        Interest savedInterest = Interest.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .subscriberCount(5L)
+                .build();
+        InterestDto expectedDto = InterestDto.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .keywords(Arrays.asList("새키워드1", "새키워드2"))
+                .subscriberCount(5L)
+                .subscribedByMe(false)
+                .build();
+
+        given(interestRepository.findById(interestId)).willReturn(java.util.Optional.of(existingInterest));
+        given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
+        given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
+
+        // When
+        InterestDto result = interestService.update(interestId, request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(interestId);
+        assertThat(result.keywords()).containsExactlyInAnyOrder("새키워드1", "새키워드2");
+        verify(interestRepository).findById(interestId);
+        verify(interestRepository).save(any(Interest.class));
+        verify(interestMapper).toDto(savedInterest);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 관심사 ID로 수정 시 InterestNotFoundException이 발생한다")
+    void should_throwInterestNotFoundException_when_nonExistentInterest() {
+        // Given
+        UUID nonExistentId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("키워드1"));
+        given(interestRepository.findById(nonExistentId)).willReturn(java.util.Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(nonExistentId, request))
+                .isInstanceOf(InterestNotFoundException.class)
+                .hasMessageContaining("관심사를 찾을 수 없습니다: " + nonExistentId);
+    }
+
+    @Test
+    @DisplayName("중복된 키워드가 있으면 DuplicateKeywordException이 발생한다")
+    void should_throwDuplicateKeywordException_when_duplicateKeywords() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("키워드1", "키워드1", "키워드2"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(DuplicateKeywordException.class)
+                .hasMessageContaining("중복된 키워드입니다");
+    }
+
+    @Test
+    @DisplayName("빈 키워드 리스트로 수정하면 예외가 발생한다")
+    void should_throwException_when_emptyList() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList());
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("키워드는 1개 이상 10개 이하로 입력해야 합니다");
+    }
+
+    @Test
+    @DisplayName("null 키워드로 수정하면 예외가 발생한다")
+    void should_throwException_when_nullKeywords() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(null);
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("키워드는 필수입니다");
+    }
+
+    @Test
+    @DisplayName("저장 중 예외 발생 시 InterestCreationException이 발생한다")
+    void should_throwInterestCreationException_when_updateSaveFails() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        InterestUpdateRequest request = new InterestUpdateRequest(Arrays.asList("키워드1"));
+        Interest existingInterest = Interest.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .subscriberCount(5L)
+                .build();
+
+        given(interestRepository.findById(interestId)).willReturn(java.util.Optional.of(existingInterest));
+        given(interestRepository.save(any(Interest.class))).willThrow(new RuntimeException("DB Error"));
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.update(interestId, request))
+                .isInstanceOf(InterestCreationException.class)
+                .hasMessage("관심사 키워드 수정 중 오류가 발생했습니다.");
     }
 } 
