@@ -3,6 +3,11 @@ package org.project.monewping.global.exception;
 import java.time.Instant;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
+import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,20 +15,23 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
+import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 
 import java.util.stream.Collectors;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 전역 예외 처리를 담당하는 컨트롤러 어드바이스
- * 
+ *
  * <p>
  * 애플리케이션 전체에서 발생하는 예외를 일관된 형태로 처리하여
  * 클라이언트에게 적절한 HTTP 상태 코드와 오류 메시지를 제공합니다.
  * </p>
- * 
+ *
  * <p>
  * 처리하는 예외 유형:
  * </p>
@@ -32,20 +40,43 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * <li>{@link EmailAlreadyExistsException} - 이메일 중복</li>
  * <li>{@link Exception} - 기타 예외</li>
  * </ul>
- * 
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  @ExceptionHandler(DuplicateInterestNameException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateInterestNameException(DuplicateInterestNameException e) {
+    ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_INTEREST_NAME", e.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
+
+  @ExceptionHandler(SimilarInterestNameException.class)
+  public ResponseEntity<ErrorResponse> handleSimilarInterestNameException(SimilarInterestNameException e) {
+    ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "SIMILAR_INTEREST_NAME", e.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
+
+  @ExceptionHandler(InterestCreationException.class)
+  public ResponseEntity<ErrorResponse> handleInterestCreationException(InterestCreationException e) {
+    ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTEREST_CREATION_ERROR", e.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+    ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", e.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
   /**
    * Bean Validation 실패 시 예외를 처리합니다.
-   * 
+   *
    * <p>
-   * 
+   *
    * @Valid 애노테이션을 사용한 유효성 검사 실패 시 발생하는 예외를 처리하여
    *        400 Bad Request 상태 코드와 함께 상세한 오류 메시지를 반환합니다.
    *        </p>
-   * 
+   *
    * @param ex 유효성 검사 실패 예외
    * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -64,19 +95,42 @@ public class GlobalExceptionHandler {
     ErrorResponse errorResponse = ErrorResponse.of(
         HttpStatus.BAD_REQUEST,
         "유효성 검사 실패",
-        errors);
+        errors
+    );
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  /**
+   * 지원하지 않는 리소스 타입 예외를 처리합니다.
+   *
+   * <p>UnsupportedResourceTypeException이 발생하면 이 메서드가 호출되어
+   * HTTP 400 Bad Request 상태 코드와 함께 에러 정보를 담은 ErrorResponse를 반환합니다.</p>
+   *
+   * @param ex 발생한 UnsupportedResourceTypeException
+   * @return HTTP 400 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+   */
+  @ExceptionHandler(UnsupportedResourceTypeException.class)
+  public ResponseEntity<ErrorResponse> handleUnsupportedResourceTypeException(
+      UnsupportedResourceTypeException ex
+  ) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST,
+        ex.getMessage(),
+        null
+    );
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
 
   /**
    * 이메일 중복 예외를 처리합니다.
-   * 
+   *
    * <p>
    * 회원가입 시 동일한 이메일을 가진 사용자가 이미 존재하는 경우 발생하는 예외를 처리하여
    * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex 이메일 중복 예외
    * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -87,19 +141,20 @@ public class GlobalExceptionHandler {
     ErrorResponse errorResponse = ErrorResponse.of(
         HttpStatus.CONFLICT,
         ex.getMessage(),
-        null);
+        null
+    );
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
   }
 
   /**
    * JSON 파싱 오류를 처리합니다.
-   * 
+   *
    * <p>
    * 잘못된 JSON 형식으로 인해 발생하는 예외를 처리하여
    * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex JSON 파싱 예외
    * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -115,19 +170,59 @@ public class GlobalExceptionHandler {
     ErrorResponse errorResponse = ErrorResponse.of(
         HttpStatus.BAD_REQUEST,
         message,
-        ex.getMessage());
+        ex.getMessage()
+    );
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
 
   /**
+   * 알림을 찾을 수 없을 때 발생하는 예외를 처리합니다.
+   *
+   * <p>NotificationNotFoundException이 발생하면 이 메서드가 호출되어
+   * HTTP 404 Not Found 상태 코드와 함께 에러 정보를 담은 ErrorResponse를 반환합니다.</p>
+   *
+   * @param ex 발생한 NotificationNotFoundException
+   * @return HTTP 404 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+   */
+  @ExceptionHandler(NotificationNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNotificationNotFoundException(
+      NotificationNotFoundException ex
+  ) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.NOT_FOUND,
+        ex.getMessage(),
+        null
+    );
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+  }
+
+  /**
+   * 사용자를 조회할 수 없을 때 발생하는 예외를 처리합니다.
+   *
+   * @param ex 발생한 UserNotFoundException
+   * @return HTTP 404 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+   */
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.NOT_FOUND,
+        "사용자를 조회할 수 없습니다.",
+        ex.getMessage()
+    );
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+  }
+
+  /**
    * 기타 예외를 처리합니다.
-   * 
+   *
    * <p>
    * 명시적으로 처리되지 않은 모든 예외를 처리하여
    * 500 Internal Server Error 상태 코드와 함께 일반적인 오류 메시지를 반환합니다.
    * </p>
-   * 
+   *
    * @param ex 처리되지 않은 예외
    * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
    */
@@ -136,12 +231,79 @@ public class GlobalExceptionHandler {
     ErrorResponse errorResponse = ErrorResponse.of(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "서버 내부 오류가 발생했습니다.",
-        ex.getMessage());
+        ex.getMessage()
+    );
 
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
   }
-  
-    /**
+
+  /**
+   * 중복 기사 조회 예외 처리 (409 Conflict).
+   */
+  @ExceptionHandler(DuplicateArticleViewsException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateArticleView(DuplicateArticleViewsException ex) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.CONFLICT,
+        "이미 조회한 기사입니다.",
+        ex.getMessage()
+    );
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
+
+  /**
+   * UUID 형식 오류 등 잘못된 요청 파라미터 예외 처리 (400 Bad Request).
+   */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST,
+        "잘못된 요청 형식입니다.",
+        ex.getMessage()
+    );
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  /**
+   * 필수 요청 헤더 누락 예외 처리 (400 Bad Request).
+   */
+  @ExceptionHandler(MissingRequestHeaderException.class)
+  public ResponseEntity<ErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST,
+        "필수 요청 헤더가 누락되었습니다.",
+        "누락된 헤더 이름: " + ex.getHeaderName()
+    );
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  /**
+   * 로그인 실패 예외를 처리합니다.
+   *
+   * <p>
+   * 로그인 시 이메일 또는 비밀번호가 일치하지 않는 경우 발생하는 예외를 처리하여
+   * 401 Unauthorized 상태 코드와 함께 오류 메시지를 반환합니다.
+   * </p>
+   *
+   * @param ex 로그인 실패 예외
+   * @return 401 Unauthorized 상태와 오류 정보를 포함한 ResponseEntity
+   */
+  @ExceptionHandler(LoginFailedException.class)
+  public ResponseEntity<ErrorResponse> handleLoginFailedException(
+      LoginFailedException ex) {
+
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.UNAUTHORIZED,
+        ex.getMessage(),
+        null);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+  }
+
+
+  /**
    * 댓글 삭제 예외 처리
    * <p>
    * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
@@ -149,17 +311,16 @@ public class GlobalExceptionHandler {
    * @param ex CommentDeleteException
    * @return 403 Forbidden 에러 응답
    */
-    @ExceptionHandler(CommentDeleteException.class)
-    public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
-        ErrorResponse response = new ErrorResponse(
-            Instant.now(),
-            HttpStatus.FORBIDDEN.value(),
-            HttpStatus.FORBIDDEN.getReasonPhrase(),
-            ex.getMessage()
-        );
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-    }
+  @ExceptionHandler(CommentDeleteException.class)
+  public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
+    ErrorResponse response = new ErrorResponse(
+        Instant.now(),
+        HttpStatus.FORBIDDEN.value(),
+        HttpStatus.FORBIDDEN.getReasonPhrase(),
+        ex.getMessage()
+    );
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+  }
 
   /**
    * 댓글 조회 실패 예외 처리
@@ -169,56 +330,32 @@ public class GlobalExceptionHandler {
    * @param ex CommentNotFoundException
    * @return 404 Not Found 에러 응답
    */
-    @ExceptionHandler(CommentNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
-        ErrorResponse response = new ErrorResponse(
-            Instant.now(),
-            HttpStatus.NOT_FOUND.value(),
-            HttpStatus.NOT_FOUND.getReasonPhrase(),
-            ex.getMessage()
-        );
+  @ExceptionHandler(CommentNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
+    ErrorResponse response = new ErrorResponse(
+        Instant.now(),
+        HttpStatus.NOT_FOUND.value(),
+        HttpStatus.NOT_FOUND.getReasonPhrase(),
+        ex.getMessage()
+    );
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+  }
 
-    /**
-     * 잘못된 요청 파라미터 타입 예외 처리 핸들러.
-     * <p>
-     * 예를 들어, UUID와 같은 파라미터가 잘못된 형식일 때 발생하는
-     * {@link MethodArgumentTypeMismatchException}을 처리하여
-     * HTTP 400 Bad Request 응답을 반환합니다.
-     *
-     * @param ex MethodArgumentTypeMismatchException 예외
-     * @return 400 Bad Request와 에러 응답 본문
-     */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
-        ErrorResponse response = new ErrorResponse(
-            Instant.now(),
-            400,
-            "잘못된 요청입니다. (파라미터 타입 오류)",
-            ex.getMessage()
-        );
-        return ResponseEntity.badRequest().body(response);
-    }
+  /**
+   * 잘못된 요청 파라미터 타입 예외 처리
+   * <p>
+   * 예: UUID 등 타입이 맞지 않는 경우 400 Bad Request 반환
+   */
 
-    /**
-     * 요청 파라미터 누락 예외 처리 핸들러.
-     * <p>
-     * 필수 요청 파라미터가 누락된 경우 {@link MissingServletRequestParameterException}을 처리하여
-     * HTTP 400 Bad Request 응답을 반환합니다.
-     *
-     * @param ex MissingServletRequestParameterException 예외
-     * @return 400 Bad Request와 에러 응답 본문
-     */
-      @ExceptionHandler(MissingServletRequestParameterException.class)
-      public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
-          ErrorResponse response = new ErrorResponse(
-              Instant.now(),
-              400,
-              "잘못된 요청입니다. (필수 파라미터 누락)",
-              ex.getMessage()
-          );
-          return ResponseEntity.badRequest().body(response);
-      }
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException ex) {
+    ErrorResponse errorResponse = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST,
+        "필수 요청 파라미터가 누락되었습니다: " + ex.getParameterName(),
+        ex.getMessage()
+    );
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
 }

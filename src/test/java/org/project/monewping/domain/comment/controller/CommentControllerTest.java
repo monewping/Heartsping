@@ -52,7 +52,7 @@ class CommentControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentController)
-            .setControllerAdvice(new GlobalExceptionHandler()) // ✅ 예외 핸들러 추가!
+            .setControllerAdvice(new GlobalExceptionHandler())
             .build();
 
         testArticleId = UUID.randomUUID();
@@ -235,7 +235,7 @@ class CommentControllerTest {
         mockMvc.perform(post("/api/comments")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
-            .andExpect(status().isOk());
+            .andExpect(status().isCreated());
     }
 
     @Test

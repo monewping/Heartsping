@@ -11,8 +11,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
+
+  devtools:
+    restart:
+      # 기본 제외 패턴 유지하고 추가로 mapper 클래스 제외
+      additional-exclude: "**/mapper/**/*MapperImpl.class"
+      log-condition-evaluation-delta: true
 
 logging:
   level:
@@ -20,3 +26,5 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     org.springframework.test: debug
+    org.springframework.boot.devtools.restart: trace
+    org.springframework.boot.devtools.classpath: trace
