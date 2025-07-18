@@ -1,9 +1,16 @@
 package org.project.monewping.global.exception;
 
+import java.time.Instant;
+import java.util.stream.Collectors;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
-import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
+import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
+import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
@@ -13,12 +20,9 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
-import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
-
-import java.util.stream.Collectors;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
@@ -277,6 +281,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 필수 요청 파라미터가 누락되었을 때 발생하는 예외를 처리합니다.
+     * 클라이언트에 누락된 파라미터 이름과 함께 400 Bad Request 상태 코드를 반환합니다.
+     *
+     * @param ex 누락된 요청 파라미터 정보를 담은 예외 객체
+     * @return 누락된 파라미터 정보를 포함한 에러 응답과 400 상태 코드
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
+        String paramName = ex.getParameterName();
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),               // 타임스탬프
+            HttpStatus.BAD_REQUEST.value(),    // 상태 코드 400
+            "필수 요청 파라미터 '" + paramName + "'가 누락되었습니다.",  // 메시지
+            ex.getMessage()                    // 상세 정보
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+
+    /**
      * 로그인 실패 예외를 처리합니다.
      *
      * <p>
@@ -300,6 +324,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 댓글 삭제 예외 처리
+     * <p>
+     * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
+     *
+     * @param ex CommentDeleteException
+     * @return 403 Forbidden 에러 응답
+     */
+    @ExceptionHandler(CommentDeleteException.class)
+    public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.FORBIDDEN.value(),
+            HttpStatus.FORBIDDEN.getReasonPhrase(),
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    /**
      * 배치 작업 실행 중 발생한 {@link NotificationBatchRunException} 예외를 처리합니다.
      *
      * @param ex 발생한 예외 객체
@@ -314,5 +357,42 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * 댓글 조회 실패 예외 처리
+     * <p>
+     * 존재하지 않는 댓글 ID로 삭제 또는 조회 시도할 경우 404 Not Found 응답을 반환한다.
+     *
+     * @param ex CommentNotFoundException
+     * @return 404 Not Found 에러 응답
+     */
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
+     * 잘못된 커서 형식(ISO-8601이 아닌 문자열)이 전달된 경우 예외 처리
+     *
+     * @param ex 처리할 InvalidCursorFormatException
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(InvalidCursorFormatException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCursorFormatException(InvalidCursorFormatException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST,
+            "잘못된 커서 형식입니다. ISO-8601 형식을 사용하세요",
+                ex.getCursor()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

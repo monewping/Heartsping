@@ -68,6 +68,7 @@ public class NotificationIntegrationTest {
         resourceId = UUID.randomUUID();
     }
 
+    @DisplayName("알림 생성 후 조회 시 등록한 알림이 반환된다")
     @Test
     void testCreateAndGetNotifications() throws Exception {
         mockMvc.perform(post("/api/notifications")
@@ -109,5 +110,31 @@ public class NotificationIntegrationTest {
         List<Notification> all = notificationRepository.findAll();
         assertThat(all).isNotEmpty()
             .allMatch(Notification::getConfirmed);
+    }
+
+    @Test
+    @DisplayName("알림 확인 시 confirmed 필드가 true로 변경")
+    void testConfirmNotification() throws Exception {
+        // given
+        Notification notification = new Notification(
+            userId,
+            "루피님이 나의 댓글을 좋아합니다.",
+            resourceId,
+            "Comment"
+        );
+        notificationRepository.saveAndFlush(notification);
+
+        // when
+        mockMvc.perform(patch("/api/notifications/" + notification.getId())
+                .header("Monew-Request-User-ID", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isOk());
+
+        // then
+        Notification updated = notificationRepository.findById(notification.getId()).orElseThrow();
+        assertThat(updated.getConfirmed())
+            .as("알림 확인 요청 후 confirmed 값이 true로 변경되어야 한다")
+            .isTrue();
     }
 }

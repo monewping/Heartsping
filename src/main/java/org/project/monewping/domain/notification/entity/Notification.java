@@ -40,6 +40,10 @@ public class Notification extends BaseUpdatableEntity {
         this.confirmed = false;
     }
 
+    public void confirm() {
+        this.confirmed = true;
+    }
+
     @Override
     public String toString() {
         return "Notification {" +

@@ -2,6 +2,7 @@ package org.project.monewping.domain.notification.repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.springframework.data.domain.Page;
@@ -92,6 +93,15 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             AND n.confirmed = false
         """)
     int confirmAllByUserId(@Param("userId") UUID userId);
+
+    /**
+     * userId가 일치하는 notification을 조회합니다.
+     *
+     * @param notificationId 조회할 알림의 ID
+     * @param userId 알림을 조회할 사용자 ID
+     * @return Optional.empty()면 존재하지 않는 알림이거나 다른 사용자의 알림
+     */
+    Optional<Notification> findByIdAndUserId(UUID notificationId, UUID userId);
 
     /**
      * 확인된(confirmed = true) 알림 중, 1주일이 경과된 알림들을 페이지 단위로 조회합니다.
