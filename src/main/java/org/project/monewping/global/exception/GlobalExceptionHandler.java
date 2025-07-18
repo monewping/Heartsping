@@ -1,5 +1,8 @@
 package org.project.monewping.global.exception;
 
+import java.time.Instant;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
@@ -11,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -276,6 +280,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 필수 요청 파라미터가 누락되었을 때 발생하는 예외를 처리합니다.
+     * 클라이언트에 누락된 파라미터 이름과 함께 400 Bad Request 상태 코드를 반환합니다.
+     *
+     * @param ex 누락된 요청 파라미터 정보를 담은 예외 객체
+     * @return 누락된 파라미터 정보를 포함한 에러 응답과 400 상태 코드
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
+        String paramName = ex.getParameterName();
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),               // 타임스탬프
+            HttpStatus.BAD_REQUEST.value(),    // 상태 코드 400
+            "필수 요청 파라미터 '" + paramName + "'가 누락되었습니다.",  // 메시지
+            ex.getMessage()                    // 상세 정보
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+
+    /**
      * 로그인 실패 예외를 처리합니다.
      *
      * <p>
@@ -297,4 +321,45 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
+
+
+    /**
+   * 댓글 삭제 예외 처리
+   * <p>
+   * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
+   *
+   * @param ex CommentDeleteException
+   * @return 403 Forbidden 에러 응답
+   */
+    @ExceptionHandler(CommentDeleteException.class)
+    public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.FORBIDDEN.value(),
+            HttpStatus.FORBIDDEN.getReasonPhrase(),
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+  /**
+   * 댓글 조회 실패 예외 처리
+   * <p>
+   * 존재하지 않는 댓글 ID로 삭제 또는 조회 시도할 경우 404 Not Found 응답을 반환한다.
+   *
+   * @param ex CommentNotFoundException
+   * @return 404 Not Found 에러 응답
+   */
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
 }

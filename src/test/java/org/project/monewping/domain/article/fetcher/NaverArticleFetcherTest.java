@@ -105,6 +105,73 @@ public class NaverArticleFetcherTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    @DisplayName("fetch() : HTTP 상태 코드가 200이 아니면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyList_WhenHttpStatusIsNotOK() {
+        // given
+        ResponseEntity<NaverNewsResponse> responseEntity =
+            new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(NaverNewsResponse.class)
+        )).thenReturn(responseEntity);
+
+        // when
+        List<ArticleSaveRequest> articles = naverArticleFetcher.fetch("테스트키워드");
+
+        // then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : 응답 바디가 null이면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyList_WhenResponseBodyIsNull() {
+        // given
+        ResponseEntity<NaverNewsResponse> responseEntity =
+            new ResponseEntity<>(null, HttpStatus.OK);
+
+        when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(NaverNewsResponse.class)
+        )).thenReturn(responseEntity);
+
+        // when
+        List<ArticleSaveRequest> articles = naverArticleFetcher.fetch("테스트키워드");
+
+        // then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : 뉴스 아이템 리스트가 빈 경우 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyList_WhenItemsListIsEmpty() {
+        // given
+        NaverNewsResponse responseBody = new NaverNewsResponse(List.of());
+
+        ResponseEntity<NaverNewsResponse> responseEntity =
+            new ResponseEntity<>(responseBody, HttpStatus.OK);
+
+        when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(NaverNewsResponse.class)
+        )).thenReturn(responseEntity);
+
+        // when
+        List<ArticleSaveRequest> articles = naverArticleFetcher.fetch("테스트키워드");
+
+        // then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
 
 
     private void setPrivateField(Object target, String fieldName, Object value) throws Exception{

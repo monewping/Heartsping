@@ -2,6 +2,8 @@ package org.project.monewping.domain.article.fetcher;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -135,6 +137,84 @@ public class ArticleCollectorSchedulerTest {
         // Then: 아무런 저장 작업이 수행되지 않음
         verifyNoInteractions(articlesService);
     }
+
+    @Test
+    @DisplayName("fetch가 null을 반환하면 저장을 호출하지 않는다")
+    void collectArticles_ShouldNotSaveWhenFetcherReturnsNull() throws Exception {
+        // Given
+        Interest interest = createInterestWithId("테스트", UUID.randomUUID());
+        when(interestRepository.findAll()).thenReturn(List.of(interest));
+        when(articleFetcher.fetch("테스트")).thenReturn(null);
+
+        // When
+        articleCollectorScheduler.collectArticlesByInterest();
+
+        // Then
+        verifyNoInteractions(articlesService);
+    }
+
+    @Test
+    @DisplayName("fetch가 빈 리스트를 반환하면 저장을 호출하지 않는다")
+    void collectArticles_ShouldNotSaveWhenFetcherReturnsEmptyList() throws Exception {
+        // Given
+        Interest interest = createInterestWithId("테스트", UUID.randomUUID());
+        when(interestRepository.findAll()).thenReturn(List.of(interest));
+        when(articleFetcher.fetch("테스트")).thenReturn(Collections.emptyList());
+
+        // When
+        articleCollectorScheduler.collectArticlesByInterest();
+
+        // Then
+        verifyNoInteractions(articlesService);
+    }
+
+    @Test
+    @DisplayName("여러 fetcher가 있을 경우 각각 호출된다")
+    void collectArticles_MultipleFetchers_AllCalled() throws Exception {
+        // Given
+        ArticleFetcher fetcher1 = mock(ArticleFetcher.class);
+        ArticleFetcher fetcher2 = mock(ArticleFetcher.class);
+
+        ArticleCollectorScheduler scheduler = new ArticleCollectorScheduler(
+            interestRepository,
+            List.of(fetcher1, fetcher2),
+            articlesService
+        );
+
+        Interest interest = createInterestWithId("테크", UUID.randomUUID());
+        when(interestRepository.findAll()).thenReturn(List.of(interest));
+        when(fetcher1.fetch("테크")).thenReturn(List.of(
+            new ArticleSaveRequest(interest.getId(), "Source1", "url1", "title1", "summary1", LocalDateTime.now())
+        ));
+        when(fetcher2.fetch("테크")).thenReturn(List.of(
+            new ArticleSaveRequest(interest.getId(), "Source2", "url2", "title2", "summary2", LocalDateTime.now())
+        ));
+
+        // When
+        scheduler.collectArticlesByInterest();
+
+        // Then
+        verify(fetcher1).fetch("테크");
+        verify(fetcher2).fetch("테크");
+
+        verify(articlesService, times(2)).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("관심사 이름이 빈 문자열일 때 fetch 호출")
+    void collectArticles_ShouldCallFetchWithEmptyKeyword() throws Exception {
+        // Given
+        Interest interest = createInterestWithId("", UUID.randomUUID());
+        when(interestRepository.findAll()).thenReturn(List.of(interest));
+        when(articleFetcher.fetch("")).thenReturn(Collections.emptyList());
+
+        // When
+        articleCollectorScheduler.collectArticlesByInterest();
+
+        // Then
+        verify(articleFetcher).fetch("");
+    }
+
 
     /**
      * ID 필드가 protected이고 BaseEntity에 존재하므로, 리플렉션으로 UUID 값을 강제 주입

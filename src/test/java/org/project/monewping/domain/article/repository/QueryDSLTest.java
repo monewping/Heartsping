@@ -9,7 +9,6 @@ import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.QArticleViews;
 import org.project.monewping.domain.article.entity.QArticles;
 import org.project.monewping.domain.interest.entity.Interest;
-import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
@@ -22,7 +21,6 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
