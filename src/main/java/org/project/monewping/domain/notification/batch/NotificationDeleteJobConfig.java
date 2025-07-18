@@ -43,8 +43,8 @@ public class NotificationDeleteJobConfig {
     public Step deleteOldNotificationsStep() {
         return new StepBuilder("deleteOldNotificationsStep", jobRepository)
             .<Notification, Notification>chunk(100, transactionManager)
-            .processor(loggingProcessor())
             .reader(notificationReader())
+            .processor(loggingProcessor())
             .writer(notificationWriter())
             .build();
     }
