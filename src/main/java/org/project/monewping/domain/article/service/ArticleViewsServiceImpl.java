@@ -62,7 +62,6 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
         // 2. 엔티티 생성 및 저장
         log.info("기사 조회 정보 생성 : viewedBy = {}, articleId = {}, createdAt = {}", viewedBy, articleId, LocalDateTime.now());
         ArticleViews articleViews = ArticleViews.builder()
-            .id(UUID.randomUUID())
             .viewedBy(viewedBy)
             .article(article)
             .createdAt(LocalDateTime.now())

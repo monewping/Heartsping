@@ -116,4 +116,74 @@ public class ChosunRssFetcherTest {
         // Then: 예외가 발생해도 빈 리스트가 반환된다
         assertTrue(articles.isEmpty());
     }
+
+    @Test
+    @DisplayName("잘못된 RSS XML 포맷일 경우 빈 리스트 반환")
+    void fetch_ReturnsEmptyList_WhenMalformedXml() throws Exception {
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn("<rss><channel><item><title>잘못된 형식"); // 의도적 잘못된 XML
+
+        List<ArticleSaveRequest> articles = fetcher.fetch("");
+
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("RSS 피드에 기사가 없으면 빈 리스트 반환")
+    void fetch_ReturnsEmptyList_WhenNoItems() throws Exception {
+        String emptyRss = """
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+          <channel>
+          </channel>
+        </rss>
+    """;
+
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(emptyRss);
+
+        List<ArticleSaveRequest> articles = fetcher.fetch("");
+
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("키워드가 null일 경우 모든 기사 반환")
+    void fetch_ReturnsAllArticles_WhenKeywordIsNull() throws Exception {
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(SAMPLE_RSS_XML);
+
+        List<ArticleSaveRequest> articles = fetcher.fetch(null);
+
+        assertEquals(2, articles.size());
+    }
+
+    @Test
+    @DisplayName("기사의 일부 필드가 누락된 경우에도 정상 처리")
+    void fetch_HandlesMissingFieldsGracefully() throws Exception {
+        String rssWithMissingDescription = """
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+          <channel>
+            <item>
+              <title>제목만 있는 기사</title>
+              <link>https://chosun.com/article3</link>
+              <pubDate>Wed, 16 Jul 2025 17:00:00 +0900</pubDate>
+            </item>
+          </channel>
+        </rss>
+        """;
+
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(rssWithMissingDescription);
+
+        List<ArticleSaveRequest> articles = fetcher.fetch("");
+
+        assertEquals(1, articles.size());
+        assertEquals("제목만 있는 기사", articles.get(0).title());
+        assertEquals("https://chosun.com/article3", articles.get(0).originalLink());
+        assertEquals("", articles.get(0).summary()); // 누락 시 빈 문자열로 처리하는지 확인
+    }
+
+
 }

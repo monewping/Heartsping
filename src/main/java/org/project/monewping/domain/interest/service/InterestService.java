@@ -11,4 +11,5 @@ public interface InterestService {
 
     InterestDto create(InterestRegisterRequest request);
     CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID);
+    void delete(UUID interestId);
 } 
