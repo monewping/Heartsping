@@ -3,14 +3,18 @@ package org.project.monewping.domain.article.controller;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
+import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto;
+import org.project.monewping.domain.article.service.ArticleRestoreService;
 import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.global.dto.CursorPageResponse;
@@ -38,6 +42,7 @@ public class ArticleController {
 
     private final ArticleViewsService articleViewsService;
     private final ArticlesService articlesService;
+    private final ArticleRestoreService articleRestoreService;
 
     /**
      * 특정 뉴스 기사에 대해 사용자의 조회 기록을 등록한다.
@@ -128,6 +133,29 @@ public class ArticleController {
     public ResponseEntity<List<String>> getAllSources() {
         List<String> sources = articlesService.getAllSources();
         return ResponseEntity.ok(sources);
+    }
+
+    /**
+     * 날짜 범위(from ~ to) 내의 뉴스 기사 복구 요청 처리
+     */
+    @GetMapping("/restore")
+    public List<ArticleRestoreResultDto> restoreArticlesByDateRange(
+        @RequestParam("from")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate from,
+
+        @RequestParam("to")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate to
+    ) {
+        log.info("뉴스 기사 데이터 복구 요청 : from = {} to = {}", from, to);
+
+        List<LocalDate> targetDates = from.datesUntil(to.plusDays(1))
+            .toList();
+
+        return targetDates.stream()
+            .map(articleRestoreService::restoreArticlesByDate)
+            .collect(Collectors.toList());
     }
 
 }
