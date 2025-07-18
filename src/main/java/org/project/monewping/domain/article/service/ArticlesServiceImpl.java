@@ -9,12 +9,13 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
+import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.article.repository.InterestRepository;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ArticlesServiceImpl implements ArticlesService {
 
+    private final ArticleViewsRepository articleViewsRepository;
     private final ArticlesRepository articlesRepository;
     private final InterestRepository interestRepository;
     private final ArticlesMapper articlesMapper;
@@ -104,8 +106,22 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         List<Articles> page = hasNext ? entities.subList(0, request.limit()) : entities;
 
+        // 1) 사용자 ID로 조회한 기사들 ID 목록 획득
+        List<UUID> articleIds = page.stream()
+            .map(Articles::getId)
+            .toList();
+
+        List<UUID> viewedArticleIds = articleViewsRepository.findAllByViewedByAndArticleIdIn(request.requestUserId(), articleIds)
+            .stream()
+            .map(av -> av.getArticle().getId())
+            .toList();
+
+        // 2) DTO 변환 시 viewedByMe 세팅
         List<ArticleDto> dtoList = page.stream()
-            .map(articlesMapper::toDto)
+            .map(article -> {
+                boolean viewedByMe = viewedArticleIds.contains(article.getId());
+                return articlesMapper.toDto(article).withViewedByMe(viewedByMe);
+            })
             .toList();
 
         String nextCursor = null;

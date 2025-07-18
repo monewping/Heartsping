@@ -20,10 +20,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
-import org.project.monewping.domain.article.entity.Interest;
-import org.project.monewping.domain.article.repository.InterestRepository;
 import org.project.monewping.domain.article.scheduler.ArticleCollectorScheduler;
 import org.project.monewping.domain.article.service.ArticlesService;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 
 @DisplayName("ArticleCollectorScheduler 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -224,7 +224,7 @@ public class ArticleCollectorSchedulerTest {
             .name(name)
             .build();
 
-        Field idField = interest.getClass().getSuperclass().getDeclaredField("id");
+        Field idField = interest.getClass().getSuperclass().getSuperclass().getDeclaredField("id");
         idField.setAccessible(true);
         idField.set(interest, id);
         return interest;

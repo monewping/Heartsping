@@ -11,8 +11,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.entity.QArticles;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.project.monewping.global.config.QuerydslConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ public class ArticlesRepositoryTest {
         // given: 테스트 준비 - 관심사 및 기사 엔티티 생성 및 저장
         Interest interest = Interest.builder()
             .name("테스트 관심사")
-            .subscriberCount(0)
+            .subscriberCount(0L)
             .build();
         interest = interestRepository.saveAndFlush(interest);  // 영속 상태 보장
 
@@ -83,7 +84,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_sortByCommentCountDesc() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("IT").subscriberCount(0).build()
+            Interest.builder().name("IT").subscriberCount(0L).build()
         );
 
         Articles article1 = Articles.builder()
@@ -137,7 +138,7 @@ public class ArticlesRepositoryTest {
     void countArticles_returnsExactCount() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("경제").subscriberCount(0).build()
+            Interest.builder().name("경제").subscriberCount(0L).build()
         );
 
         articlesRepository.save(Articles.builder()
@@ -184,7 +185,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_withoutDateFilter() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("문화").subscriberCount(0).build()
+            Interest.builder().name("문화").subscriberCount(0L).build()
         );
 
         articlesRepository.save(Articles.builder()
@@ -232,7 +233,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_withCursorBeforeId() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("정치").subscriberCount(0).build()
+            Interest.builder().name("정치").subscriberCount(0L).build()
         );
 
         LocalDateTime baseTime = LocalDateTime.of(2025, 7, 17, 12, 0);
@@ -295,7 +296,7 @@ public class ArticlesRepositoryTest {
         Interest interest = interestRepository.save(
             Interest.builder()
                 .name("정치")
-                .subscriberCount(0)
+                .subscriberCount(0L)
                 .build()
         );
 
@@ -333,7 +334,7 @@ public class ArticlesRepositoryTest {
         Interest interest = interestRepository.save(
             Interest.builder()
                 .name("경제")
-                .subscriberCount(0)
+                .subscriberCount(0L)
                 .build()
         );
 
@@ -371,7 +372,7 @@ public class ArticlesRepositoryTest {
         Interest interest = interestRepository.save(
             Interest.builder()
                 .name("스포츠")
-                .subscriberCount(0)
+                .subscriberCount(0L)
                 .build()
         );
 
@@ -397,7 +398,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_noResults() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("없는관심사").subscriberCount(0).build()
+            Interest.builder().name("없는관심사").subscriberCount(0L).build()
         );
 
         ArticleSearchRequest request = new ArticleSearchRequest(
@@ -425,7 +426,7 @@ public class ArticlesRepositoryTest {
     @DisplayName("after 파라미터로 커서 페이지네이션 조회가 가능하다")
     void searchArticles_withCursorAfterId() {
         Interest interest = interestRepository.save(
-            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+            Interest.builder().name("테스트관심사").subscriberCount(0L).build()
         );
 
         LocalDateTime baseTime = LocalDateTime.of(2025, 7, 17, 12, 0);
@@ -484,7 +485,7 @@ public class ArticlesRepositoryTest {
     void queryWithQArticlesAndInterestId() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("과학").subscriberCount(0).build()
+            Interest.builder().name("과학").subscriberCount(0L).build()
         );
 
         Articles article = articlesRepository.save(Articles.builder()

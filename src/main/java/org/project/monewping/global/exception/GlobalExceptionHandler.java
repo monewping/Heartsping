@@ -1,7 +1,11 @@
 package org.project.monewping.global.exception;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.project.monewping.domain.comment.exception.CommentNotFoundException;
+import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
@@ -10,8 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
@@ -36,10 +40,33 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * <li>{@link EmailAlreadyExistsException} - 이메일 중복</li>
  * <li>{@link Exception} - 기타 예외</li>
  * </ul>
- *
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DuplicateInterestNameException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateInterestNameException(DuplicateInterestNameException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_INTEREST_NAME", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(SimilarInterestNameException.class)
+    public ResponseEntity<ErrorResponse> handleSimilarInterestNameException(SimilarInterestNameException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "SIMILAR_INTEREST_NAME", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(InterestCreationException.class)
+    public ResponseEntity<ErrorResponse> handleInterestCreationException(InterestCreationException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTEREST_CREATION_ERROR", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     /**
      * Bean Validation 실패 시 예외를 처리합니다.
@@ -188,7 +215,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    /*
+    /**
      * 기타 예외를 처리합니다.
      *
      * <p>
@@ -294,4 +321,45 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
+
+
+    /**
+   * 댓글 삭제 예외 처리
+   * <p>
+   * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
+   *
+   * @param ex CommentDeleteException
+   * @return 403 Forbidden 에러 응답
+   */
+    @ExceptionHandler(CommentDeleteException.class)
+    public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.FORBIDDEN.value(),
+            HttpStatus.FORBIDDEN.getReasonPhrase(),
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+  /**
+   * 댓글 조회 실패 예외 처리
+   * <p>
+   * 존재하지 않는 댓글 ID로 삭제 또는 조회 시도할 경우 404 Not Found 응답을 반환한다.
+   *
+   * @param ex CommentNotFoundException
+   * @return 404 Not Found 에러 응답
+   */
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
 }
