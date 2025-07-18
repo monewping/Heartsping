@@ -23,4 +23,11 @@ public interface ArticlesMapper {
     @Mapping(target = "viewedByMe", ignore = true)
     ArticleDto toDto(Articles article);
 
+    // 복구용 DTO → 엔티티
+    @Mapping(source = "sourceUrl", target = "originalLink")
+    @Mapping(source = "publishDate", target = "publishedAt")
+    @Mapping(target = "deleted", constant = "false")
+    @Mapping(target = "interest", ignore = true)
+    Articles toEntity(ArticleDto dto);
+
 }

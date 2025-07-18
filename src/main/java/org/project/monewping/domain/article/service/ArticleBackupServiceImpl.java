@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.repository;
+package org.project.monewping.domain.article.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
-import org.project.monewping.domain.article.service.ArticleBackupService;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
