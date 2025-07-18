@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.article.repository.InterestRepository;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
