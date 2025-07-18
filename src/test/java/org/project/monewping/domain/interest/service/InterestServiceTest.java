@@ -12,10 +12,7 @@ import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
-import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
-import org.project.monewping.domain.interest.exception.InterestCreationException;
-import org.project.monewping.domain.interest.exception.InterestNotFoundException;
-import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.interest.exception.*;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.impl.InterestServiceImpl;
@@ -395,8 +392,8 @@ class InterestServiceTest {
     }
 
     @Test
-    @DisplayName("관심사 삭제 중 예외 발생 시 InterestCreationException이 발생한다")
-    void should_throwInterestCreationException_when_deleteFails() {
+    @DisplayName("관심사 삭제 중 예외 발생 시 InterestDeletionException이 발생한다")
+    void should_throwInterestDeletionException_when_deleteFails() {
         // Given
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
@@ -411,7 +408,7 @@ class InterestServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> interestService.delete(interestId))
-                .isInstanceOf(InterestCreationException.class)
+                .isInstanceOf(InterestDeletionException.class)
                 .hasMessage("관심사 삭제 중 오류가 발생했습니다.");
     }
 } 

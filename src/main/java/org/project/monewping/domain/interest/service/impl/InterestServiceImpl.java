@@ -11,6 +11,7 @@ import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.InterestDeletionException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
@@ -219,7 +220,7 @@ public class InterestServiceImpl implements InterestService {
             log.info("[InterestService] 관심사 삭제 성공: interestId={}, name={}", interestId, interest.getName());
         } catch (Exception e) {
             log.error("[InterestService] 관심사 삭제 실패: interestId={}, error={}", interestId, e.getMessage(), e);
-            throw new InterestCreationException("관심사 삭제 중 오류가 발생했습니다.", e);
+            throw new InterestDeletionException("관심사 삭제 중 오류가 발생했습니다.", e);
         }
     }
 }
