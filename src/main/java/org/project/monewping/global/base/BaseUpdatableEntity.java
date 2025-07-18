@@ -1,7 +1,10 @@
 package org.project.monewping.global.base;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,4 +22,5 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
     @Column(name = "updated_at")
     @LastModifiedDate
     private Instant updatedAt;
+
 }
