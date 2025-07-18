@@ -2,6 +2,7 @@ package org.project.monewping.domain.article.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.project.monewping.domain.article.entity.Articles;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,5 +22,6 @@ public interface ArticlesRepository extends JpaRepository<Articles, UUID>, Artic
 
     List<Articles> findByPublishedAtBetweenAndDeletedFalse(LocalDateTime from, LocalDateTime to);
 
+    Optional<Articles> findByIdAndDeletedFalse(UUID id);
 
 }
