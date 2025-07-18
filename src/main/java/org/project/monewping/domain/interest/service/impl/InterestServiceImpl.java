@@ -253,21 +253,21 @@ public class InterestServiceImpl implements InterestService {
         if (keywords == null) {
             throw new IllegalArgumentException("키워드는 필수입니다.");
         }
-        
+
         if (keywords.isEmpty()) {
             throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
-        
+
         // null이나 빈 문자열 제거 후 중복 검사
         List<String> validKeywords = keywords.stream()
                 .filter(keyword -> keyword != null && !keyword.trim().isEmpty())
                 .map(String::trim)
                 .toList();
-        
+
         if (validKeywords.isEmpty()) {
             throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
-        
+
         // 중복된 키워드 확인
         List<String> duplicates = validKeywords.stream()
                 .filter(keyword -> validKeywords.stream()
@@ -275,10 +275,12 @@ public class InterestServiceImpl implements InterestService {
                         .count() > 1)
                 .distinct()
                 .toList();
-        
+
         if (!duplicates.isEmpty()) {
             log.warn("[InterestService] 중복된 키워드 발견: {}", duplicates);
             throw new DuplicateKeywordException(duplicates.get(0));
+        }
+    }
 
     /**
      * 관심사를 삭제합니다.
