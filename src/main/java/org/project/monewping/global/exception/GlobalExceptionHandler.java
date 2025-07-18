@@ -280,6 +280,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 필수 요청 파라미터가 누락되었을 때 발생하는 예외를 처리합니다.
+     * 클라이언트에 누락된 파라미터 이름과 함께 400 Bad Request 상태 코드를 반환합니다.
+     *
+     * @param ex 누락된 요청 파라미터 정보를 담은 예외 객체
+     * @return 누락된 파라미터 정보를 포함한 에러 응답과 400 상태 코드
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
+        String paramName = ex.getParameterName();
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),               // 타임스탬프
+            HttpStatus.BAD_REQUEST.value(),    // 상태 코드 400
+            "필수 요청 파라미터 '" + paramName + "'가 누락되었습니다.",  // 메시지
+            ex.getMessage()                    // 상세 정보
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+
+    /**
      * 로그인 실패 예외를 처리합니다.
      *
      * <p>
@@ -342,20 +362,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    /**
-     * 잘못된 요청 파라미터 타입 예외 처리
-     * <p>
-     * 예: UUID 등 타입이 맞지 않는 경우 400 Bad Request 반환
-     */
-
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
-        MissingServletRequestParameterException ex) {
-        ErrorResponse errorResponse = ErrorResponse.of(
-            HttpStatus.BAD_REQUEST,
-            "필수 요청 파라미터가 누락되었습니다: " + ex.getParameterName(),
-                      ex.getMessage()
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
 }
