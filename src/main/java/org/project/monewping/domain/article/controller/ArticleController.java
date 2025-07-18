@@ -19,6 +19,7 @@ import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -153,6 +154,32 @@ public class ArticleController {
         List<ArticleRestoreResultDto> restoreResults = articleRestoreService.restoreArticlesByRange(from, to);
 
         return ResponseEntity.ok(restoreResults);
+    }
+
+    /**
+     * 논리 삭제 API 엔드포인트입니다.
+     *
+     * @param id 삭제할 기사 ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> softDelete(@PathVariable UUID id) {
+        log.info("논리 삭제 요청 받음. articleId={}", id);
+        articlesService.softDelete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 물리 삭제 API 엔드포인트입니다.
+     *
+     * @param id 삭제할 기사 ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<Void> hardDelete(@PathVariable UUID id) {
+        log.info("물리 삭제 요청 받음. articleId={}", id);
+        articlesService.hardDelete(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
