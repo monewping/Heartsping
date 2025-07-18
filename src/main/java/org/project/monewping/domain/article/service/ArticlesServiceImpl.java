@@ -156,12 +156,12 @@ public class ArticlesServiceImpl implements ArticlesService {
     public void softDelete(UUID articleId) {
         Articles article = articlesRepository.findByIdAndDeletedFalse(articleId)
             .orElseThrow(() -> {
-                log.warn("논리 삭제 시도했으나, 기사 없음. articleId={}", articleId);
+                log.warn("뉴스 기사 논리 삭제 시도했으나, 기사 없음. articleId = {}", articleId);
                 return new ArticleNotFoundException(articleId);
             });
 
         article.softDeleteWithMasking();
-        log.info("기사 논리 삭제 완료. articleId={}", articleId);
+        log.info("뉴스 기사 논리 삭제 완료. articleId = {}", articleId);
     }
 
     /**
@@ -175,12 +175,12 @@ public class ArticlesServiceImpl implements ArticlesService {
     public void hardDelete(UUID articleId) {
         Articles article = articlesRepository.findById(articleId)
             .orElseThrow(() -> {
-                log.warn("물리 삭제 시도했으나, 기사 없음. articleId={}", articleId);
+                log.warn("뉴스 기사 물리 삭제 시도했으나, 기사 없음. articleId = {}", articleId);
                 return new ArticleNotFoundException(articleId);
             });
 
         articlesRepository.delete(article);
-        log.info("기사 물리 삭제 완료. articleId={}", articleId);
+        log.info("뉴스 기사 물리 삭제 완료. articleId = {}", articleId);
     }
 
     /* 내부 헬퍼 메서드로 중복 코드 제거 */
