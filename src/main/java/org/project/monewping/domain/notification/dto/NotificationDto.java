@@ -5,7 +5,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record NotificationDto(
+public record NotificationDto (
     UUID id,
     UUID userId,
     UUID resourceId,
@@ -14,4 +14,4 @@ public record NotificationDto(
     Boolean confirmed,
     Instant createdAt,
     Instant updatedAt
-    ) { }
+) { }
