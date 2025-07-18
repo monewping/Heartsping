@@ -3,6 +3,7 @@ package org.project.monewping.domain.comment.controller;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.service.CommentService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * 댓글 API 컨트롤러
  * 댓글 조회 및 등록 API를 제공합니다.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/comments")
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class CommentController {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
             articleId, orderBy, direction, cursor, after, limit
         );
+        log.info("[CommentController] 댓글 목록 조회 완료 - articleId: {}, count: {}", articleId, response.size());
         return ResponseEntity.ok(response);
     }
 
@@ -52,5 +55,29 @@ public class CommentController {
     public ResponseEntity<Void> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
         commentService.registerComment(requestDto);
         return ResponseEntity.status(201).build();
+    }
+
+    /**
+     * 댓글을 삭제합니다.
+     * 논리 삭제와 물리 삭제로 나뉜다.
+     */
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+        @PathVariable UUID commentId,
+        @RequestParam UUID userId
+    ) {
+        commentService.deleteComment(commentId, userId);
+        log.info("[CommentController] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{commentId}/hard")
+    public ResponseEntity<Void> deleteCommentPhysically(
+        @PathVariable UUID commentId,
+        @RequestParam UUID userId
+    ) {
+        commentService.deleteCommentPhysically(commentId, userId);
+        log.info("[CommentController] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+        return ResponseEntity.noContent().build();
     }
 }
