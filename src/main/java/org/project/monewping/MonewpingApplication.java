@@ -12,7 +12,7 @@ public class MonewpingApplication {
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.load();
         dotenv.entries().forEach(entry -> {
-            // 이미 시스템 프로퍼티에 없다면 등록
+            // 기존 환경변수 외의 값이 존재한다면 등록
             if (System.getProperty(entry.getKey()) == null) {
                 System.setProperty(entry.getKey(), entry.getValue());
             }
