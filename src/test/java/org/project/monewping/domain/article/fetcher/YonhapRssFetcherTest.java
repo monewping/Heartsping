@@ -103,4 +103,84 @@ public class YonhapRssFetcherTest {
         assertNotNull(articles);
         assertTrue(articles.isEmpty());
     }
+
+    @Test
+    @DisplayName("fetch() : 빈 키워드일 경우 모든 기사 반환 또는 필터링 없이 동작")
+    void fetch_ShouldReturnAllArticles_WhenKeywordIsEmpty() {
+        // Given
+        String keyword = "";
+
+        // When
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch(keyword);
+
+        // Then
+        assertNotNull(articles);
+        // MOCK_RSS_XML 내 기사 2개가 모두 반환되어야 함
+        assertEquals(2, articles.size());
+    }
+
+    @Test
+    @DisplayName("fetch() : 키워드가 포함되지 않은 기사는 필터링 된다")
+    void fetch_ShouldFilterOutNonMatchingArticles() {
+        // Given
+        String keyword = "없는키워드";
+
+        // When
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch(keyword);
+
+        // Then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : RSS에 기사 아이템이 없으면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyListWhenNoItems() throws Exception {
+        // Given
+        String emptyRss = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0">
+          <channel>
+          </channel>
+        </rss>
+        """;
+        when(httpResponseMock.body()).thenReturn(emptyRss);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        // When
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
+
+        // Then
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : pubDate 파싱 실패 시에도 예외 없이 처리")
+    void fetch_ShouldHandleInvalidPubDateFormat() throws Exception {
+        // Given
+        String invalidDateRss = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0">
+          <channel>
+            <item>
+              <title>AI 혁신 뉴스</title>
+              <link>https://news.yonhap.com/article1</link>
+              <description>AI 관련 뉴스 내용</description>
+              <pubDate>잘못된 날짜 포맷</pubDate>
+            </item>
+          </channel>
+        </rss>
+        """;
+        when(httpResponseMock.body()).thenReturn(invalidDateRss);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        // When
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
+
+        // Then
+        assertNotNull(articles);
+        assertEquals(1, articles.size());
+    }
+
 }

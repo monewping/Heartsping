@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
+import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
@@ -27,6 +28,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -239,5 +241,34 @@ class InterestControllerTest {
                 .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효성 검사 실패"));
+
+    @Test
+    @DisplayName("관심사 구독 취소 API를 호출하면 200 OK와 결과가 반환된다")
+    void should_return200_when_unsubscribeInterest() throws Exception {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        SubscriptionDto response = SubscriptionDto.builder()
+                .id(UUID.randomUUID())
+                .interestId(interestId)
+                .interestName("국가")
+                .interestKeywords(List.of("대한민국", "일본"))
+                .interestSubscriberCount(9L)
+                .createdAt(java.time.Instant.now())
+                .build();
+
+        given(subscriptionService.unsubscribe(interestId, userId))
+                .willReturn(response);
+
+        // When & Then
+        mockMvc.perform(delete("/api/interests/{interestId}/subscriptions", interestId)
+                .with(csrf()) // CSRF 토큰 추가
+                .header("Monew-Request-User-ID", userId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interestId").value(interestId.toString()))
+                .andExpect(jsonPath("$.interestName").value("국가"))
+                .andExpect(jsonPath("$.interestSubscriberCount").value(9L))
+                .andExpect(jsonPath("$.interestKeywords[0]").value("대한민국"))
+                .andExpect(jsonPath("$.interestKeywords[1]").value("일본"));
     }
 } 
