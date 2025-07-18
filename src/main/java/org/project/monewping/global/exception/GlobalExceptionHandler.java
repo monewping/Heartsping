@@ -7,7 +7,9 @@ import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
@@ -60,6 +62,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInterestCreationException(InterestCreationException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTEREST_CREATION_ERROR", e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(InterestNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleInterestNotFoundException(InterestNotFoundException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.NOT_FOUND, "INTEREST_NOT_FOUND", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

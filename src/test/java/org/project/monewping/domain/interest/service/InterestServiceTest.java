@@ -12,9 +12,7 @@ import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
-import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
-import org.project.monewping.domain.interest.exception.InterestCreationException;
-import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.interest.exception.*;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.impl.InterestServiceImpl;
@@ -356,5 +354,61 @@ class InterestServiceTest {
         verify(interestRepository).findAllNames();
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
+    }
+
+    // === 관심사 삭제 테스트 ===
+    @Test
+    @DisplayName("존재하는 관심사 삭제 시 성공적으로 삭제된다")
+    void should_deleteInterest_when_interestExists() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        Interest interest = Interest.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .subscriberCount(5L)
+                .build();
+
+        given(interestRepository.findById(interestId)).willReturn(java.util.Optional.of(interest));
+
+        // When
+        interestService.delete(interestId);
+
+        // Then
+        verify(interestRepository).findById(interestId);
+        verify(interestRepository).delete(interest);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 관심사 삭제 시 InterestNotFoundException이 발생한다")
+    void should_throwInterestNotFoundException_when_interestNotExists() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        given(interestRepository.findById(interestId)).willReturn(java.util.Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.delete(interestId))
+                .isInstanceOf(InterestNotFoundException.class)
+                .hasMessageContaining("관심사를 찾을 수 없습니다: " + interestId);
+    }
+
+    @Test
+    @DisplayName("관심사 삭제 중 예외 발생 시 InterestDeletionException이 발생한다")
+    void should_throwInterestDeletionException_when_deleteFails() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        Interest interest = Interest.builder()
+                .id(interestId)
+                .name("테스트 관심사")
+                .subscriberCount(5L)
+                .build();
+
+        given(interestRepository.findById(interestId)).willReturn(java.util.Optional.of(interest));
+        org.mockito.BDDMockito.willThrow(new RuntimeException("DB Error"))
+                .given(interestRepository).delete(interest);
+
+        // When & Then
+        assertThatThrownBy(() -> interestService.delete(interestId))
+                .isInstanceOf(InterestDeletionException.class)
+                .hasMessage("관심사 삭제 중 오류가 발생했습니다.");
     }
 } 
