@@ -12,6 +12,8 @@ import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,7 +30,7 @@ public class BasicNotificationService implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
-    //private final UserRepository userRepository;
+    private final UserRepository userRepository;
     //private final ArticleRepository articleRepository;
     //private final InterestRepository interestRepository;
     //private final InterestSubscriptionRepository interestSubscriptionRepository;
@@ -141,6 +143,29 @@ public class BasicNotificationService implements NotificationService {
             totalUnreadNotification,
             hasNext
         );
+    }
+
+    /**
+     * 주어진 사용자 ID에 해당하는 모든 미확인 알림을 확인 처리합니다.
+     *
+     * <p>
+     *     이 메서드는 Notification 엔티티에서 {@code confirmed = false}인 레코드를 찾아
+     *     {@code confirmed = true}로 업데이트하며, 처리된 알림의 개수를 로그로 기록합니다.
+     *     사용자 정보가 존재하지 않는 경우
+     * </p>
+     *
+     * @param userId 확인 처리를 수행할 사용자의 ID
+     * @throws UserNotFoundException 사용자를 조회할 수 없는 경우
+     */
+    @Override
+    @Transactional
+    public void confirmAll(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("userId: " + userId);
+        }
+
+        int updatedCount = notificationRepository.confirmAllByUserId(userId);
+        log.info("총 {}개의 알림이 확인 처리되었습니다. (userId: {})", updatedCount, userId);
     }
 
     /**

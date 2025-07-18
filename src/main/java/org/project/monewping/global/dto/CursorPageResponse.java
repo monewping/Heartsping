@@ -14,12 +14,11 @@ import java.util.List;
  * @param hasNext       다음 페이지 존재 여부
  */
 public record CursorPageResponse<T>(
-    List<T> content,
-    Long nextIdAfter,
-    String nextCursor,
-    int size,
-    long totalElements,
-    boolean hasNext
-) {
+        List<T> content,
+        Long nextIdAfter,
+        String nextCursor,
+        int size,
+        long totalElements,
+        boolean hasNext) {
 
 }

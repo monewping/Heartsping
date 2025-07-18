@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.project.monewping.global.base.BaseUpdatableEntity;
 
 /**
  * 댓글 도메인 엔티티
@@ -11,15 +13,11 @@ import lombok.*;
  */
 @Entity
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "comments")
-public class Comment {
-
-    @Id
-    @Column(columnDefinition = "uuid")
-    private UUID id;
+public class Comment extends BaseUpdatableEntity {
 
     @Column(name = "article_id", nullable = false)
     private UUID articleId;
@@ -35,6 +33,9 @@ public class Comment {
 
     @Column(name = "like_count", nullable = false)
     private int likeCount;
+
+    @Column(nullable = false)
+    private Boolean deleted;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

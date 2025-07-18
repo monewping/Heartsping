@@ -1,5 +1,6 @@
 package org.project.monewping.domain.comment.controller;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ public class CommentController {
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
         @RequestParam(required = false, defaultValue = "50") Integer limit
-    ) {
+    )   {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
             articleId, orderBy, direction, cursor, after, limit
         );
@@ -51,10 +52,9 @@ public class CommentController {
      * 댓글을 등록합니다.
      */
     @PostMapping
-    public ResponseEntity<Void> registerComment(@RequestBody CommentRegisterRequestDto requestDto) {
+    public ResponseEntity<Void> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
         commentService.registerComment(requestDto);
-        log.info("[CommentController] 댓글 등록 완료 - articleId: {}, userId: {}", requestDto.getArticleId(), requestDto.getUserId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(201).build();
     }
 
     /**

@@ -18,6 +18,7 @@ public class CommentMapperImpl implements CommentMapper {
         if (requestDto == null) {
             return null;
         }
+        Instant now = Instant.now();
         return Comment.builder()
             .id(UUID.randomUUID())
             .articleId(requestDto.getArticleId())
@@ -25,23 +26,23 @@ public class CommentMapperImpl implements CommentMapper {
             .userNickname("익명")  // 임시
             .content(requestDto.getContent())
             .likeCount(0)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .isDeleted(false)
+            .createdAt(now)
+            .updatedAt(now)
+            .deleted(false)
             .build();
     }
 
     @Override
     public CommentResponseDto toResponseDto(Comment comment) {
         if (comment == null) {
-          return null;
+            return null;
         }
-            CommentResponseDto dto = new CommentResponseDto();
-            dto.setId(comment.getId());
-            dto.setContent(comment.getContent());
-            dto.setUserNickname(comment.getUserNickname());
-            dto.setLikeCount(comment.getLikeCount());
-            dto.setCreatedAt(comment.getCreatedAt());
-        return dto;
+        return new CommentResponseDto(
+            comment.getId(),
+            comment.getContent(),
+            comment.getUserNickname(),
+            comment.getLikeCount(),
+            comment.getCreatedAt()
+        );
     }
 }
