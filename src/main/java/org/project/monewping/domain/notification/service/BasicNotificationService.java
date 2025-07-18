@@ -196,7 +196,7 @@ public class BasicNotificationService implements NotificationService {
 
         Notification notification = notificationRepository
             .findByIdAndUserId(notificationId, userId)
-            .orElseThrow(() -> new NotificationNotFoundException(userId, notificationId));
+            .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         notification.confirm();
         log.debug("notification confirmed: {}", notification);

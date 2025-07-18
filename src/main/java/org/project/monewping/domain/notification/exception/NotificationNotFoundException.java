@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public class NotificationNotFoundException extends RuntimeException {
 
-    public NotificationNotFoundException(UUID userId, UUID notificationId) {
-        super("존재하지 않는 알림입니다 (userId: " + userId + "notificationId: " + notificationId + ")");
+    public NotificationNotFoundException(UUID notificationId) {
+        super("존재하지 않는 알림입니다 (notificationId: " + notificationId + ")");
     }
 }

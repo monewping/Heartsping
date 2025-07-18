@@ -322,7 +322,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
-
     /**
    * 댓글 삭제 예외 처리
    * <p>
@@ -362,6 +361,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    /**
+     * 잘못된 커서 형식(ISO-8601이 아닌 문자열)이 전달된 경우 예외 처리
+     *
+     * @param ex 처리할 InvalidCursorFormatException
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(InvalidCursorFormatException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCursorFormatException(InvalidCursorFormatException ex) {
         ErrorResponse errorResponse = ErrorResponse.of(
