@@ -46,7 +46,7 @@ dependencies {
     // Jaro Winkler 유사도 계산 의존성
     implementation 'org.apache.commons:commons-text:1.11.0'
     // MongoDB (개발/운영용)
-    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'
@@ -60,7 +60,7 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testImplementation 'org.springframework.security:spring-security-test'
     // 임베디드 MongoDB (테스트용)
-    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // QueryDSL 의존성
