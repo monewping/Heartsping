@@ -72,14 +72,26 @@ public class Interest extends BaseUpdatableEntity {
         keyword.setInterest(this);
     }
 
+
+
     /**
-     * 키워드를 제거합니다.
+     * 키워드 목록을 업데이트합니다.
      *
-     * <p>관심사와 키워드의 연관관계를 해제합니다.</p>
-     * @param keyword 제거할 키워드
+     * <p>기존 키워드를 모두 제거하고 새로운 키워드 목록으로 교체합니다.</p>
+     * @param newKeywords 새로운 키워드 이름 목록
      */
-    public void removeKeyword(Keyword keyword) {
-        this.keywords.remove(keyword);
-        keyword.setInterest(null);
+    public void updateKeywords(List<String> newKeywords) {
+        // 기존 키워드 모두 제거
+        this.keywords.clear();
+        
+        // 새로운 키워드 추가
+        if (newKeywords != null) {
+            newKeywords.stream()
+                    .filter(keyword -> keyword != null && !keyword.trim().isEmpty())
+                    .forEach(keywordName -> {
+                        Keyword keyword = new Keyword(this, keywordName.trim());
+                        this.keywords.add(keyword);
+                    });
+        }
     }
 }
