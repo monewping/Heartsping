@@ -2,12 +2,17 @@ package org.project.monewping.domain.comment.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -19,8 +24,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
+import org.project.monewping.global.exception.GlobalExceptionHandler;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -43,29 +50,29 @@ class CommentControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(commentController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(commentController)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
 
         testArticleId = UUID.randomUUID();
 
-        // 테스트용 댓글 데이터 생성
         testComments = Arrays.asList(
             new CommentResponseDto(
                 UUID.randomUUID(),
                 "첫 번째 댓글입니다.",
                 "사용자1",
                 5,
-                LocalDateTime.now().minusHours(1)
+                Instant.now().minus(Duration.ofHours(1))
             ),
             new CommentResponseDto(
                 UUID.randomUUID(),
                 "두 번째 댓글입니다.",
                 "사용자2",
                 3,
-                LocalDateTime.now().minusHours(2)
+                Instant.now().minus(Duration.ofHours(1))
             )
         );
 
-        // 테스트용 커서 페이지 응답 생성
         testResponse = new CursorPageResponse<>(
             testComments,
             123456L,
@@ -79,7 +86,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 성공 - 기본 파라미터")
     void getComments_Success_WithDefaultParameters() throws Exception {
-        // Given
         when(commentService.getComments(
             eq(testArticleId),
             eq("createdAt"),
@@ -89,7 +95,6 @@ class CommentControllerTest {
             eq(50)
         )).thenReturn(testResponse);
 
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -112,7 +117,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 성공 - 모든 파라미터 포함")
     void getComments_Success_WithAllParameters() throws Exception {
-        // Given
         String cursor = "test_cursor";
         String after = "2024-01-01T10:00:00";
         Integer limit = 20;
@@ -126,7 +130,6 @@ class CommentControllerTest {
             eq(limit)
         )).thenReturn(testResponse);
 
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
                 .param("orderBy", "likeCount")
@@ -145,7 +148,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 성공 - 빈 결과")
     void getComments_Success_EmptyResult() throws Exception {
-        // Given
         CursorPageResponse<CommentResponseDto> emptyResponse = new CursorPageResponse<>(
             Arrays.asList(),
             null,
@@ -164,7 +166,6 @@ class CommentControllerTest {
             any(Integer.class)
         )).thenReturn(emptyResponse);
 
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -181,7 +182,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 실패 - articleId 파라미터 누락")
     void getComments_Fail_MissingArticleId() throws Exception {
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
@@ -190,7 +190,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 실패 - 잘못된 UUID 형식")
     void getComments_Fail_InvalidUuidFormat() throws Exception {
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .param("articleId", "invalid-uuid")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -200,7 +199,6 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 조회 성공 - 커서 페이지네이션")
     void getComments_Success_WithCursor() throws Exception {
-        // Given
         String cursor = "cursor_value";
 
         when(commentService.getComments(
@@ -212,7 +210,6 @@ class CommentControllerTest {
             eq(50)
         )).thenReturn(testResponse);
 
-        // When & Then
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
                 .param("cursor", cursor)
@@ -221,5 +218,76 @@ class CommentControllerTest {
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.hasNext").value(true));
+    }
+
+    @Test
+    @DisplayName("댓글 등록 성공")
+    void registerComment_Success() throws Exception {
+        String requestBody = String.format("""
+        {
+            "articleId": "%s",
+            "userId": "%s",
+            "content": "테스트 댓글입니다."
+        }
+        """, UUID.randomUUID(), UUID.randomUUID());
+
+        mockMvc.perform(post("/api/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 성공")
+    void deleteComment_Success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doNothing().when(commentService).deleteComment(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
+                .param("userId", userId.toString()))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
+    void deleteComment_Fail_NotOwner() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
+            .when(commentService).deleteComment(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
+                .param("userId", userId.toString()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공")
+    void deleteCommentPhysically_Success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doNothing().when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
+                .param("userId", userId.toString()))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
+    void deleteCommentPhysically_Fail_NotOwner() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
+            .when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
+                .param("userId", userId.toString()))
+            .andExpect(status().isForbidden());
     }
 }

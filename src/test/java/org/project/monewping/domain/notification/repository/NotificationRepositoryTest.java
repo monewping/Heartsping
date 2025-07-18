@@ -10,11 +10,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.global.config.JpaAuditingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class NotificationRepositoryTest {
         userId    = UUID.randomUUID();
         UUID resourceA = UUID.randomUUID();
         UUID resourceB = UUID.randomUUID();
+        UUID resourceC = UUID.randomUUID();
 
         notificationRepository.save(new Notification(userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article"));
         notificationRepository.save(new Notification(userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article"));

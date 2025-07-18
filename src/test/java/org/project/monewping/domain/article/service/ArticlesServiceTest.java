@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,7 +11,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,14 +26,18 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
+import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
+import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.article.repository.InterestRepository;
+import org.project.monewping.global.dto.CursorPageResponse;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 
 @DisplayName("ArticlesService 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +45,9 @@ public class ArticlesServiceTest {
 
     @InjectMocks
     private ArticlesServiceImpl articleService;
+
+    @Mock
+    private ArticleViewsRepository articleViewsRepository;
 
     @Mock
     private ArticlesRepository articlesRepository;
@@ -89,8 +100,8 @@ public class ArticlesServiceTest {
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
             .name("AI")
-            .subscriberCount(1000)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(1000L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request1 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-1", "제목1", "요약1", LocalDateTime.now());
@@ -142,8 +153,8 @@ public class ArticlesServiceTest {
 
         Interest interest = Interest.builder()
             .name("AI")
-            .subscriberCount(1000)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(1000L)
+            .updatedAt(Instant.now())
             .build();
 
         Articles expectedArticle = Articles.builder()
@@ -189,8 +200,8 @@ public class ArticlesServiceTest {
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
             .name("IT")
-            .subscriberCount(500)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(500L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request1 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-1", "제목1", "요약1", LocalDateTime.now());
@@ -248,8 +259,8 @@ public class ArticlesServiceTest {
         Interest interest = Interest.builder()
             .id(interestId)
             .name("IT")
-            .subscriberCount(100)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(100L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request = new ArticleSaveRequest(
@@ -278,5 +289,173 @@ public class ArticlesServiceTest {
 
         // Then
         verify(articlesRepository).save(article);
+    }
+
+    @Test
+    @DisplayName("검색어로 제목 또는 요약에 일치하는 기사들을 조회할 수 있다")
+    void findArticles_ByKeywordOnly() {
+        // Given
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            "인공지능",
+            null,
+            null,
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            null,
+            null,
+            10,
+            UUID.randomUUID()  // ✅ 사용자 ID를 실제로 넣어줍니다
+        );
+
+        Articles article = Articles.builder()
+            .id(UUID.randomUUID())
+            .title("인공지능 혁신")
+            .source("연합뉴스")
+            .originalLink("https://ai.com/1")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now())
+            .viewCount(0L)
+            .deleted(false)
+            .build();
+
+        given(articlesRepository.searchArticles(request)).willReturn(List.of(article));
+        given(articlesRepository.countArticles(request)).willReturn(1L);
+        given(articlesMapper.toDto(article)).willReturn(
+            new ArticleDto(
+                article.getId(),
+                article.getSource(),
+                article.getOriginalLink(),
+                article.getTitle(),
+                article.getPublishedAt(),
+                article.getSummary(),
+                article.getViewCount(),
+                0L,
+                false
+            )
+        );
+
+        // ✅ articleViewsRepository 의존성 추가
+        given(articleViewsRepository.findAllByViewedByAndArticleIdIn(any(), any()))
+            .willReturn(List.of()); // 사용자 조회 없음 처리
+
+        // When
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(request);
+
+        // Then
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
+        assertThat(result.hasNext()).isFalse();
+    }
+
+
+    @Test
+    @DisplayName("관심사, 출처, 날짜 범위 필터와 함께 기사 목록을 조회할 수 있다")
+    void findArticles_WithAllFilters() {
+        // Given
+        UUID interestId = UUID.randomUUID();
+        List<String> sources = List.of("연합뉴스");
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(7);
+        LocalDateTime toDate = LocalDateTime.now();
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            "AI",
+            interestId,
+            sources,
+            fromDate,
+            toDate,
+            "viewCount",
+            "DESC",
+            null,
+            null,
+            2,
+            null
+        );
+
+        Articles article = Articles.builder()
+            .id(UUID.randomUUID())
+            .source("연합뉴스")
+            .originalLink("https://news.com/article1")
+            .title("AI 산업 동향")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now().minusDays(1))
+            .build();
+
+        given(articlesRepository.searchArticles(request)).willReturn(List.of(article));
+        given(articlesRepository.countArticles(request)).willReturn(1L); // ✅ 추가된 부분
+        given(articlesMapper.toDto(article)).willReturn(new ArticleDto(
+            article.getId(),
+            article.getSource(),
+            article.getOriginalLink(),
+            article.getTitle(),
+            article.getPublishedAt(),
+            article.getSummary(),
+            0L,
+            0L,
+            false
+        ));
+
+        // When
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(request);
+
+        // Then
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
+    }
+
+
+    @Test
+    @DisplayName("정렬 기준에 따라 다른 방식으로 커서 페이징을 수행할 수 있다")
+    void findArticles_SortedByCommentCount_WithCursor() {
+        // Given
+        UUID cursorId = UUID.randomUUID();
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            null,
+            null,
+            null,
+            null,
+            "commentCount",
+            "DESC",
+            cursorId.toString(),
+            null,
+            5,
+            null
+        );
+
+        given(articlesRepository.searchArticles(request)).willReturn(List.of());
+
+        // When
+        CursorPageResponse<ArticleDto> result = articleService.findArticles(request);
+
+        // Then
+        assertThat(result.content()).isEmpty();
+        assertThat(result.totalElements()).isZero();
+    }
+
+    @Test
+    @DisplayName("출처 목록 조회 - 삭제된 기사 제외하고 중복 없이 반환")
+    void getAllSources_ReturnsUniqueNonDeletedSources() {
+        // given - repository가 중복, 삭제된 출처 포함 리스트 반환
+        List<String> mockSources = Arrays.asList("NAVER", "중앙일보", "NAVER", "한겨레");
+        when(articlesRepository.findDistinctSources()).thenReturn(mockSources);
+
+        // when
+        List<String> result = articleService.getAllSources();
+
+        // then - 중복 제거 로직이 서비스에 있으면 검증
+        assertThat(result).containsExactlyInAnyOrder("NAVER", "중앙일보", "한겨레");
+    }
+
+    @Test
+    @DisplayName("출처 목록 조회 - 결과가 없으면 빈 리스트 반환")
+    void getAllSources_ReturnsEmptyListWhenNoSources() {
+        when(articlesRepository.findDistinctSources()).thenReturn(Collections.emptyList());
+
+        List<String> result = articleService.getAllSources();
+
+        assertThat(result).isEmpty();
     }
 }

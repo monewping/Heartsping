@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
+import org.project.monewping.domain.interest.entity.Interest;
 
 @DisplayName("ArticlesMapper 테스트")
 public class ArticlesMapperTest {

@@ -113,7 +113,7 @@ public class YonhapRssFetcher implements ArticleFetcher {
                 articles.add(new ArticleSaveRequest(
                     // 관심사 ID는 외부 매핑
                     null,
-                    "Naver",
+                    "Yonhap",
                     link,
                     title,
                     // NPE 방지를 위해 Null이 아니면 그대로, Null이라면 빈 문자열로 대체

@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.global.base.BaseEntity;
 
 @Entity
