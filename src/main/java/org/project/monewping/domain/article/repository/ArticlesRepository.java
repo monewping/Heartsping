@@ -22,6 +22,7 @@ public interface ArticlesRepository extends JpaRepository<Articles, UUID>, Artic
 
     List<Articles> findByPublishedAtBetweenAndDeletedFalse(LocalDateTime from, LocalDateTime to);
 
+    // 논리 삭제 메서드
     Optional<Articles> findByIdAndDeletedFalse(UUID id);
 
 }
