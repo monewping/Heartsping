@@ -1,5 +1,8 @@
 package org.project.monewping.global.exception;
 
+import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.InterestCreationException;
+import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
@@ -33,10 +36,33 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * <li>{@link EmailAlreadyExistsException} - 이메일 중복</li>
  * <li>{@link Exception} - 기타 예외</li>
  * </ul>
- *
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DuplicateInterestNameException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateInterestNameException(DuplicateInterestNameException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_INTEREST_NAME", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(SimilarInterestNameException.class)
+    public ResponseEntity<ErrorResponse> handleSimilarInterestNameException(SimilarInterestNameException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "SIMILAR_INTEREST_NAME", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(InterestCreationException.class)
+    public ResponseEntity<ErrorResponse> handleInterestCreationException(InterestCreationException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTEREST_CREATION_ERROR", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     /**
      * Bean Validation 실패 시 예외를 처리합니다.
@@ -185,7 +211,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    /*
+    /**
      * 기타 예외를 처리합니다.
      *
      * <p>
