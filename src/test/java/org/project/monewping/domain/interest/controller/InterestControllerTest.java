@@ -229,18 +229,19 @@ class InterestControllerTest {
         // Given
         UUID interestId = UUID.randomUUID();
         String requestBody = """
-            {
-                "keywords": []
-            }
-            """;
+                {
+                    "keywords": []
+                }
+                """;
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효성 검사 실패"));
+    }
 
     @Test
     @DisplayName("관심사 구독 취소 API를 호출하면 200 OK와 결과가 반환된다")
