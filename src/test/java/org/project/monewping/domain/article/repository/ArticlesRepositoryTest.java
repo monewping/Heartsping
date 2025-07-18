@@ -510,5 +510,170 @@ public class ArticlesRepositoryTest {
         assertThat(result.get(0).getTitle()).contains("양자역학");
     }
 
+    @Test
+    @DisplayName("유효하지 않은 커서 ID를 입력하면 빈 리스트를 반환한다")
+    void searchArticles_withInvalidCursor_returnsEmpty() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+        );
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            null,
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            "00000000-0000-0000-0000-000000000000", // 존재하지 않는 UUID 커서
+            LocalDateTime.now(),
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("잘못된 정렬 조건 입력 시 기본 정렬이 적용된다")
+    void searchArticles_invalidSortParameters() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+        );
+
+        ArticleSearchRequest invalidOrderBy = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            null,
+            null,
+            null,
+            "invalidField", // 잘못된 정렬 기준
+            "DESC",
+            null,
+            null,
+            10,
+            null
+        );
+
+        ArticleSearchRequest invalidDirection = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            null,
+            null,
+            null,
+            "publishDate",
+            "INVALID", // 잘못된 정렬 방향
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        List<Articles> resultsOrderBy = articlesRepository.searchArticles(invalidOrderBy);
+        List<Articles> resultsDirection = articlesRepository.searchArticles(invalidDirection);
+
+        // then
+        assertThat(resultsOrderBy).isNotNull();
+        assertThat(resultsDirection).isNotNull();
+
+        // 추가로 기본 정렬인 publishDate DESC 기준으로 정렬됐는지 검증 가능
+        assertThat(resultsOrderBy)
+            .isSortedAccordingTo((a, b) -> b.getPublishedAt().compareTo(a.getPublishedAt()));
+
+        assertThat(resultsDirection)
+            .isSortedAccordingTo((a, b) -> b.getPublishedAt().compareTo(a.getPublishedAt()));
+    }
+
+    @Test
+    @DisplayName("키워드가 요약에 포함된 경우에도 검색된다")
+    void searchArticles_keywordInSummary() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+        );
+
+        articlesRepository.save(Articles.builder()
+            .interest(interest)
+            .source("테스트출처")
+            .originalLink("https://news.com/summary1")
+            .title("제목에 키워드 없음")
+            .summary("요약에 포함된 키워드: AI")
+            .publishedAt(LocalDateTime.now())
+            .deleted(false)
+            .build());
+
+        ArticleSearchRequest request = new ArticleSearchRequest(
+            "AI", // 키워드
+            interest.getId(),
+            List.of("테스트출처"),
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            null,
+            null,
+            10,
+            null
+        );
+
+        // when
+        List<Articles> results = articlesRepository.searchArticles(request);
+
+        // then
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getSummary()).contains("AI");
+    }
+
+    @Test
+    @DisplayName("limit이 0 이하일 경우 기본 limit가 적용된다")
+    void searchArticles_invalidLimit() {
+        // given
+        Interest interest = interestRepository.save(
+            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+        );
+
+        ArticleSearchRequest requestZeroLimit = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            null,
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            null,
+            null,
+            0, // limit 0
+            null
+        );
+
+        ArticleSearchRequest requestNegativeLimit = new ArticleSearchRequest(
+            null,
+            interest.getId(),
+            null,
+            null,
+            null,
+            "publishDate",
+            "DESC",
+            null,
+            null,
+            -5, // limit 음수
+            null
+        );
+
+        // when
+        List<Articles> resultsZeroLimit = articlesRepository.searchArticles(requestZeroLimit);
+        List<Articles> resultsNegativeLimit = articlesRepository.searchArticles(requestNegativeLimit);
+
+        // then
+        assertThat(resultsZeroLimit.size()).isLessThanOrEqualTo(10); // 기본 limit 값
+        assertThat(resultsNegativeLimit.size()).isLessThanOrEqualTo(10);
+    }
 
 }

@@ -22,5 +22,10 @@ public interface ArticlesMapper {
     @Mapping(target = "viewedByMe", ignore = true)
     ArticleDto toDto(Articles article);
 
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "publishedAt", source = "publishDate")
+    @Mapping(target = "originalLink", source = "sourceUrl")
+    @Mapping(target = "interest", ignore = true)
     Articles toEntity(ArticleDto dto);
 }
