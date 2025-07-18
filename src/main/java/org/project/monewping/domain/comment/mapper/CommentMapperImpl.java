@@ -28,7 +28,7 @@ public class CommentMapperImpl implements CommentMapper {
             .likeCount(0)
             .createdAt(now)
             .updatedAt(now)
-            .deleted(false)
+            .isDeleted(false)
             .build();
     }
 
