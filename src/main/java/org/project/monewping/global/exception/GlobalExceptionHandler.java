@@ -16,7 +16,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
@@ -363,20 +362,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    /**
-     * 잘못된 요청 파라미터 타입 예외 처리
-     * <p>
-     * 예: UUID 등 타입이 맞지 않는 경우 400 Bad Request 반환
-     */
-
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
-        MissingServletRequestParameterException ex) {
-        ErrorResponse errorResponse = ErrorResponse.of(
-            HttpStatus.BAD_REQUEST,
-            "필수 요청 파라미터가 누락되었습니다: " + ex.getParameterName(),
-                      ex.getMessage()
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
 }
