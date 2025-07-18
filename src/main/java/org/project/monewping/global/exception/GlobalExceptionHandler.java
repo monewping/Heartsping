@@ -4,6 +4,7 @@ import org.project.monewping.domain.interest.exception.DuplicateInterestNameExce
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -296,5 +297,22 @@ public class GlobalExceptionHandler {
             null);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * 배치 작업 실행 중 발생한 {@link NotificationBatchRunException} 예외를 처리합니다.
+     *
+     * @param ex 발생한 예외 객체
+     * @return HTTP 500 상태 코드와 함께 에러 메시지를 포함한 {@link ErrorResponse}
+     */
+    @ExceptionHandler(NotificationBatchRunException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationBatchRunException(NotificationBatchRunException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
