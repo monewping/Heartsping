@@ -29,11 +29,4 @@ public abstract class BaseEntity {
     @Column(name = "created_at", nullable = false)
     @CreatedDate
     private Instant createdAt;
-
-    /*
-        알림 목록 조회 테스트 용 생성 시각 setter
-     */
-    protected void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
 }
