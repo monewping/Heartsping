@@ -23,6 +23,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
@@ -102,7 +103,6 @@ public class CommentServiceImpl implements CommentService {
 
     // 댓글 수정
     @Override
-    @Transactional
     public void updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new CommentNotFoundException(commentId));

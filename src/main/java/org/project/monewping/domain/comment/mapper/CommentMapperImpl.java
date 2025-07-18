@@ -20,10 +20,9 @@ public class CommentMapperImpl implements CommentMapper {
         }
         Instant now = Instant.now();
         return Comment.builder()
-            .id(UUID.randomUUID())
             .articleId(requestDto.getArticleId())
             .userId(requestDto.getUserId())
-            .userNickname("익명")  // 임시
+            .userNickname(requestDto.getUserNickname())
             .content(requestDto.getContent())
             .likeCount(0)
             .createdAt(now)
