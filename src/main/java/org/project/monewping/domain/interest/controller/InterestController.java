@@ -54,19 +54,14 @@ public class InterestController {
     public ResponseEntity<InterestDto> create(@Valid @RequestBody InterestRegisterRequest request) {
         log.info("[InterestController] 관심사 등록 API 호출: name={}", request.name());
 
-        try {
-            InterestDto responseDto = interestService.create(request);
+        InterestDto responseDto = interestService.create(request);
 
-            log.info("[InterestController] 관심사 등록 API 성공: id={}, name={}", responseDto.id(), responseDto.name());
+        log.info("[InterestController] 관심사 등록 API 성공: id={}, name={}", responseDto.id(), responseDto.name());
 
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .header("Location", "/api/interests/" + responseDto.id())
-                    .body(responseDto);
-        } catch (Exception e) {
-            log.error("[InterestController] 관심사 등록 API 실패: name={}, error={}", request.name(), e.getMessage(), e);
-            throw e;
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header("Location", "/api/interests/" + responseDto.id())
+                .body(responseDto);
     }
 
     /**
@@ -127,18 +122,14 @@ public class InterestController {
         log.info("[InterestController] 관심사 키워드 수정 API 호출: interestId={}, keywords={}",
                 interestId, request.keywords());
 
-        try {
-            InterestDto responseDto = interestService.update(interestId, request);
+        InterestDto responseDto = interestService.update(interestId, request);
 
-            log.info("[InterestController] 관심사 키워드 수정 API 성공: interestId={}, keywords={}",
-                    interestId, responseDto.keywords());
+        log.info("[InterestController] 관심사 키워드 수정 API 성공: interestId={}, keywords={}",
+                interestId, responseDto.keywords());
 
-            return ResponseEntity.ok(responseDto);
-        } catch (Exception e) {
-            log.error("[InterestController] 관심사 키워드 수정 API 실패: interestId={}, error={}",
-                    interestId, e.getMessage(), e);
-            throw e;
-        }
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(responseDto);
     }
 
     /**
@@ -172,15 +163,10 @@ public class InterestController {
     public ResponseEntity<Void> delete(@PathVariable UUID interestId) {
         log.info("[InterestController] 관심사 삭제 API 호출: interestId={}", interestId);
         
-        try {
-            interestService.delete(interestId);
-            
-            log.info("[InterestController] 관심사 삭제 API 성공: interestId={}", interestId);
-            
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            log.error("[InterestController] 관심사 삭제 API 실패: interestId={}, error={}", interestId, e.getMessage(), e);
-            throw e;
-        }
+        interestService.delete(interestId);
+        
+        log.info("[InterestController] 관심사 삭제 API 성공: interestId={}", interestId);
+        
+        return ResponseEntity.noContent().build();
     }
 } 

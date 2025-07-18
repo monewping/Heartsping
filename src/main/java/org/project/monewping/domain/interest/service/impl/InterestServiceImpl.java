@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -258,27 +260,23 @@ public class InterestServiceImpl implements InterestService {
             throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
 
-        // null이나 빈 문자열 제거 후 중복 검사
-        List<String> validKeywords = keywords.stream()
-                .filter(keyword -> keyword != null && !keyword.trim().isEmpty())
-                .map(String::trim)
-                .toList();
-
-        if (validKeywords.isEmpty()) {
-            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
+        // null이나 빈 문자열 제거 후 중복 검사 (성능 개선)
+        Set<String> seen = new HashSet<>();
+        for (String kw : keywords) {
+            if (kw == null) continue;
+            
+            String trimmed = kw.trim();
+            if (trimmed.isEmpty()) continue;
+            
+            // 중복 검사 (O(1) 연산)
+            if (!seen.add(trimmed)) {
+                throw new DuplicateKeywordException(trimmed);
+            }
         }
-
-        // 중복된 키워드 확인
-        List<String> duplicates = validKeywords.stream()
-                .filter(keyword -> validKeywords.stream()
-                        .filter(k -> k.equals(keyword))
-                        .count() > 1)
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()) {
-            log.warn("[InterestService] 중복된 키워드 발견: {}", duplicates);
-            throw new DuplicateKeywordException(duplicates.get(0));
+        
+        // 유효한 키워드가 하나도 없는 경우
+        if (seen.isEmpty()) {
+            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
     }
 
