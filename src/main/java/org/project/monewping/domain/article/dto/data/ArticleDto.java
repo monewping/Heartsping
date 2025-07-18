@@ -27,4 +27,10 @@ public record ArticleDto(
     Long viewCount,
     boolean viewedByMe
 ) {
+    public ArticleDto withViewedByMe(boolean viewedByMe) {
+        return new ArticleDto(
+            id, source, sourceUrl, title, publishDate,
+            summary, commentCount, viewCount, viewedByMe
+        );
+    }
 }

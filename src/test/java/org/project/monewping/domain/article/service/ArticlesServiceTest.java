@@ -33,6 +33,7 @@ import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
+import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.project.monewping.domain.interest.entity.Interest;
@@ -44,6 +45,9 @@ public class ArticlesServiceTest {
 
     @InjectMocks
     private ArticlesServiceImpl articleService;
+
+    @Mock
+    private ArticleViewsRepository articleViewsRepository;
 
     @Mock
     private ArticlesRepository articlesRepository;
@@ -302,19 +306,49 @@ public class ArticlesServiceTest {
             null,
             null,
             10,
-            null
+            UUID.randomUUID()  // ✅ 사용자 ID를 실제로 넣어줍니다
         );
 
-        given(articlesRepository.searchArticles(request)).willReturn(List.of());
+        Articles article = Articles.builder()
+            .id(UUID.randomUUID())
+            .title("인공지능 혁신")
+            .source("연합뉴스")
+            .originalLink("https://ai.com/1")
+            .summary("요약")
+            .publishedAt(LocalDateTime.now())
+            .viewCount(0L)
+            .deleted(false)
+            .build();
+
+        given(articlesRepository.searchArticles(request)).willReturn(List.of(article));
+        given(articlesRepository.countArticles(request)).willReturn(1L);
+        given(articlesMapper.toDto(article)).willReturn(
+            new ArticleDto(
+                article.getId(),
+                article.getSource(),
+                article.getOriginalLink(),
+                article.getTitle(),
+                article.getPublishedAt(),
+                article.getSummary(),
+                article.getViewCount(),
+                0L,
+                false
+            )
+        );
+
+        // ✅ articleViewsRepository 의존성 추가
+        given(articleViewsRepository.findAllByViewedByAndArticleIdIn(any(), any()))
+            .willReturn(List.of()); // 사용자 조회 없음 처리
 
         // When
         CursorPageResponse<ArticleDto> result = articleService.findArticles(request);
 
         // Then
-        assertThat(result.content()).isEmpty();
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
         assertThat(result.hasNext()).isFalse();
-        assertThat(result.totalElements()).isZero();
     }
+
 
     @Test
     @DisplayName("관심사, 출처, 날짜 범위 필터와 함께 기사 목록을 조회할 수 있다")
