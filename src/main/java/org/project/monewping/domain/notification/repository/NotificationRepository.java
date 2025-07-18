@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.project.monewping.domain.notification.entity.Notification;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -91,4 +92,13 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             AND n.confirmed = false
         """)
     int confirmAllByUserId(@Param("userId") UUID userId);
+
+    /**
+     * 확인된(confirmed = true) 알림 중, 1주일이 경과된 알림들을 페이지 단위로 조회합니다.
+     *
+     * @param updatedAt 기준 시간. 이 시간보다 이전에 updatedAt이 설정된 알림만 조회됩니다.
+     * @param pageable 페이징 정보를 포함한 객체입니다. (예: 페이지 크기, 정렬 순서 등)
+     * @return 조건에 맞는 {@link Notification} 객체들을 담고 있는 {@link Page}
+     */
+    Page<Notification> findAllByConfirmedIsTrueAndUpdatedAtBefore(Instant updatedAt, Pageable pageable);
 }
