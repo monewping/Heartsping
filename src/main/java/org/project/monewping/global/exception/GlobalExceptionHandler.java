@@ -193,7 +193,8 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
-  
+
+    /**
      * 사용자를 조회할 수 없을 때 발생하는 예외를 처리합니다.
      *
      * @param ex 발생한 UserNotFoundException
@@ -210,6 +211,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
+    /**
      * 기타 예외를 처리합니다.
      *
      * <p>
