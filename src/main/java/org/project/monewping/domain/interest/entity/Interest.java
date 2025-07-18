@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.project.monewping.global.base.BaseUpdatableEntity;
 import lombok.Builder;
@@ -34,6 +35,11 @@ public class Interest extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "interest", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Keyword> keywords = new ArrayList<>();
+
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
 
     public Interest(String name, Long subscriberCount, List<Keyword> keywords) {
         this.name = name;
