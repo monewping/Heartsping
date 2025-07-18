@@ -57,3 +57,8 @@ management:
 server:
   port: ${PORT:8080}
   address: 0.0.0.0
+
+naver:
+  api:
+    client-id: w77BI41SmIuc2Nfm3L4d
+    client-secret: nDx6IuyH3i
