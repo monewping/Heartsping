@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
@@ -136,26 +135,24 @@ public class ArticleController {
     }
 
     /**
-     * 날짜 범위(from ~ to) 내의 뉴스 기사 복구 요청 처리
+     * 날짜 범위 내에서 유실된 뉴스 기사 복구를 수행합니다.
+     *
+     * @param from 복구 시작일 (yyyy-MM-dd)
+     * @param to   복구 종료일 (yyyy-MM-dd)
+     * @return 각 날짜별 복구 결과 리스트
      */
     @GetMapping("/restore")
-    public List<ArticleRestoreResultDto> restoreArticlesByDateRange(
-        @RequestParam("from")
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate from,
+    public ResponseEntity<List<ArticleRestoreResultDto>> restoreArticles(
+        @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
-        @RequestParam("to")
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate to
-    ) {
-        log.info("뉴스 기사 데이터 복구 요청 : from = {} to = {}", from, to);
+        if (from.isAfter(to)) {
+            return ResponseEntity.badRequest().build();
+        }
 
-        List<LocalDate> targetDates = from.datesUntil(to.plusDays(1))
-            .toList();
+        List<ArticleRestoreResultDto> restoreResults = articleRestoreService.restoreArticlesByRange(from, to);
 
-        return targetDates.stream()
-            .map(articleRestoreService::restoreArticlesByDate)
-            .collect(Collectors.toList());
+        return ResponseEntity.ok(restoreResults);
     }
 
 }

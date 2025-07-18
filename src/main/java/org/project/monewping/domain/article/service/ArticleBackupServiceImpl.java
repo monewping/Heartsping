@@ -1,11 +1,6 @@
 package org.project.monewping.domain.article.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +9,7 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.storage.ArticleBackupStorage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,40 +25,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArticleBackupServiceImpl implements ArticleBackupService {
 
     private final ArticlesRepository articlesRepository;
+    private final ArticleBackupStorage backupStorage;
     private final ArticlesMapper articlesMapper;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 지정된 날짜에 해당하는 뉴스 기사 데이터를 백업합니다.
+     * 지정된 날짜의 뉴스를 백업합니다.
      *
-     * <p>백업 대상은 해당 날짜에 발행되었으며, 삭제되지 않은 기사입니다.
-     * 결과는 JSON 파일로 저장되며, 저장 위치는 {@code backup/news-YYYY-MM-DD.json}입니다.</p>
-     *
-     * @param date 백업할 날짜 (YYYY-MM-DD 기준)
-     * @throws RuntimeException 백업 과정 중 파일 저장 오류 발생 시 예외 발생
+     * @param date 백업 대상 날짜 (yyyy-MM-dd)
      */
     @Override
     public void backupArticlesByDate(LocalDate date) {
+        log.info("뉴스 기사 백업 시작 = 날짜 : {}", date);
 
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.plusDays(1).atStartOfDay();
+        // 해당 날짜에 삭제되지 않은 기사 목록 조회
+        List<Articles> articles = articlesRepository.findByPublishedAtBetweenAndDeletedFalse(
+            date.atStartOfDay(), date.plusDays(1).atStartOfDay()
+        );
 
-        List<Articles> articles = articlesRepository.findAllByPublishedAtBetweenAndDeletedFalse(start, end);
-        List<ArticleDto> backupDtos = articles.stream()
+        // 엔티티 → DTO 변환
+        List<ArticleDto> dtos = articles.stream()
             .map(articlesMapper::toDto)
             .collect(Collectors.toList());
 
-        String backupDir = "backup";
-        new File(backupDir).mkdirs(); // 디렉토리 없으면 생성
+        // DTO 리스트를 백업 저장소에 저장
+        backupStorage.save(date, dtos);
 
-        String filename = backupDir + "/news-" + date + ".json";
-        try (FileWriter writer = new FileWriter(filename)) {
-            objectMapper.writeValue(writer, backupDtos);
-            log.info("✅ 백업 완료: 날짜 = {}, 수량 = {}, 파일 = {}", date, backupDtos.size(), filename);
-        } catch (IOException e) {
-            log.error("❌ 백업 실패", e);
-            throw new RuntimeException("백업 중 오류 발생", e);
-        }
+        log.info("뉴스 기사 백업 완료 = 날짜 : {}, 건수 : {}", date, dtos.size());
     }
 
 }

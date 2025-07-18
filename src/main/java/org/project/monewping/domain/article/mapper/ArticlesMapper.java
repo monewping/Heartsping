@@ -4,7 +4,6 @@ import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
-import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.entity.Interest;
@@ -23,11 +22,5 @@ public interface ArticlesMapper {
     @Mapping(target = "viewedByMe", ignore = true)
     ArticleDto toDto(Articles article);
 
-    // 복구용 DTO → 엔티티
-    @Mapping(source = "sourceUrl", target = "originalLink")
-    @Mapping(source = "publishDate", target = "publishedAt")
-    @Mapping(target = "deleted", constant = "false")
-    @Mapping(target = "interest", ignore = true)
     Articles toEntity(ArticleDto dto);
-
 }

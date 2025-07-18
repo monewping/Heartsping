@@ -1,10 +1,7 @@
 package org.project.monewping.domain.article.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +11,13 @@ import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.storage.ArticleBackupStorage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 백업된 뉴스 기사 JSON 파일로부터 복구 작업을 수행하는 서비스입니다.
+ * 로컬 또는 외부 백업 소스로부터 백업 데이터를 불러와,
+ * DB에 존재하지 않는 기사만 복원합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,58 +25,72 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ArticleRestoreServiceImpl implements ArticleRestoreService {
 
+    private final ArticleBackupStorage backupStorage;
     private final ArticlesRepository articlesRepository;
     private final ArticlesMapper articlesMapper;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 주어진 날짜에 해당하는 백업 파일을 읽고, 아직 저장되지 않은 뉴스 기사를 복원합니다.
+     * 주어진 날짜 범위(from, to)에 대해 일별로 복구 작업을 수행합니다.
+     * 각 날짜별 백업 데이터를 로드하고,
+     * 현재 DB에 없는 원본 링크의 기사만 필터링하여 저장합니다.
      *
-     * @param date 복원 대상 날짜 (예: 2025-07-17)
-     * @return 복원된 기사 ID 목록 및 개수를 담은 결과 DTO
+     * @param from 복구 시작일 (포함)
+     * @param to 복구 종료일 (포함)
+     * @return 복구 결과 목록 (날짜별 복구 결과 포함)
+     * @throws IllegalArgumentException 시작일이 종료일보다 늦으면 예외 발생
      */
     @Override
-    public ArticleRestoreResultDto restoreArticlesByDate(LocalDate date) {
-
-        String filename = "backup/news-" + date + ".json";
-        List<ArticleDto> backupDtos;
-
-        // 1. JSON 파일 로드
-        try {
-            backupDtos = objectMapper.readValue(
-                new File(filename),
-                new TypeReference<List<ArticleDto>>() {}
-            );
-        } catch (IOException e) {
-            log.error("❌ 복구 실패 - 파일 읽기 오류", e);
-            throw new RuntimeException("복구 JSON 파일 읽기 실패", e);
+    public List<ArticleRestoreResultDto> restoreArticlesByRange(LocalDate from, LocalDate to) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("복구 시작일(from)은 종료일(to)보다 빠르거나 같아야 합니다.");
         }
 
-        // 2. 기존 저장된 originalLink 목록 조회
-        List<String> existingLinks = articlesRepository.findAllByOriginalLinkIn(
-                backupDtos.stream().map(ArticleDto::sourceUrl).toList()
-            ).stream()
-            .map(Articles::getOriginalLink)
-            .toList();
+        List<ArticleRestoreResultDto> result = new ArrayList<>();
 
-        // 3. 중복되지 않은 기사만 필터링
-        List<ArticleDto> toRestore = backupDtos.stream()
-            .filter(dto -> !existingLinks.contains(dto.sourceUrl()))
-            .toList();
+        // from부터 to까지 하루씩 증가시키며 복구 작업 수행
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+            log.info("뉴스 기사 복구 시작 - 날짜 : {}", date);
 
-        // 4. 엔티티로 변환 및 저장
-        List<Articles> restoredEntities = toRestore.stream()
-            .map(articlesMapper::toEntity)
-            .collect(Collectors.toList());
-        articlesRepository.saveAll(restoredEntities);
+            // 백업 저장소에서 해당 날짜 백업 데이터 로드
+            List<ArticleDto> backup = backupStorage.load(date);
 
-        // 5. 복원 결과 리턴
-        List<String> restoredIds = restoredEntities.stream()
-            .map(article -> article.getId().toString())
-            .toList();
+            // 백업 데이터가 없으면 빈 결과 추가 후 다음 날짜로 이동
+            if (backup == null || backup.isEmpty()) {
+                log.info("복구할 데이터 없음 - 날짜 : {}", date);
+                result.add(new ArticleRestoreResultDto(date.atStartOfDay(), List.of(), 0));
+                continue;
+            }
 
-        log.info("✅ 복구 완료: 날짜 = {}, 복구 수 = {}", date, restoredIds.size());
-        return new ArticleRestoreResultDto(date, restoredIds, restoredIds.size());
+            // 백업 데이터에서 원본 링크만 추출
+            List<String> originalLinks = backup.stream()
+                .map(ArticleDto::sourceUrl)
+                .collect(Collectors.toList());
+
+            // DB에 이미 존재하는 원본 링크 목록 조회
+            List<String> existingLinks = articlesRepository.findExistingOriginalLinks(originalLinks);
+
+            // DB에 없는(복구 대상) 기사 필터링
+            List<ArticleDto> toRestore = backup.stream()
+                .filter(dto -> !existingLinks.contains(dto.sourceUrl()))
+                .toList();
+
+            // DTO -> 엔티티 변환
+            List<Articles> entities = toRestore.stream()
+                .map(articlesMapper::toEntity)
+                .collect(Collectors.toList());
+
+            // 복구 대상 기사 저장
+            articlesRepository.saveAll(entities);
+
+            // 복구 결과 추가
+            result.add(new ArticleRestoreResultDto(
+                date.atStartOfDay(),
+                entities.stream().map(e -> e.getId().toString()).collect(Collectors.toList()),
+                entities.size()));
+
+            log.info("뉴스 기사 복구 완료 - 날짜 : {}, 복구 건수 : {}", date, entities.size());
+        }
+
+        return result;
     }
-
 }

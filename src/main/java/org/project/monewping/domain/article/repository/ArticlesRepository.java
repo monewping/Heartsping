@@ -16,7 +16,10 @@ public interface ArticlesRepository extends JpaRepository<Articles, UUID>, Artic
     @Query("SELECT DISTINCT a.source FROM Articles a WHERE a.deleted = false")
     List<String> findDistinctSources();
 
-    // 백업용 날짜 기준 기사 목록 조회
-    List<Articles> findAllByPublishedAtBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
+    @Query("SELECT a.originalLink FROM Articles a WHERE a.originalLink IN :originalLinks")
+    List<String> findExistingOriginalLinks(List<String> originalLinks);
+
+    List<Articles> findByPublishedAtBetweenAndDeletedFalse(LocalDateTime from, LocalDateTime to);
+
 
 }
