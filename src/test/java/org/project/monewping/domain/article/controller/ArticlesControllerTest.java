@@ -307,53 +307,61 @@ public class ArticlesControllerTest {
     @Test
     @DisplayName("논리 삭제 API 성공 시 204 반환")
     void softDeleteApi_Success() throws Exception {
+        // Given
         UUID articleId = UUID.randomUUID();
-
-        // service 호출 시 예외 없도록 설정
         doNothing().when(articlesService).softDelete(articleId);
 
+        // When
         mockMvc.perform(delete("/api/articles/{articleId}", articleId))
             .andExpect(status().isNoContent());
 
+        // Then
         verify(articlesService).softDelete(articleId);
     }
 
     @Test
     @DisplayName("논리 삭제 API - 없는 기사 요청 시 404 반환")
     void softDeleteApi_NotFound() throws Exception {
+        // Given
         UUID articleId = UUID.randomUUID();
-
         doThrow(new ArticleNotFoundException(articleId)).when(articlesService).softDelete(articleId);
 
+        // When
         mockMvc.perform(delete("/api/articles/{articleId}", articleId))
             .andExpect(status().isNotFound());
 
+        // Then
         verify(articlesService).softDelete(articleId);
     }
 
     @Test
     @DisplayName("물리 삭제 API 성공 시 204 반환")
     void hardDeleteApi_Success() throws Exception {
+        // Given
         UUID articleId = UUID.randomUUID();
-
         doNothing().when(articlesService).hardDelete(articleId);
 
+        // When
         mockMvc.perform(delete("/api/articles/{articleId}/hard", articleId))
             .andExpect(status().isNoContent());
 
+        // Then
         verify(articlesService).hardDelete(articleId);
     }
 
     @Test
     @DisplayName("물리 삭제 API - 없는 기사 요청 시 404 반환")
     void hardDeleteApi_NotFound() throws Exception {
+        // Given
         UUID articleId = UUID.randomUUID();
-
         doThrow(new ArticleNotFoundException(articleId)).when(articlesService).hardDelete(articleId);
 
+        // When
         mockMvc.perform(delete("/api/articles/{articleId}/hard", articleId))
             .andExpect(status().isNotFound());
 
+        // Then
         verify(articlesService).hardDelete(articleId);
     }
+
 }
