@@ -20,9 +20,4 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
     @LastModifiedDate
     private Instant updatedAt;
 
-    @Column(columnDefinition = "uuid")
-    private UUID id;
-
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
 }
