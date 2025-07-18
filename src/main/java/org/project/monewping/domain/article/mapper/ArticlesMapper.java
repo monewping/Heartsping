@@ -4,7 +4,6 @@ import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
-import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.interest.entity.Interest;
