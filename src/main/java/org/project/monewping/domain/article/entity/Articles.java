@@ -55,9 +55,6 @@ public class Articles extends BaseEntity {
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
 
-    @OneToMany(mappedBy = "article", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<ArticleViews> articleViews = new ArrayList<>();
-
     // 논리 삭제 시 적용될 마스킹
     public void softDeleteWithMasking() {
         this.title = "[ 삭제된 기사 ]";
