@@ -516,7 +516,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_withInvalidCursor_returnsEmpty() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+            Interest.builder().name("테스트관심사").subscriberCount(0L).build()
         );
 
         ArticleSearchRequest request = new ArticleSearchRequest(
@@ -545,7 +545,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_invalidSortParameters() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+            Interest.builder().name("테스트관심사").subscriberCount(0L).build()
         );
 
         ArticleSearchRequest invalidOrderBy = new ArticleSearchRequest(
@@ -597,7 +597,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_keywordInSummary() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+            Interest.builder().name("테스트관심사").subscriberCount(0L).build()
         );
 
         articlesRepository.save(Articles.builder()
@@ -637,7 +637,7 @@ public class ArticlesRepositoryTest {
     void searchArticles_invalidLimit() {
         // given
         Interest interest = interestRepository.save(
-            Interest.builder().name("테스트관심사").subscriberCount(0).build()
+            Interest.builder().name("테스트관심사").subscriberCount(0L).build()
         );
 
         ArticleSearchRequest requestZeroLimit = new ArticleSearchRequest(

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,10 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.storage.ArticleBackupStorage;
+import org.project.monewping.domain.interest.entity.Interest;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ArticleBackupService 테스트")
@@ -45,9 +46,15 @@ public class ArticleBackupServiceTest {
         LocalDate date = LocalDate.of(2025, 7, 18);
         UUID articleId = UUID.randomUUID();
 
+        Interest interest = Interest.builder()
+            .name("AI")
+            .subscriberCount(100L)
+            .updatedAt(Instant.now())
+            .build();
+
         Articles article = Articles.builder()
             .id(articleId)
-            .interest(new Interest())
+            .interest(interest)  // <-- 변경된 부분
             .source("source")
             .originalLink("url")
             .title("title")
