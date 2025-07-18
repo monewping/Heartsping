@@ -1,10 +1,13 @@
 package org.project.monewping.domain.article.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.service.ArticleRestoreService;
 import org.project.monewping.domain.article.service.ArticleViewsService;
@@ -298,5 +302,58 @@ public class ArticlesControllerTest {
 
         // then
         verifyNoInteractions(articleRestoreService);
+    }
+
+    @Test
+    @DisplayName("논리 삭제 API 성공 시 204 반환")
+    void softDeleteApi_Success() throws Exception {
+        UUID articleId = UUID.randomUUID();
+
+        // service 호출 시 예외 없도록 설정
+        doNothing().when(articlesService).softDelete(articleId);
+
+        mockMvc.perform(delete("/api/articles/{articleId}", articleId))
+            .andExpect(status().isNoContent());
+
+        verify(articlesService).softDelete(articleId);
+    }
+
+    @Test
+    @DisplayName("논리 삭제 API - 없는 기사 요청 시 404 반환")
+    void softDeleteApi_NotFound() throws Exception {
+        UUID articleId = UUID.randomUUID();
+
+        doThrow(new ArticleNotFoundException(articleId)).when(articlesService).softDelete(articleId);
+
+        mockMvc.perform(delete("/api/articles/{articleId}", articleId))
+            .andExpect(status().isNotFound());
+
+        verify(articlesService).softDelete(articleId);
+    }
+
+    @Test
+    @DisplayName("물리 삭제 API 성공 시 204 반환")
+    void hardDeleteApi_Success() throws Exception {
+        UUID articleId = UUID.randomUUID();
+
+        doNothing().when(articlesService).hardDelete(articleId);
+
+        mockMvc.perform(delete("/api/articles/{articleId}/hard", articleId))
+            .andExpect(status().isNoContent());
+
+        verify(articlesService).hardDelete(articleId);
+    }
+
+    @Test
+    @DisplayName("물리 삭제 API - 없는 기사 요청 시 404 반환")
+    void hardDeleteApi_NotFound() throws Exception {
+        UUID articleId = UUID.randomUUID();
+
+        doThrow(new ArticleNotFoundException(articleId)).when(articlesService).hardDelete(articleId);
+
+        mockMvc.perform(delete("/api/articles/{articleId}/hard", articleId))
+            .andExpect(status().isNotFound());
+
+        verify(articlesService).hardDelete(articleId);
     }
 }
