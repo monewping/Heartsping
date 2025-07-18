@@ -46,7 +46,14 @@ public class ArticleCollectorScheduler {
 
             for (ArticleFetcher fetcher : articleFetchers) {
                 try {
-                    List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword).stream()
+                    List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword);
+
+                    // 방어코드: null일 경우 빈 리스트로 초기화
+                    if (fetchedArticles == null) {
+                        fetchedArticles = List.of();
+                    }
+
+                    List<ArticleSaveRequest> articlesToSave = fetchedArticles.stream()
                         .map(article -> new ArticleSaveRequest(
                             interestId,
                             article.source(),
@@ -57,19 +64,22 @@ public class ArticleCollectorScheduler {
                         ))
                         .toList();
 
-                    articlesService.saveAll(fetchedArticles);
-                    totalCount += fetchedArticles.size();
+                    if (articlesToSave.isEmpty()) {
+                        log.info("관심사 키워드 '{}'에 대해 0개 기사 수집 완료", keyword);
+                        continue; // 빈 리스트면 저장 호출 안 함
+                    }
 
-                    log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword, fetchedArticles.size());
+                    articlesService.saveAll(articlesToSave);
+                    totalCount += articlesToSave.size();
+
+                    log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword, articlesToSave.size());
                 } catch (Exception e) {
                     log.error("기사 수집 중 예외 발생 = 키워드 : '{}', 에러 : {}", keyword, e.getMessage(), e);
                 }
             }
-
         }
 
         log.info("[ 뉴스 기사 수집 배치 종료 ] 총 수집 시도 기사 수 : {}", totalCount);
-
     }
 
 }
