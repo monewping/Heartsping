@@ -20,6 +20,7 @@ public interface ArticlesMapper {
     @Mapping(source = "originalLink", target = "sourceUrl")
     @Mapping(source = "publishedAt", target = "publishDate")
     @Mapping(target = "viewedByMe", ignore = true)
+    @Mapping(target = "withViewedByMe", ignore = true)
     ArticleDto toDto(Articles article);
 
     @Mapping(target = "createdAt", ignore = true)

@@ -60,5 +60,5 @@ server:
 
 naver:
   api:
-    client-id: ${3h4R7y2Aw1d5fDiGIqEM}
-    client-secret: ${grCErSEto_}
+    client-id: ${NAVER_CLIENT_ID}
+    client-secret: ${NAVER_CLIENT_SECRET}
