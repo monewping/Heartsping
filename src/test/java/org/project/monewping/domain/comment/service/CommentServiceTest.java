@@ -3,8 +3,11 @@ package org.project.monewping.domain.comment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
@@ -54,8 +58,8 @@ class CommentServiceTest {
                 .userNickname("사용자1")
                 .content("첫 번째 댓글입니다.")
                 .likeCount(5)
-                .createdAt(LocalDateTime.now().minusHours(1))
-                .updatedAt(LocalDateTime.now().minusHours(1))
+                .createdAt(Instant.now().minus(Duration.ofHours(1)))
+                .updatedAt(Instant.now().minus(Duration.ofHours(1)))
                 .deleted(false)
                 .build(),
             Comment.builder()
@@ -65,13 +69,12 @@ class CommentServiceTest {
                 .userNickname("사용자2")
                 .content("두 번째 댓글입니다.")
                 .likeCount(3)
-                .createdAt(LocalDateTime.now().minusHours(2))
-                .updatedAt(LocalDateTime.now().minusHours(2))
+                .createdAt(Instant.now().minus(Duration.ofHours(2)))
+                .updatedAt(Instant.now().minus(Duration.ofHours(2)))
                 .deleted(false)
                 .build()
         );
 
-        // 테스트용 CommentResponseDto 생성
         testResponseDtos = Arrays.asList(
             new CommentResponseDto(
                 testComments.get(0).getId(),
@@ -103,6 +106,8 @@ class CommentServiceTest {
             eq(50)
         )).thenReturn(testComments);
 
+        when(commentRepository.countByArticleId(eq(testArticleId))).thenReturn(2L);
+
         when(commentMapper.toResponseDto(testComments.get(0))).thenReturn(testResponseDtos.get(0));
         when(commentMapper.toResponseDto(testComments.get(1))).thenReturn(testResponseDtos.get(1));
 
@@ -113,12 +118,12 @@ class CommentServiceTest {
 
         // Then
         assertThat(result.content()).hasSize(2);
-        assertThat(result.content().get(0).getContent()).isEqualTo("첫 번째 댓글입니다.");
-        assertThat(result.content().get(0).getUserNickname()).isEqualTo("사용자1");
-        assertThat(result.content().get(0).getLikeCount()).isEqualTo(5);
-        assertThat(result.content().get(1).getContent()).isEqualTo("두 번째 댓글입니다.");
-        assertThat(result.content().get(1).getUserNickname()).isEqualTo("사용자2");
-        assertThat(result.content().get(1).getLikeCount()).isEqualTo(3);
+        assertThat(result.content().get(0).content()).isEqualTo("첫 번째 댓글입니다.");
+        assertThat(result.content().get(0).userNickname()).isEqualTo("사용자1");
+        assertThat(result.content().get(0).likeCount()).isEqualTo(5);
+        assertThat(result.content().get(1).content()).isEqualTo("두 번째 댓글입니다.");
+        assertThat(result.content().get(1).userNickname()).isEqualTo("사용자2");
+        assertThat(result.content().get(1).likeCount()).isEqualTo(3);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
         assertThat(result.nextIdAfter()).isEqualTo(Math.abs(testComments.get(1).getId().getMostSignificantBits()));
         assertThat(result.size()).isEqualTo(2);
@@ -299,4 +304,31 @@ class CommentServiceTest {
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
     }
+    @Test
+    @DisplayName("댓글 등록 성공")
+    void registerComment_Success() {
+        CommentRegisterRequestDto requestDto = new CommentRegisterRequestDto();
+        requestDto.setArticleId(UUID.randomUUID());
+        requestDto.setUserId(UUID.randomUUID());
+        requestDto.setContent("테스트 댓글입니다.");
+
+        Comment mockComment = Comment.builder()
+            .id(UUID.randomUUID())
+            .articleId(requestDto.getArticleId())
+            .userId(requestDto.getUserId())
+            .content(requestDto.getContent())
+            .userNickname("테스트 유저")
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .likeCount(0)
+            .deleted(false)
+            .build();
+
+        when(commentMapper.toEntity(any(CommentRegisterRequestDto.class))).thenReturn(mockComment);
+
+        commentService.registerComment(requestDto);
+
+        verify(commentRepository).save(any(Comment.class));
+    }
+
 }
