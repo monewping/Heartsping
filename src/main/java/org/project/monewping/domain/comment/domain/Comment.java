@@ -34,9 +34,6 @@ public class Comment extends BaseUpdatableEntity {
     @Column(name = "like_count", nullable = false)
     private int likeCount;
 
-    @Column(nullable = false)
-    private Boolean deleted;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
