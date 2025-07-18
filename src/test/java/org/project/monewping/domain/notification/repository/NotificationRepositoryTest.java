@@ -86,4 +86,16 @@ public class NotificationRepositoryTest {
 
         assertThat(nextPage).extracting("content").contains("Binu님이 나의 댓글을 좋아합니다.");
     }
+
+    @Test
+    @DisplayName("모든 알림 확인 상태 수정 성공")
+    void testConfirmAllByUserId() {
+        int updated = notificationRepository.confirmAllByUserId(userId);
+        assertThat(updated).isEqualTo(3);
+
+        List<Notification> all = notificationRepository.findAll();
+        assertThat(all)
+            .isNotEmpty()
+            .allMatch(Notification::getConfirmed);
+    }
 }

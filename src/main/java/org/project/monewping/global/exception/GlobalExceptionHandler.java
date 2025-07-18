@@ -5,6 +5,7 @@ import org.project.monewping.domain.interest.exception.InterestCreationException
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -195,6 +196,23 @@ public class GlobalExceptionHandler {
             HttpStatus.NOT_FOUND,
             ex.getMessage(),
             null
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * 사용자를 조회할 수 없을 때 발생하는 예외를 처리합니다.
+     *
+     * @param ex 발생한 UserNotFoundException
+     * @return HTTP 404 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.NOT_FOUND,
+            "사용자를 조회할 수 없습니다.",
+            ex.getMessage()
         );
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);

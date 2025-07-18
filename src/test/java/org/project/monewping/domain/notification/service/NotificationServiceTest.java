@@ -1,9 +1,12 @@
 package org.project.monewping.domain.notification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +26,8 @@ import org.project.monewping.domain.notification.dto.CursorPageResponseNotificat
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +38,9 @@ public class NotificationServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private BasicNotificationService notificationService;
@@ -148,5 +156,34 @@ public class NotificationServiceTest {
         assertThat(page.content()).hasSize(DEFAULT_LIMIT);
         String expectedCursor = base.plusSeconds(DEFAULT_LIMIT - 1).toString();
         assertThat(page.nextCursor()).isEqualTo(expectedCursor);
+    }
+
+    @Test
+    @DisplayName("존재하는 사용자에 대해 전체 알림 확인 처리 성공")
+    void confirmAllNotifications_success() {
+        // given
+        given(userRepository.existsById(userId)).willReturn(true);
+        given(notificationRepository.confirmAllByUserId(userId)).willReturn(5);
+
+        // when
+        notificationService.confirmAll(userId);
+
+        // then
+        verify(userRepository).existsById(userId);
+        verify(notificationRepository).confirmAllByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자일 경우 UserNotFoundException 발생")
+    void confirmAllNotifications_userNotFound() {
+        // given
+        given(userRepository.existsById(userId)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> notificationService.confirmAll(userId))
+            .isInstanceOf(UserNotFoundException.class);
+
+        verify(userRepository).existsById(userId);
+        verify(notificationRepository, never()).confirmAllByUserId(any());
     }
 }
