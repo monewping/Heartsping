@@ -2,8 +2,11 @@ package org.project.monewping.domain.notification.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -97,5 +100,18 @@ public class NotificationControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].userId").value(userId.toString()))
             .andExpect(jsonPath("$.content[0].resourceId").value(resourceId.toString()));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/notifications – 전체 알림 확인 처리 성공")
+    void testConfirmAllNotifications() throws Exception {
+        doNothing().when(notificationService).confirmAll(userId);
+
+        mockMvc.perform(patch("/api/notifications")
+                .header("Monew-Request-User-ID", userId.toString())
+            )
+            .andExpect(status().isOk());
+
+        verify(notificationService).confirmAll(userId);
     }
 }

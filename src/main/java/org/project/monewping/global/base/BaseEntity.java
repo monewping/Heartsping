@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,7 +18,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @MappedSuperclass
 @SuperBuilder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
@@ -29,11 +30,4 @@ public abstract class BaseEntity {
     @Column(name = "created_at", nullable = false)
     @CreatedDate
     private Instant createdAt;
-
-    /*
-        알림 목록 조회 테스트 용 생성 시각 setter
-     */
-    protected void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
 }

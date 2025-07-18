@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,11 +23,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.entity.ArticleViews;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.interest.entity.Interest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @DisplayName("ArticleViewsService 테스트")
@@ -53,8 +54,8 @@ public class ArticleViewsServiceTest {
         articles = Articles.builder()
             .interest(Interest.builder()
                 .name("경제")
-                .subscriberCount(100)
-                .updatedAt(LocalDateTime.now())
+                .subscriberCount(100L)
+                .updatedAt(Instant.now())
                 .build())
             .source("네이버")
             .originalLink("https://news.naver.com/sample")
