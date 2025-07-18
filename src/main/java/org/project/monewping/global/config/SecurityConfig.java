@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll() // 정적 리소스 허용
                         .requestMatchers("/api/**").permitAll() // api 요청 전체 허용 (일시적으로 허용)
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
-                ).httpBasic(withDefaults());
+                );
         return http.build();
     }
 }

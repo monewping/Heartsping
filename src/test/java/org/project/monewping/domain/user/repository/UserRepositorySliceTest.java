@@ -9,28 +9,29 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.global.config.JpaAuditingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * UserRepository의 데이터 접근 계층 테스트
  *
  * <p>
- *
+ * 
  * @DataJpaTest를 사용하여 JPA 관련 컴포넌트만 로드하고
  *               인메모리 H2 데이터베이스를 사용하여 Repository 계층을 테스트합니다.
  *               </p>
  */
 @DataJpaTest
-@EnableJpaRepositories(basePackages = "org.project.monewping.domain.user.repository")
 @EntityScan(basePackages = "org.project.monewping.domain.user.domain")
-@EnableJpaAuditing
+@EnableJpaRepositories(basePackages = "org.project.monewping.domain.user.repository")
+@Import(JpaAuditingConfig.class)
 @DisplayName("UserRepository 슬라이스 테스트")
 class UserRepositorySliceTest {
 

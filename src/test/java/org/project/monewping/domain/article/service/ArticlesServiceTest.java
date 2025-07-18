@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,13 +30,14 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.repository.InterestRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 
 @DisplayName("ArticlesService 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -95,8 +97,8 @@ public class ArticlesServiceTest {
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
             .name("AI")
-            .subscriberCount(1000)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(1000L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request1 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-1", "제목1", "요약1", LocalDateTime.now());
@@ -148,8 +150,8 @@ public class ArticlesServiceTest {
 
         Interest interest = Interest.builder()
             .name("AI")
-            .subscriberCount(1000)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(1000L)
+            .updatedAt(Instant.now())
             .build();
 
         Articles expectedArticle = Articles.builder()
@@ -195,8 +197,8 @@ public class ArticlesServiceTest {
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
             .name("IT")
-            .subscriberCount(500)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(500L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request1 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-1", "제목1", "요약1", LocalDateTime.now());
@@ -254,8 +256,8 @@ public class ArticlesServiceTest {
         Interest interest = Interest.builder()
             .id(interestId)
             .name("IT")
-            .subscriberCount(100)
-            .updatedAt(LocalDateTime.now())
+            .subscriberCount(100L)
+            .updatedAt(Instant.now())
             .build();
 
         ArticleSaveRequest request = new ArticleSaveRequest(

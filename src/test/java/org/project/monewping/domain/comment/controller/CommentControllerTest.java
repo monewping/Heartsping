@@ -4,10 +4,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -54,14 +56,14 @@ class CommentControllerTest {
                 "첫 번째 댓글입니다.",
                 "사용자1",
                 5,
-                LocalDateTime.now().minusHours(1)
+                Instant.now().minus(Duration.ofHours(1))
             ),
             new CommentResponseDto(
                 UUID.randomUUID(),
                 "두 번째 댓글입니다.",
                 "사용자2",
                 3,
-                LocalDateTime.now().minusHours(2)
+                Instant.now().minus(Duration.ofHours(1))
             )
         );
 
@@ -222,4 +224,21 @@ class CommentControllerTest {
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.hasNext").value(true));
     }
+    @Test
+    @DisplayName("댓글 등록 성공")
+    void registerComment_Success() throws Exception {
+        String requestBody = String.format("""
+        {
+            "articleId": "%s",
+            "userId": "%s",
+            "content": "테스트 댓글입니다."
+        }
+        """, UUID.randomUUID(), UUID.randomUUID());
+
+        mockMvc.perform(post("/api/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isCreated());
+    }
+
 }

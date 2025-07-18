@@ -5,10 +5,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
-import org.project.monewping.domain.article.entity.Interest;
 import org.project.monewping.domain.article.fetcher.ArticleFetcher;
-import org.project.monewping.domain.article.repository.InterestRepository;
 import org.project.monewping.domain.article.service.ArticlesService;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
