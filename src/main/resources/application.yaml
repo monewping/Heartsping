@@ -55,3 +55,7 @@ naver:
   api:
     client-id: w77BI41SmIuc2Nfm3L4d
     client-secret: nDx6IuyH3i
+
+data:
+  mongodb:
+    uri: mongodb://localhost:27017/monewping

@@ -8,6 +8,9 @@ spring:
   h2:
     console:
       enabled: true
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/monewping_test
   jpa:
     hibernate:
       ddl-auto: create-drop
