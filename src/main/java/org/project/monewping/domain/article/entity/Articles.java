@@ -64,4 +64,8 @@ public class Articles extends BaseEntity {
         this.deleted = true;
     }
 
+    public void updateInterest(Interest interest) {
+        this.interest = interest;
+    }
+
 }

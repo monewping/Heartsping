@@ -200,20 +200,50 @@ public class HankyungRssFetcherTest {
     }
 
     @Test
-    @DisplayName("fetch() : 키워드 대소문자 구분 없이 필터링")
-    void fetch_ShouldFilterIgnoringCase() {
-        // MOCK_RSS_XML 안에 "키워드1" 있음. "키워드1" vs "키워드1"(다른 케이스) 테스트
+    @DisplayName("fetch() : 키워드가 대소문자와 상관없이 필터링되는지 검증한다.")
+    void fetch_ShouldFilterIgnoringCase() throws Exception {
+        // given: 키워드가 포함된 RSS XML과 Mock HTTP 응답 설정
+        String mockRssXml = """
+        <rss>
+            <channel>
+                <item>
+                    <title>Breaking News: Market Hits Record High</title>
+                    <link>https://example.com/news1</link>
+                    <description>Latest financial news from the stock market.</description>
+                    <pubDate>Wed, 17 Jul 2024 10:00:00 +0900</pubDate>
+                </item>
+                <item>
+                    <title>Another Title</title>
+                    <link>https://example.com/news2</link>
+                    <description>Unrelated content.</description>
+                    <pubDate>Wed, 17 Jul 2024 11:00:00 +0900</pubDate>
+                </item>
+            </channel>
+        </rss>
+        """;
 
-        List<ArticleSaveRequest> articlesUpper = hankyungRssFetcher.fetch("키워드1".toUpperCase());
-        List<ArticleSaveRequest> articlesLower = hankyungRssFetcher.fetch("키워드1".toLowerCase());
+        HttpClient mockClient = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
 
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(mockRssXml);
+        when(mockClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(mockResponse);
+
+        HankyungRssFetcher fetcher = new HankyungRssFetcher(mockClient);
+
+        // when: 대문자 키워드와 소문자 키워드로 fetch 요청
+        List<ArticleSaveRequest> articlesUpper = fetcher.fetch("NEWS");
+        List<ArticleSaveRequest> articlesLower = fetcher.fetch("news");
+
+        // then: 둘 다 동일한 결과를 포함하고 있어야 함
         assertNotNull(articlesUpper);
         assertFalse(articlesUpper.isEmpty());
 
         assertNotNull(articlesLower);
         assertFalse(articlesLower.isEmpty());
 
-        // 둘 다 같은 기사 포함 확인
         assertEquals(articlesUpper.get(0).originalLink(), articlesLower.get(0).originalLink());
     }
 

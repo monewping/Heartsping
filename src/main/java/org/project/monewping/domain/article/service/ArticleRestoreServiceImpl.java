@@ -12,6 +12,7 @@ import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.storage.ArticleBackupStorage;
+import org.project.monewping.domain.interest.entity.Interest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,14 +31,13 @@ public class ArticleRestoreServiceImpl implements ArticleRestoreService {
     private final ArticlesMapper articlesMapper;
 
     /**
-     * 주어진 날짜 범위(from, to)에 대해 일별로 복구 작업을 수행합니다.
-     * 각 날짜별 백업 데이터를 로드하고,
-     * 현재 DB에 없는 원본 링크의 기사만 필터링하여 저장합니다.
+     * 지정된 날짜 범위(from, to) 내의 백업 데이터를 일별로 로드하여,
+     * 현재 DB에 존재하지 않는 뉴스 기사만 필터링 후 저장합니다.
      *
      * @param from 복구 시작일 (포함)
      * @param to 복구 종료일 (포함)
-     * @return 복구 결과 목록 (날짜별 복구 결과 포함)
-     * @throws IllegalArgumentException 시작일이 종료일보다 늦으면 예외 발생
+     * @return 날짜별 복구 결과 목록. 각 결과는 복구 일시, 복구된 기사 ID 리스트 및 복구 건수를 포함함.
+     * @throws IllegalArgumentException 시작일이 종료일보다 늦을 경우 발생.
      */
     @Override
     public List<ArticleRestoreResultDto> restoreArticlesByRange(LocalDate from, LocalDate to) {
@@ -47,11 +47,10 @@ public class ArticleRestoreServiceImpl implements ArticleRestoreService {
 
         List<ArticleRestoreResultDto> result = new ArrayList<>();
 
-        // from부터 to까지 하루씩 증가시키며 복구 작업 수행
         for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             log.info("뉴스 기사 복구 시작 - 날짜 : {}", date);
 
-            // 백업 저장소에서 해당 날짜 백업 데이터 로드
+            // 해당 날짜 백업 데이터 로드
             List<ArticleDto> backup = backupStorage.load(date);
 
             // 백업 데이터가 없으면 빈 결과 추가 후 다음 날짜로 이동
@@ -61,28 +60,38 @@ public class ArticleRestoreServiceImpl implements ArticleRestoreService {
                 continue;
             }
 
-            // 백업 데이터에서 원본 링크만 추출
+            // 백업 데이터의 원본 링크 목록 추출
             List<String> originalLinks = backup.stream()
                 .map(ArticleDto::sourceUrl)
                 .collect(Collectors.toList());
 
-            // DB에 이미 존재하는 원본 링크 목록 조회
+            // DB에 이미 존재하는 원본 링크 조회
             List<String> existingLinks = articlesRepository.findExistingOriginalLinks(originalLinks);
 
-            // DB에 없는(복구 대상) 기사 필터링
+            // DB에 없는 기사만 필터링
             List<ArticleDto> toRestore = backup.stream()
                 .filter(dto -> !existingLinks.contains(dto.sourceUrl()))
                 .toList();
 
-            // DTO -> 엔티티 변환
+            // DTO를 엔티티로 변환 후 interest 별도 세팅
             List<Articles> entities = toRestore.stream()
-                .map(articlesMapper::toEntity)
+                .map(dto -> {
+                    Articles entity = articlesMapper.toEntity(dto);
+
+                    // TODO: 관심사(Interest) 세팅 로직 구현 필요
+                    // 예: DTO에 interestId가 없을 경우, 기사 출처 등으로 기본 관심사를 찾아 세팅하거나,
+                    //      null 혹은 기본 관심사를 세팅할 수 있음.
+                    Interest defaultInterest = null; // 임시 null 세팅
+                    entity.updateInterest(defaultInterest);
+
+                    return entity;
+                })
                 .collect(Collectors.toList());
 
-            // 복구 대상 기사 저장
+            // DB에 복구 대상 기사 저장
             articlesRepository.saveAll(entities);
 
-            // 복구 결과 추가
+            // 복구 결과 리스트에 추가
             result.add(new ArticleRestoreResultDto(
                 date.atStartOfDay(),
                 entities.stream().map(e -> e.getId().toString()).collect(Collectors.toList()),
