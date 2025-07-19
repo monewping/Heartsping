@@ -6,10 +6,12 @@ import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.project.monewping.domain.interest.dto.InterestDto;
 import org.project.monewping.domain.interest.dto.request.CursorPageRequestSearchInterestDto;
 import org.project.monewping.domain.interest.dto.request.InterestRegisterRequest;
+import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
 import org.project.monewping.domain.interest.dto.response.CursorPageResponseInterestDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestDeletionException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
@@ -26,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 관심사 비즈니스 로직을 구현하는 서비스입니다.
@@ -194,6 +198,86 @@ public class InterestServiceImpl implements InterestService {
     @Transactional
     public CursorPageResponseInterestDto findInterestByNameAndSubcriberCountByCursor(CursorPageRequestSearchInterestDto request, UUID monewRequestUserID) {
         return interestRepository.searchWithCursor(request, monewRequestUserID);
+    }
+
+    /**
+     * 관심사의 키워드를 수정합니다.
+     *
+     * <p>관심사 이름은 수정할 수 없고, 키워드만 수정 가능합니다.
+     * 기존 키워드를 모두 제거하고 새로운 키워드 목록으로 교체합니다.</p>
+     * @param interestId 수정할 관심사 ID
+     * @param request 키워드 수정 요청 DTO
+     * @return 수정된 관심사 정보 DTO
+     * @throws InterestNotFoundException 존재하지 않는 관심사 ID인 경우
+     * @throws DuplicateKeywordException 중복된 키워드가 있는 경우
+     * @throws IllegalArgumentException 요청 데이터가 유효하지 않은 경우
+     */
+    @Override
+    @Transactional
+    public InterestDto update(UUID interestId, InterestUpdateRequest request) {
+        log.info("[InterestService] 관심사 키워드 수정 요청: interestId={}, keywords={}", interestId, request.keywords());
+
+        // 키워드 유효성 검증을 먼저 수행
+        validateKeywords(request.keywords());
+
+        // 관심사 존재 여부 확인
+        Interest interest = interestRepository.findById(interestId)
+                .orElseThrow(() -> {
+                    log.warn("[InterestService] 존재하지 않는 관심사: {}", interestId);
+                    return new InterestNotFoundException(interestId);
+                });
+
+        try {
+            // 키워드 업데이트
+            interest.updateKeywords(request.keywords());
+            Interest savedInterest = interestRepository.save(interest);
+            
+            log.info("[InterestService] 관심사 키워드 수정 성공: interestId={}, keywords={}", 
+                    interestId, request.keywords());
+            
+            return interestMapper.toDto(savedInterest);
+        } catch (Exception e) {
+            log.error("[InterestService] 관심사 키워드 수정 실패: interestId={}, error={}", 
+                    interestId, e.getMessage(), e);
+            throw new InterestCreationException("관심사 키워드 수정 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 키워드 목록의 유효성을 검증합니다.
+     *
+     * <p>null, 빈 리스트, 중복된 키워드가 있는지 확인합니다.</p>
+     * @param keywords 검증할 키워드 목록
+     * @throws IllegalArgumentException 키워드가 null이거나 빈 리스트인 경우
+     * @throws DuplicateKeywordException 중복된 키워드가 있는 경우
+     */
+    private void validateKeywords(List<String> keywords) {
+        if (keywords == null) {
+            throw new IllegalArgumentException("키워드는 필수입니다.");
+        }
+
+        if (keywords.isEmpty()) {
+            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
+        }
+
+        // null이나 빈 문자열 제거 후 중복 검사 (성능 개선)
+        Set<String> seen = new HashSet<>();
+        for (String kw : keywords) {
+            if (kw == null) continue;
+            
+            String trimmed = kw.trim();
+            if (trimmed.isEmpty()) continue;
+            
+            // 중복 검사 (O(1) 연산)
+            if (!seen.add(trimmed)) {
+                throw new DuplicateKeywordException(trimmed);
+            }
+        }
+        
+        // 유효한 키워드가 하나도 없는 경우
+        if (seen.isEmpty()) {
+            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
+        }
     }
 
     /**
