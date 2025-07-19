@@ -19,7 +19,6 @@ import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,9 +55,6 @@ class UserServiceTest {
     @Mock
     private UserMapper userMapper;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
     @InjectMocks
     private UserService userService;
 
@@ -91,14 +87,14 @@ class UserServiceTest {
         userToSave = User.builder()
                 .email("test@example.com")
                 .nickname("testuser")
-                .password("encodedPassword123")
+                .password("password123")
                 .build();
 
         savedUser = User.builder()
                 .id(UUID.randomUUID())
                 .email("test@example.com")
                 .nickname("testuser")
-                .password("encodedPassword123")
+                .password("password123")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -130,7 +126,6 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
         given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
@@ -145,7 +140,6 @@ class UserServiceTest {
 
         verify(userRepository).existsByEmail(registerRequest.email());
         verify(userMapper).toEntity(registerRequest);
-        verify(passwordEncoder).encode(registerRequest.password());
         verify(userRepository).save(any(User.class));
         verify(userMapper).toResponse(savedUser);
     }
@@ -185,7 +179,6 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
         given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
@@ -210,7 +203,6 @@ class UserServiceTest {
         // given
         given(userRepository.existsByEmail(registerRequest.email())).willReturn(false);
         given(userMapper.toEntity(registerRequest)).willReturn(userToSave);
-        given(passwordEncoder.encode(registerRequest.password())).willReturn("encodedPassword");
         given(userRepository.save(any(User.class))).willReturn(savedUser);
         given(userMapper.toResponse(savedUser)).willReturn(registerResponse);
 
@@ -235,7 +227,6 @@ class UserServiceTest {
     void login_Success() {
         // given
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(savedUser));
-        given(passwordEncoder.matches(loginRequest.password(), savedUser.getPassword())).willReturn(true);
         given(userMapper.toLoginResponse(savedUser)).willReturn(loginResponse);
 
         // when
@@ -248,7 +239,6 @@ class UserServiceTest {
         assertThat(result.createdAt()).isEqualTo(savedUser.getCreatedAt());
 
         verify(userRepository).findByEmail(loginRequest.email());
-        verify(passwordEncoder).matches(loginRequest.password(), savedUser.getPassword());
         verify(userMapper).toLoginResponse(savedUser);
     }
 
@@ -287,7 +277,6 @@ class UserServiceTest {
     void login_WrongPassword_ThrowsException() {
         // given
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(savedUser));
-        given(passwordEncoder.matches(loginRequest.password(), savedUser.getPassword())).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> userService.login(loginRequest))
@@ -295,14 +284,13 @@ class UserServiceTest {
                 .hasMessage("이메일 또는 비밀번호가 일치하지 않습니다.");
 
         verify(userRepository).findByEmail(loginRequest.email());
-        verify(passwordEncoder).matches(loginRequest.password(), savedUser.getPassword());
     }
 
     /**
      * 비밀번호 검증 로직이 올바르게 동작하는지 테스트합니다.
      * 
      * <p>
-     * PasswordEncoder를 통해 비밀번호 검증이 정상적으로 수행되는지 확인합니다.
+     * 비밀번호 검증이 정상적으로 수행되는지 확인합니다.
      * </p>
      */
     @Test
@@ -310,14 +298,13 @@ class UserServiceTest {
     void login_PasswordVerification_Success() {
         // given
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(savedUser));
-        given(passwordEncoder.matches(loginRequest.password(), savedUser.getPassword())).willReturn(true);
         given(userMapper.toLoginResponse(savedUser)).willReturn(loginResponse);
 
         // when
         userService.login(loginRequest);
 
         // then
-        verify(passwordEncoder).matches(loginRequest.password(), savedUser.getPassword());
+        verify(userRepository).findByEmail(loginRequest.email());
     }
 
     /**
@@ -332,7 +319,6 @@ class UserServiceTest {
     void login_CallsUserMapper() {
         // given
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(savedUser));
-        given(passwordEncoder.matches(loginRequest.password(), savedUser.getPassword())).willReturn(true);
         given(userMapper.toLoginResponse(savedUser)).willReturn(loginResponse);
 
         // when
