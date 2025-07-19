@@ -19,6 +19,9 @@ public class CommentRegisterRequestDto {
     @NotNull(message = "userId는 필수입니다.")
     private UUID userId;
 
+    @NotBlank(message = "userNickname은 필수입니다.")
+    private String userNickname;
+
     @NotBlank(message = "내용은 비어 있을 수 없습니다.")
     private String content;
 }

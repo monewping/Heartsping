@@ -34,20 +34,27 @@ public class Comment extends BaseUpdatableEntity {
     @Column(name = "like_count", nullable = false)
     private int likeCount;
 
-    @Column(nullable = false)
-    private Boolean deleted;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Getter
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted;
 
     public void delete() {
         this.isDeleted = true;
         this.updatedAt = Instant.now();
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+        this.updatedAt = Instant.now();
+    }
+
+    public Boolean isDeleted() {
+        return this.isDeleted;
     }
 }
