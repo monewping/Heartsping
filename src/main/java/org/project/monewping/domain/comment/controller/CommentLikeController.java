@@ -18,20 +18,22 @@ public class CommentLikeController {
         /**
         * 댓글 좋아요 등록
         */
-         @PostMapping("/{commentId}/comment-likes")
-         public ResponseEntity<Void> likeComment(@RequestParam UUID userId,
-             @PathVariable UUID commentId) {
-            commentLikeService.likeComment(userId, commentId);
-            return ResponseEntity.ok().build();
-         }
+        @PostMapping("/{commentId}/comment-likes")
+        public ResponseEntity<Void> likeComment(
+            @RequestHeader("userId") UUID userId,
+            @PathVariable UUID commentId) {
+          commentLikeService.likeComment(userId, commentId);
+          return ResponseEntity.ok().build();
+        }
 
          /**
          * * 댓글 좋아요 취소
          */
          @DeleteMapping("/{commentId}/comment-likes")
-         public ResponseEntity<Void> unlikeComment(@RequestParam UUID userId,
+         public ResponseEntity<Void> unlikeComment(
+             @RequestHeader("userId") UUID userId,
              @PathVariable UUID commentId) {
-             commentLikeService.unlikeComment(userId, commentId);
-             return ResponseEntity.ok().build();
-             }
+           commentLikeService.unlikeComment(userId, commentId);
+           return ResponseEntity.ok().build();
+         }
 }

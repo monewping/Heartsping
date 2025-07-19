@@ -49,9 +49,9 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                .param("userId", userId.toString())
+                .header("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -64,9 +64,9 @@ class CommentLikeControllerTest {
             .when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                .param("userId", userId.toString())
+                .header("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -78,9 +78,9 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                .param("userId", userId.toString())
+                .header("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -93,8 +93,8 @@ class CommentLikeControllerTest {
             .when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                .param("userId", userId.toString())
+                .header("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 }
