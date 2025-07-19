@@ -27,14 +27,21 @@ public class ArticlesRepositoryImpl implements ArticlesRepositoryCustom {
     public List<Articles> searchArticles(ArticleSearchRequest request) {
         QArticles article = QArticles.articles;
 
+        // 1. limit 값 검증 및 기본값 적용
+        Integer limit = request.limit();
+        if (limit == null || limit <= 0) {
+            limit = 10;
+        }
+
         BooleanBuilder builder = buildSearchPredicate(article, request);
         OrderSpecifier<?> order = buildOrderSpecifier(article, request);
 
+        // 2. limit+1 적용
         return queryFactory
             .selectFrom(article)
             .where(builder)
             .orderBy(order)
-            .limit(request.limit() + 1)  // +1개 조회로 다음 페이지 존재 여부 판단
+            .limit(limit + 1)  // limit + 1 조회
             .fetch();
     }
 
