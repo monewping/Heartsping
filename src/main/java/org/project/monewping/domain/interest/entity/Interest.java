@@ -10,6 +10,8 @@ import lombok.Builder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 /**
  * 관심사 정보를 저장하는 엔티티입니다.
@@ -72,14 +74,31 @@ public class Interest extends BaseUpdatableEntity {
         keyword.setInterest(this);
     }
 
+
+
     /**
-     * 키워드를 제거합니다.
+     * 키워드 목록을 업데이트합니다.
      *
-     * <p>관심사와 키워드의 연관관계를 해제합니다.</p>
-     * @param keyword 제거할 키워드
+     * <p>기존 키워드를 모두 제거하고 새로운 키워드 목록으로 교체합니다.</p>
+     * @param newKeywords 새로운 키워드 이름 목록
      */
-    public void removeKeyword(Keyword keyword) {
-        this.keywords.remove(keyword);
-        keyword.setInterest(null);
+    public void updateKeywords(List<String> newKeywords) {
+        // 1) 중복 제거·트림
+        Set<String> uniqueKeywords = new LinkedHashSet<>();
+        if (newKeywords != null) {
+            for (String keyword : newKeywords) {
+                String trimmed = keyword == null ? "" : keyword.trim();
+                if (!trimmed.isEmpty()) {
+                    uniqueKeywords.add(trimmed);
+                }
+            }
+        }
+        
+        // 2) 기존 키워드 교체 (keywords는 @Builder.Default로 초기화되어 있어 NPE 걱정 없음)
+        this.keywords.clear();
+        uniqueKeywords.forEach(keywordName -> {
+            Keyword keyword = new Keyword(this, keywordName);
+            this.keywords.add(keyword);
+        });
     }
 }

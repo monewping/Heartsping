@@ -60,5 +60,5 @@ server:
 
 naver:
   api:
-    client-id: w77BI41SmIuc2Nfm3L4d
-    client-secret: nDx6IuyH3i
+    client-id: ${NAVER_CLIENT_ID}
+    client-secret: ${NAVER_CLIENT_SECRET}
