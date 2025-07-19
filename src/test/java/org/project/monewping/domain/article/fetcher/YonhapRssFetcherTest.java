@@ -1,10 +1,13 @@
 package org.project.monewping.domain.article.fetcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.http.HttpClient;
@@ -14,6 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 
 @DisplayName("YonhapRssFetcher 테스트")
@@ -183,4 +187,66 @@ public class YonhapRssFetcherTest {
         assertEquals(1, articles.size());
     }
 
+    @Test
+    @DisplayName("fetch() : RSS XML에 <channel> 태그가 없으면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyListWhenNoChannel() throws Exception {
+        String noChannelXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\"></rss>";
+        when(httpResponseMock.body()).thenReturn(noChannelXml);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("AI");
+
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : null 키워드 입력 시 예외 없이 처리")
+    void fetch_ShouldHandleNullKeyword() {
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch(null);
+
+        assertNotNull(articles);
+        // 추가로 모든 기사 반환 또는 필터링 없이 동작 확인
+    }
+
+    @Test
+    @DisplayName("fetch() : 키워드 대소문자 구분 없이 필터링")
+    void fetch_ShouldFilterIgnoringCase() {
+        List<ArticleSaveRequest> articlesUpper = yonhapRssFetcher.fetch("AI");
+        List<ArticleSaveRequest> articlesLower = yonhapRssFetcher.fetch("ai");
+
+        assertNotNull(articlesUpper);
+        assertFalse(articlesUpper.isEmpty());
+
+        assertNotNull(articlesLower);
+        assertFalse(articlesLower.isEmpty());
+
+        // 같은 링크를 포함하는지 비교
+        assertEquals(articlesUpper.get(0).originalLink(), articlesLower.get(0).originalLink());
+    }
+
+    @Test
+    @DisplayName("fetch() : 복수 아이템 중 일부만 키워드 포함 시 필터링 정상 동작")
+    void fetch_ShouldFilterPartialMatchingItems() {
+        List<ArticleSaveRequest> articles = yonhapRssFetcher.fetch("혁신");
+
+        assertNotNull(articles);
+        assertEquals(1, articles.size());
+        assertTrue(articles.get(0).title().contains("혁신"));
+    }
+
+    @Test
+    @DisplayName("fetch() : HttpRequest가 올바르게 생성되는지 확인")
+    void fetch_ShouldCreateCorrectHttpRequest() throws Exception {
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+
+        yonhapRssFetcher.fetch("AI");
+
+        verify(httpClientMock, times(1)).send(requestCaptor.capture(), any());
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertNotNull(capturedRequest);
+        assertTrue(capturedRequest.uri().toString().contains("yonhap"));
+        assertEquals("GET", capturedRequest.method());
+    }
 }

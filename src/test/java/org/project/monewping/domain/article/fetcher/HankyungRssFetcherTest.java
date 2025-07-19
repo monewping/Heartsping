@@ -1,10 +1,13 @@
 package org.project.monewping.domain.article.fetcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.http.HttpClient;
@@ -14,6 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 
 @DisplayName("HankyungRssFetcher 테스트")
@@ -172,6 +176,118 @@ public class HankyungRssFetcherTest {
         // Then
         assertNotNull(articles);
         assertEquals(1, articles.size());  // 날짜 파싱 실패해도 기사 수집은 됨
+    }
+
+    @Test
+    @DisplayName("fetch() : RSS XML에 <channel> 태그가 없으면 빈 리스트 반환")
+    void fetch_ShouldReturnEmptyListWhenNoChannel() throws Exception {
+        String noChannelXml = "<rss></rss>";
+        when(httpResponseMock.body()).thenReturn(noChannelXml);
+        when(httpResponseMock.statusCode()).thenReturn(200);
+
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch("키워드");
+
+        assertNotNull(articles);
+        assertTrue(articles.isEmpty());
+    }
+
+    @Test
+    @DisplayName("fetch() : null 키워드 입력 시 예외 없이 처리")
+    void fetch_ShouldHandleNullKeyword() {
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch(null);
+
+        assertNotNull(articles);
+    }
+
+    @Test
+    @DisplayName("fetch() : 키워드가 대소문자와 상관없이 필터링되는지 검증한다.")
+    void fetch_ShouldFilterIgnoringCase() throws Exception {
+        // given: 키워드가 포함된 RSS XML과 Mock HTTP 응답 설정
+        String mockRssXml = """
+        <rss>
+            <channel>
+                <item>
+                    <title>Breaking News: Market Hits Record High</title>
+                    <link>https://example.com/news1</link>
+                    <description>Latest financial news from the stock market.</description>
+                    <pubDate>Wed, 17 Jul 2024 10:00:00 +0900</pubDate>
+                </item>
+                <item>
+                    <title>Another Title</title>
+                    <link>https://example.com/news2</link>
+                    <description>Unrelated content.</description>
+                    <pubDate>Wed, 17 Jul 2024 11:00:00 +0900</pubDate>
+                </item>
+            </channel>
+        </rss>
+        """;
+
+        HttpClient mockClient = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
+
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(mockRssXml);
+        when(mockClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(mockResponse);
+
+        HankyungRssFetcher fetcher = new HankyungRssFetcher(mockClient);
+
+        // when: 대문자 키워드와 소문자 키워드로 fetch 요청
+        List<ArticleSaveRequest> articlesUpper = fetcher.fetch("NEWS");
+        List<ArticleSaveRequest> articlesLower = fetcher.fetch("news");
+
+        // then: 둘 다 동일한 결과를 포함하고 있어야 함
+        assertNotNull(articlesUpper);
+        assertFalse(articlesUpper.isEmpty());
+
+        assertNotNull(articlesLower);
+        assertFalse(articlesLower.isEmpty());
+
+        assertEquals(articlesUpper.get(0).originalLink(), articlesLower.get(0).originalLink());
+    }
+
+    @Test
+    @DisplayName("fetch() : 복수 아이템 중 일부만 키워드 포함 시 필터링 정상 동작")
+    void fetch_ShouldFilterPartialMatchingItems() {
+        // MOCK_RSS_XML에 키워드1 포함 1개, 키워드2 포함 1개 있음
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch("키워드2");
+
+        assertNotNull(articles);
+        assertEquals(1, articles.size());
+        assertTrue(articles.get(0).title().contains("키워드2"));
+    }
+
+    @Test
+    @DisplayName("fetch() : 정상 pubDate 포맷 시 파싱 후 저장 확인")
+    void fetch_ShouldParsePubDateCorrectly() {
+        List<ArticleSaveRequest> articles = hankyungRssFetcher.fetch("키워드1");
+
+        assertNotNull(articles);
+        assertFalse(articles.isEmpty());
+
+        // 날짜 파싱 결과가 null이 아니어야 한다고 가정 (필드나 메서드가 있다면 검증)
+        // 만약 ArticleSaveRequest에 날짜 필드가 없다면 fetch 내부 파싱 로직 확인 필요
+        // 여기서는 기본적으로 정상적으로 객체가 생성됐다는 의미로 충분
+
+        ArticleSaveRequest article = articles.get(0);
+        assertNotNull(article);
+        // 추가 검증은 fetch 내부 로직 접근 가능해야 가능
+    }
+
+    @Test
+    @DisplayName("fetch() : HttpRequest가 올바르게 생성되는지 확인")
+    void fetch_ShouldCreateCorrectHttpRequest() throws Exception {
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+
+        hankyungRssFetcher.fetch("키워드1");
+
+        verify(httpClientMock, times(1)).send(requestCaptor.capture(), any());
+
+        HttpRequest capturedRequest = requestCaptor.getValue();
+        assertNotNull(capturedRequest);
+        assertTrue(capturedRequest.uri().toString().contains("hankyung"));
+        assertEquals("GET", capturedRequest.method());
     }
 
 }

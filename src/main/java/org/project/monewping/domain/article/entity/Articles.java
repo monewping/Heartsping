@@ -51,4 +51,8 @@ public class Articles extends BaseEntity {
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
 
+    public void updateInterest(Interest interest) {
+        this.interest = interest;
+    }
+
 }
