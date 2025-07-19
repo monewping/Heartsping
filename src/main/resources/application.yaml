@@ -2,6 +2,8 @@ spring:
   application:
     name: monewping
   sql.init.mode: always
+  sql.init.schema-locations: classpath:ddl.sql
+  sql.init.data-locations: classpath:data.sql
   profiles:
     active: default
 
@@ -30,6 +32,14 @@ spring:
         highlight_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # MongoDB 설정
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: monewping
+      auto-index-creation: true
 
 logging:
   level:
@@ -62,7 +72,3 @@ naver:
   api:
     client-id: w77BI41SmIuc2Nfm3L4d
     client-secret: nDx6IuyH3i
-
-data:
-  mongodb:
-    uri: mongodb://localhost:27017/monewping
