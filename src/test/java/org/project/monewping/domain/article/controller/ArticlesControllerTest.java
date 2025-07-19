@@ -2,12 +2,15 @@ package org.project.monewping.domain.article.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +18,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
+import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
+import org.project.monewping.domain.article.service.ArticleRestoreService;
 import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.global.dto.CursorPageResponse;
@@ -41,6 +46,9 @@ public class ArticlesControllerTest {
 
     @MockitoBean
     private ArticlesService articlesService;
+
+    @MockitoBean
+    private ArticleRestoreService articleRestoreService;
 
     @Test
     @DisplayName("기사 뷰 등록 성공 - 200 OK, 반환 데이터 검증")
@@ -229,4 +237,66 @@ public class ArticlesControllerTest {
             .andExpect(status().isInternalServerError());
     }
 
+    @Test
+    @DisplayName("복구 API는 유효한 날짜 범위 요청 시 200 OK와 결과를 반환한다")
+    void restoreArticles_success() throws Exception {
+        // given
+        LocalDate from = LocalDate.of(2025, 7, 16);
+        LocalDate to = LocalDate.of(2025, 7, 18);
+
+        ArticleRestoreResultDto result = new ArticleRestoreResultDto(
+            from.atStartOfDay(),
+            List.of("id-1", "id-2"),
+            2
+        );
+
+        when(articleRestoreService.restoreArticlesByRange(from, to))
+            .thenReturn(List.of(result));
+
+        // when & then
+        mockMvc.perform(get("/api/articles/restore")
+                .param("from", from.toString())
+                .param("to", to.toString()))
+            .andExpect(status().isOk());
+
+        // then
+        verify(articleRestoreService).restoreArticlesByRange(from, to);
+    }
+
+    @Test
+    @DisplayName("복구 API는 from이 to보다 이후일 경우 400 Bad Request를 반환한다")
+    void restoreArticles_invalidDateRange_returnsBadRequest() throws Exception {
+        // given
+        String from = "2025-07-19";
+        String to = "2025-07-18";
+
+        // when & then
+        mockMvc.perform(get("/api/articles/restore")
+                .param("from", from)
+                .param("to", to))
+            .andExpect(status().isBadRequest());
+
+        // then
+        verifyNoInteractions(articleRestoreService);
+    }
+
+    @Test
+    @DisplayName("복구 API는 파라미터 누락 시 400 Bad Request를 반환한다")
+    void restoreArticles_missingParams_returnsBadRequest() throws Exception {
+        // given
+        String validDate = "2025-07-18";
+
+        // when & then: 'to' 누락
+        mockMvc.perform(get("/api/articles/restore")
+                .param("from", validDate))
+            .andExpect(status().isBadRequest());
+
+        // when & then: 'from' 누락
+        mockMvc.perform(get("/api/articles/restore")
+                .param("to", validDate))
+            .andExpect(status().isBadRequest());
+
+        // then
+        verifyNoInteractions(articleRestoreService);
+    }
 }
