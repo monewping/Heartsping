@@ -234,7 +234,6 @@ class CommentControllerTest {
         {
             "articleId": "%s",
             "userId": "%s",
-            "userNickname": "테스트유저",
             "content": "테스트 댓글입니다."
         }
         """, UUID.randomUUID(), UUID.randomUUID());
