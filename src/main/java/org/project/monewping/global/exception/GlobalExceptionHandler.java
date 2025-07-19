@@ -7,6 +7,7 @@ import org.project.monewping.domain.article.exception.DuplicateArticleViewsExcep
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
+import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
@@ -68,6 +69,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInterestNotFoundException(InterestNotFoundException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.NOT_FOUND, "INTEREST_NOT_FOUND", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(DuplicateKeywordException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateKeywordException(DuplicateKeywordException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_KEYWORD", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

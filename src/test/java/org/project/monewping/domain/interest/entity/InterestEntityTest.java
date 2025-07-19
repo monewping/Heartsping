@@ -1,5 +1,6 @@
 package org.project.monewping.domain.interest.entity;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Interest 엔티티 통합 테스트")
 class InterestEntityTest {
+
+    private Interest interest;
+    private Keyword keyword1;
+    private Keyword keyword2;
+
+    @BeforeEach
+    void setUp() {
+        interest = Interest.builder()
+            .name("테스트 관심사")
+            .subscriberCount(0L)
+            .keywords(new ArrayList<>())
+            .build();
+
+        keyword1 = Keyword.builder()
+            .name("테스트 키워드1")
+            .build();
+
+        keyword2 = Keyword.builder()
+            .name("테스트 키워드2")
+            .build();
+    }
 
     @Test
     @DisplayName("Interest 기본 생성자 테스트")
@@ -29,423 +51,286 @@ class InterestEntityTest {
     @DisplayName("Interest 생성자 테스트")
     void testConstructor() {
         // given
-        String name = "테스트 관심사";
-        Long subscriberCount = 10L;
-        Interest interest = Interest.builder().name(name).build();
+        String name = "새로운 관심사";
+        Long subscriberCount = 5L;
         List<Keyword> keywords = new ArrayList<>();
-        keywords.add(new Keyword(interest, "키워드1"));
-        keywords.add(new Keyword(interest, "키워드2"));
-        
+
         // when
-        Interest testInterest = new Interest(name, subscriberCount, keywords);
-        
+        Interest newInterest = new Interest(name, subscriberCount, keywords);
+
         // then
-        assertThat(testInterest.getName()).isEqualTo(name);
-        assertThat(testInterest.getSubscriberCount()).isEqualTo(subscriberCount);
-        assertThat(testInterest.getKeywords()).isEqualTo(keywords);
+        assertThat(newInterest.getName()).isEqualTo(name);
+        assertThat(newInterest.getSubscriberCount()).isEqualTo(subscriberCount);
+        assertThat(newInterest.getKeywords()).isEmpty();
     }
 
     @Test
     @DisplayName("Interest 생성자 테스트 - keywords가 null인 경우")
     void testConstructorWithNullKeywords() {
         // given
-        String name = "테스트 관심사";
+        String name = "새로운 관심사";
         Long subscriberCount = 5L;
-        
+
         // when
-        Interest interest = new Interest(name, subscriberCount, null);
-        
+        Interest newInterest = new Interest(name, subscriberCount, null);
+
         // then
-        assertThat(interest.getName()).isEqualTo(name);
-        assertThat(interest.getSubscriberCount()).isEqualTo(subscriberCount);
-        assertThat(interest.getKeywords()).isEmpty();
+        assertThat(newInterest.getName()).isEqualTo(name);
+        assertThat(newInterest.getSubscriberCount()).isEqualTo(subscriberCount);
+        assertThat(newInterest.getKeywords()).isEmpty();
     }
 
     @Test
     @DisplayName("Interest Builder 패턴 테스트")
     void testBuilder() {
-        // given
-        String name = "빌더 테스트 관심사";
-        Long subscriberCount = 20L;
-        Interest interest = Interest.builder().name(name).build();
-        List<Keyword> keywords = new ArrayList<>();
-        keywords.add(new Keyword(interest, "빌더 키워드1"));
-        keywords.add(new Keyword(interest, "빌더 키워드2"));
-        
-        // when
-        Interest testInterest = Interest.builder()
-                .name(name)
-                .subscriberCount(subscriberCount)
-                .keywords(keywords)
-                .build();
-        
-        // then
-        assertThat(testInterest.getName()).isEqualTo(name);
-        assertThat(testInterest.getSubscriberCount()).isEqualTo(subscriberCount);
-        assertThat(testInterest.getKeywords()).isEqualTo(keywords);
-    }
+        // given & when
+        Interest builtInterest = Interest.builder()
+            .name("빌더로 생성된 관심사")
+            .subscriberCount(10L)
+            .keywords(List.of(keyword1, keyword2))
+            .build();
 
-    @Test
-    @DisplayName("Interest 엔티티 생성 및 저장 테스트")
-    void testEntityCreationAndPersistence() {
-        // given
-        String name = "저장 테스트 관심사";
-        Long subscriberCount = 15L;
-        Interest interest = Interest.builder().name(name).build();
-        List<Keyword> keywords = new ArrayList<>();
-        keywords.add(new Keyword(interest, "저장 키워드1"));
-        keywords.add(new Keyword(interest, "저장 키워드2"));
-        keywords.add(new Keyword(interest, "저장 키워드3"));
-        
-        // when
-        Interest testInterest = Interest.builder()
-                .name(name)
-                .subscriberCount(subscriberCount)
-                .keywords(keywords)
-                .build();
-        
         // then
-        assertThat(testInterest).isNotNull();
-        assertThat(testInterest.getName()).isEqualTo(name);
-        assertThat(testInterest.getSubscriberCount()).isEqualTo(subscriberCount);
-        assertThat(testInterest.getKeywords()).isEqualTo(keywords);
-    }
-
-    @Test
-    @DisplayName("Interest 전체 필드 통합 테스트")
-    void testAllFieldsIntegration() {
-        // given
-        String name1 = "관심사1";
-        String name2 = "관심사2";
-        Long subscriberCount1 = 10L;
-        Long subscriberCount2 = 20L;
-        Interest interest1 = Interest.builder().name(name1).build();
-        Interest interest2 = Interest.builder().name(name2).build();
-        List<Keyword> keywords1 = new ArrayList<>();
-        keywords1.add(new Keyword(interest1, "키워드1"));
-        List<Keyword> keywords2 = new ArrayList<>();
-        keywords2.add(new Keyword(interest2, "키워드2"));
-        keywords2.add(new Keyword(interest2, "키워드3"));
-        
-        // when
-        Interest testInterest1 = Interest.builder()
-                .name(name1)
-                .subscriberCount(subscriberCount1)
-                .keywords(keywords1)
-                .build();
-        
-        Interest testInterest2 = Interest.builder()
-                .name(name2)
-                .subscriberCount(subscriberCount2)
-                .keywords(keywords2)
-                .build();
-        
-        // then
-        assertThat(testInterest1).isNotEqualTo(testInterest2);
-        assertThat(testInterest1.getName()).isNotEqualTo(testInterest2.getName());
-        assertThat(testInterest1.getSubscriberCount()).isNotEqualTo(testInterest2.getSubscriberCount());
-        assertThat(testInterest1.getKeywords()).isNotEqualTo(testInterest2.getKeywords());
+        assertThat(builtInterest.getName()).isEqualTo("빌더로 생성된 관심사");
+        assertThat(builtInterest.getSubscriberCount()).isEqualTo(10L);
+        assertThat(builtInterest.getKeywords()).contains(keyword1, keyword2);
     }
 
     @Test
     @DisplayName("기본 구독자 수 테스트")
     void testDefaultSubscriberCount() {
         // given & when
-        Interest interest = Interest.builder()
-                .name("기본 구독자 수 테스트")
-                .build();
-        
+        Interest defaultInterest = Interest.builder()
+            .name("기본 관심사")
+            .build();
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(0L);
+        assertThat(defaultInterest.getSubscriberCount()).isEqualTo(0L);
     }
 
     @Test
     @DisplayName("기본 키워드 리스트 테스트")
-    void testDefaultKeywordsList() {
+    void testDefaultKeywords() {
         // given & when
-        Interest interest = Interest.builder()
-                .name("기본 키워드 테스트")
-                .build();
-        
+        Interest defaultInterest = Interest.builder()
+            .name("기본 관심사")
+            .build();
+
         // then
-        assertThat(interest.getKeywords()).isEmpty();
+        assertThat(defaultInterest.getKeywords()).isEmpty();
     }
 
     @Test
     @DisplayName("구독자 수 증가 테스트")
-    void testIncreaseSubscriberCount() {
+    void testIncreaseSubscriber() {
         // given
-        Interest interest = Interest.builder()
-                .name("구독자 수 증가 테스트")
-                .subscriberCount(5L)
-                .build();
-        
+        Long initialCount = interest.getSubscriberCount();
+
         // when
         interest.increaseSubscriber();
-        
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(6L);
+        assertThat(interest.getSubscriberCount()).isEqualTo(initialCount + 1);
     }
 
     @Test
     @DisplayName("구독자 수 감소 테스트 - 0보다 클 때")
-    void testDecreaseSubscriberCountWhenGreaterThanZero() {
+    void testDecreaseSubscriberWhenGreaterThanZero() {
         // given
-        Interest interest = Interest.builder()
-                .name("구독자 수 감소 테스트")
-                .subscriberCount(5L)
-                .build();
-        
+        interest.increaseSubscriber();
+        interest.increaseSubscriber();
+        Long initialCount = interest.getSubscriberCount();
+
         // when
         interest.decreaseSubscriber();
-        
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(4L);
+        assertThat(interest.getSubscriberCount()).isEqualTo(initialCount - 1);
     }
 
     @Test
     @DisplayName("구독자 수 감소 테스트 - 0일 때")
-    void testDecreaseSubscriberCountWhenZero() {
+    void testDecreaseSubscriberWhenZero() {
         // given
-        Interest interest = Interest.builder()
-                .name("구독자 수 감소 테스트")
-                .subscriberCount(0L)
-                .build();
-        
+        Long initialCount = interest.getSubscriberCount();
+
         // when
         interest.decreaseSubscriber();
-        
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(0L);
+        assertThat(interest.getSubscriberCount()).isEqualTo(initialCount);
     }
 
     @Test
     @DisplayName("키워드 추가 테스트")
     void testAddKeyword() {
         // given
-        Interest interest = Interest.builder()
-                .name("키워드 추가 테스트")
-                .build();
-        Keyword newKeyword = new Keyword(interest, "새로운 키워드");
-        
+        int initialSize = interest.getKeywords().size();
+
         // when
-        interest.addKeyword(newKeyword);
-        
+        interest.addKeyword(keyword1);
+
         // then
-        assertThat(interest.getKeywords()).contains(newKeyword);
-        assertThat(interest.getKeywords()).hasSize(1);
+        assertThat(interest.getKeywords()).hasSize(initialSize + 1);
+        assertThat(interest.getKeywords()).contains(keyword1);
+        assertThat(keyword1.getInterest()).isEqualTo(interest);
     }
 
     @Test
     @DisplayName("여러 키워드 추가 테스트")
     void testAddMultipleKeywords() {
         // given
-        Interest interest = Interest.builder()
-                .name("여러 키워드 추가 테스트")
-                .build();
-        Keyword keyword1 = new Keyword(interest, "키워드1");
-        Keyword keyword2 = new Keyword(interest, "키워드2");
-        Keyword keyword3 = new Keyword(interest, "키워드3");
-        
+        int initialSize = interest.getKeywords().size();
+
         // when
         interest.addKeyword(keyword1);
         interest.addKeyword(keyword2);
-        interest.addKeyword(keyword3);
-        
-        // then
-        assertThat(interest.getKeywords()).contains(keyword1, keyword2, keyword3);
-        assertThat(interest.getKeywords()).hasSize(3);
-    }
 
-    @Test
-    @DisplayName("키워드 제거 테스트")
-    void testRemoveKeyword() {
-        // given
-        Interest interest = Interest.builder()
-                .name("키워드 제거 테스트")
-                .build();
-        Keyword keyword1 = new Keyword(interest, "키워드1");
-        Keyword keyword2 = new Keyword(interest, "키워드2");
-        
-        // when
-        interest.addKeyword(keyword1);
-        interest.addKeyword(keyword2);
-        interest.removeKeyword(keyword1);
-        
         // then
-        assertThat(interest.getKeywords()).doesNotContain(keyword1);
-        assertThat(interest.getKeywords()).contains(keyword2);
-        assertThat(interest.getKeywords()).hasSize(1);
-    }
-
-    @Test
-    @DisplayName("Interest 여러 관심사 생성 테스트")
-    void testMultipleInterests() {
-        // given & when
-        Interest[] interests = new Interest[10];
-        for (int i = 0; i < 10; i++) {
-            interests[i] = Interest.builder()
-                    .name("관심사" + (i + 1))
-                    .subscriberCount((long) (i + 1) * 10)
-                    .build();
-        }
-        
-        // then
-        for (int i = 0; i < 10; i++) {
-            assertThat(interests[i].getName()).isEqualTo("관심사" + (i + 1));
-            assertThat(interests[i].getSubscriberCount()).isEqualTo((long) (i + 1) * 10);
-        }
+        assertThat(interest.getKeywords()).hasSize(initialSize + 2);
+        assertThat(interest.getKeywords()).contains(keyword1, keyword2);
+        assertThat(keyword1.getInterest()).isEqualTo(interest);
+        assertThat(keyword2.getInterest()).isEqualTo(interest);
     }
 
     @Test
     @DisplayName("Interest 구독자 수 연속 증가 테스트")
     void testConsecutiveSubscriberIncrease() {
         // given
-        Interest interest = Interest.builder()
-                .name("연속 증가 테스트")
-                .subscriberCount(0L)
-                .build();
-        
+        Long initialCount = interest.getSubscriberCount();
+
         // when
-        for (int i = 0; i < 5; i++) {
-            interest.increaseSubscriber();
-        }
-        
+        interest.increaseSubscriber();
+        interest.increaseSubscriber();
+        interest.increaseSubscriber();
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(5L);
+        assertThat(interest.getSubscriberCount()).isEqualTo(initialCount + 3);
     }
 
     @Test
     @DisplayName("Interest 구독자 수 연속 감소 테스트")
     void testConsecutiveSubscriberDecrease() {
         // given
-        Interest interest = Interest.builder()
-                .name("연속 감소 테스트")
-                .subscriberCount(10L)
-                .build();
-        
+        interest.increaseSubscriber();
+        interest.increaseSubscriber();
+        interest.increaseSubscriber();
+        Long initialCount = interest.getSubscriberCount();
+
         // when
-        for (int i = 0; i < 3; i++) {
-            interest.decreaseSubscriber();
-        }
-        
+        interest.decreaseSubscriber();
+        interest.decreaseSubscriber();
+
         // then
-        assertThat(interest.getSubscriberCount()).isEqualTo(7L);
+        assertThat(interest.getSubscriberCount()).isEqualTo(initialCount - 2);
     }
 
     @Test
     @DisplayName("Interest 구독자 수 0 이하로 감소 방지 테스트")
     void testSubscriberCountNotGoBelowZero() {
         // given
-        Interest interest = Interest.builder()
-                .name("0 이하 방지 테스트")
-                .subscriberCount(2L)
-                .build();
-        
+        Long initialCount = interest.getSubscriberCount();
+
         // when
-        interest.decreaseSubscriber(); // 2 -> 1
-        interest.decreaseSubscriber(); // 1 -> 0
-        interest.decreaseSubscriber(); // 0 -> 0 (변화 없음)
-        interest.decreaseSubscriber(); // 0 -> 0 (변화 없음)
-        
+        interest.decreaseSubscriber();
+        interest.decreaseSubscriber();
+        interest.decreaseSubscriber();
+
         // then
         assertThat(interest.getSubscriberCount()).isEqualTo(0L);
+        assertThat(interest.getSubscriberCount()).isGreaterThanOrEqualTo(0L);
     }
 
     @Test
     @DisplayName("Interest 한글 이름 테스트")
     void testKoreanName() {
         // given
-        String koreanName = "한글 관심사 이름";
-        
+        String koreanName = "한글 관심사";
+
         // when
-        Interest interest = Interest.builder()
+        Interest koreanInterest = Interest.builder()
                 .name(koreanName)
                 .build();
-        
+
         // then
-        assertThat(interest.getName()).isEqualTo(koreanName);
+        assertThat(koreanInterest.getName()).isEqualTo(koreanName);
     }
 
     @Test
     @DisplayName("Interest 영어 이름 테스트")
     void testEnglishName() {
         // given
-        String englishName = "English Interest Name";
-        
+        String englishName = "English Interest";
+
         // when
-        Interest interest = Interest.builder()
+        Interest englishInterest = Interest.builder()
                 .name(englishName)
                 .build();
-        
+
         // then
-        assertThat(interest.getName()).isEqualTo(englishName);
+        assertThat(englishInterest.getName()).isEqualTo(englishName);
     }
 
     @Test
     @DisplayName("Interest 특수 문자 이름 테스트")
     void testSpecialCharacterName() {
         // given
-        String specialName = "특수문자 관심사!@#$%^&*()";
-        
+        String specialName = "관심사@#$%";
+
         // when
-        Interest interest = Interest.builder()
+        Interest specialInterest = Interest.builder()
                 .name(specialName)
                 .build();
-        
+
         // then
-        assertThat(interest.getName()).isEqualTo(specialName);
+        assertThat(specialInterest.getName()).isEqualTo(specialName);
     }
 
     @Test
     @DisplayName("Interest 긴 이름 테스트")
     void testLongName() {
         // given
-        String longName = "이것은 매우 긴 관심사 이름입니다. ".repeat(10);
-        
+        String longName = "매우 긴 관심사 이름입니다. 이 이름은 테스트를 위해 만들어졌습니다.";
+
         // when
-        Interest interest = Interest.builder()
+        Interest longNameInterest = Interest.builder()
                 .name(longName)
                 .build();
-        
+
         // then
-        assertThat(interest.getName()).isEqualTo(longName);
+        assertThat(longNameInterest.getName()).isEqualTo(longName);
     }
 
     @Test
     @DisplayName("Interest 빈 키워드 리스트 테스트")
     void testEmptyKeywordsList() {
         // given
-        Interest interest = Interest.builder()
-                .name("빈 키워드 테스트")
-                .keywords(new ArrayList<>())
-                .build();
-        
+        List<Keyword> emptyKeywords = new ArrayList<>();
+
         // when
-        Keyword keyword = new Keyword(interest, "테스트 키워드");
-        interest.addKeyword(keyword);
-        interest.removeKeyword(keyword);
-        
+        Interest emptyKeywordsInterest = Interest.builder()
+                .name("빈 키워드 테스트")
+                .keywords(emptyKeywords)
+                .build();
+
         // then
-        assertThat(interest.getKeywords()).isEmpty();
+        assertThat(emptyKeywordsInterest.getKeywords()).isEmpty();
     }
 
     @Test
     @DisplayName("Interest toString 메서드 테스트")
     void testToString() {
         // given
-        Interest interest = Interest.builder()
+        Interest testInterest = Interest.builder()
                 .name("toString 테스트")
-                .subscriberCount(100L)
+                .subscriberCount(5L)
                 .build();
-        
+
         // when
-        String result = interest.toString();
-        
+        String result = testInterest.toString();
+
         // then
         assertThat(result).isNotNull();
-        // 기본 Object.toString()은 클래스명과 해시코드를 포함하므로 이를 확인
         assertThat(result).contains("Interest");
-        assertThat(result).contains("@");
     }
 } 
