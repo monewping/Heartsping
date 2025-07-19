@@ -1,6 +1,5 @@
 package org.project.monewping.domain.comment.service;
 
-import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,17 +79,7 @@ public class CommentServiceImpl implements CommentService {
                 "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId().toString()
             ));
 
-        Instant now = Instant.now();
-        Comment comment = Comment.builder()
-            .articleId(requestDto.getArticleId())
-            .userId(requestDto.getUserId())
-            .userNickname(user.getNickname())
-            .content(requestDto.getContent())
-            .createdAt(now)
-            .updatedAt(now)
-            .likeCount(0)
-            .isDeleted(false)
-            .build();
+        Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
 
         commentRepository.save(comment);
         log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}", requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
