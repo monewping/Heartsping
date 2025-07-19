@@ -101,4 +101,22 @@ public class InterestController {
                 .body(response);
 
     }
+
+    /**
+     * 관심사 구독을 취소합니다.
+     *
+     * @param interestId 구독 취소할 관심사 ID
+     * @param subscriberId 구독자(사용자) ID
+     * @return 구독 취소 정보 DTO
+     */
+    @DeleteMapping("/{interestId}/subscriptions")
+    public ResponseEntity<SubscriptionDto> unsubscribe(
+            @PathVariable UUID interestId,
+            @RequestHeader("Monew-Request-User-ID") UUID subscriberId
+    ) {
+        SubscriptionDto response = subscriptionService.unsubscribe(interestId, subscriberId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
 } 

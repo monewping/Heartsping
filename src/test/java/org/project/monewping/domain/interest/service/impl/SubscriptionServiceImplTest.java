@@ -11,6 +11,7 @@ import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.entity.Subscription;
+import org.project.monewping.domain.interest.exception.SubscriptionNotFoundException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.user.domain.User;
@@ -265,5 +266,151 @@ class SubscriptionServiceImplTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.interestKeywords()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("정상적인 구독 취소가 성공한다")
+    void unsubscribe_Success() {
+        // given
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.of(interest));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interestId)).willReturn(Optional.of(subscription));
+
+        // when
+        SubscriptionDto result = subscriptionService.unsubscribe(interestId, subscriberId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.interestId()).isEqualTo(interestId);
+        assertThat(result.interestName()).isEqualTo("테스트 관심사");
+        assertThat(result.interestSubscriberCount()).isEqualTo(9L); // 구독자 수 감소 확인
+
+        verify(userRepository).findById(subscriberId);
+        verify(interestRepository).findById(interestId);
+        verify(subscriptionRepository).findByUserIdAndInterestId(subscriberId, interestId);
+        verify(subscriptionRepository).delete(subscription);
+    }
+
+    @Test
+    @DisplayName("키워드가 있는 관심사 구독 취소가 성공한다")
+    void unsubscribe_WithKeywords_Success() {
+        // given
+        Keyword keyword1 = new Keyword(interest, "키워드1");
+        Keyword keyword2 = new Keyword(interest, "키워드2");
+        interest.addKeyword(keyword1);
+        interest.addKeyword(keyword2);
+
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.of(interest));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interestId)).willReturn(Optional.of(subscription));
+
+        // when
+        SubscriptionDto result = subscriptionService.unsubscribe(interestId, subscriberId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.interestKeywords()).containsExactly("키워드1", "키워드2");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자로 구독 취소 시도 시 예외가 발생한다")
+    void unsubscribe_UserNotFound_ThrowsException() {
+        // given
+        given(userRepository.findById(subscriberId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("사용자 없음");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 관심사로 구독 취소 시도 시 예외가 발생한다")
+    void unsubscribe_InterestNotFound_ThrowsException() {
+        // given
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("관심사 없음");
+    }
+
+    @Test
+    @DisplayName("구독하지 않은 관심사에 대해 구독 취소 시도 시 예외가 발생한다")
+    void unsubscribe_SubscriptionNotFound_ThrowsException() {
+        // given
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.of(interest));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interestId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
+                .isInstanceOf(SubscriptionNotFoundException.class)
+                .hasMessageContaining("구독을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("구독자 수가 1인 관심사 구독 취소가 성공한다")
+    void unsubscribe_OneSubscriber_Success() {
+        // given
+        Interest oneInterest = Interest.builder()
+                .id(interestId)
+                .name("구독자 1명 관심사")
+                .subscriberCount(1L)
+                .build();
+
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.of(oneInterest));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interestId)).willReturn(Optional.of(subscription));
+
+        // when
+        SubscriptionDto result = subscriptionService.unsubscribe(interestId, subscriberId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.interestSubscriberCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("동일 사용자가 여러 관심사 구독/취소를 반복해도 구독자 수가 정확히 반영된다")
+    void subscribeAndUnsubscribe_MultipleInterests() {
+        // given
+        Interest interest1 = Interest.builder().id(UUID.randomUUID()).name("관심사1").subscriberCount(0L).build();
+        Interest interest2 = Interest.builder().id(UUID.randomUUID()).name("관심사2").subscriberCount(0L).build();
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interest1.getId())).willReturn(Optional.of(interest1));
+        given(interestRepository.findById(interest2.getId())).willReturn(Optional.of(interest2));
+        given(subscriptionRepository.findInterestIdsByUserId(subscriberId)).willReturn(List.of());
+        given(subscriptionRepository.save(any(Subscription.class))).willReturn(subscription);
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interest1.getId())).willReturn(Optional.of(subscription));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interest2.getId())).willReturn(Optional.of(subscription));
+
+        // when
+        SubscriptionDto dto1 = subscriptionService.subscribe(interest1.getId(), subscriberId);
+        SubscriptionDto dto2 = subscriptionService.subscribe(interest2.getId(), subscriberId);
+        SubscriptionDto cancel1 = subscriptionService.unsubscribe(interest1.getId(), subscriberId);
+        SubscriptionDto cancel2 = subscriptionService.unsubscribe(interest2.getId(), subscriberId);
+
+        // then
+        assertThat(dto1.interestSubscriberCount()).isEqualTo(1L);
+        assertThat(dto2.interestSubscriberCount()).isEqualTo(1L);
+        assertThat(cancel1.interestSubscriberCount()).isEqualTo(0L);
+        assertThat(cancel2.interestSubscriberCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("구독 취소 중 예외 발생 시 트랜잭션이 롤백된다")
+    void unsubscribe_rollbackOnException() {
+        // given
+        given(userRepository.findById(subscriberId)).willReturn(Optional.of(user));
+        given(interestRepository.findById(interestId)).willReturn(Optional.of(interest));
+        given(subscriptionRepository.findByUserIdAndInterestId(subscriberId, interestId)).willThrow(new RuntimeException("DB 오류"));
+
+        // when & then
+        assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessage("DB 오류");
     }
 } 
