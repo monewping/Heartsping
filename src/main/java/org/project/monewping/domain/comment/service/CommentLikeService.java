@@ -22,32 +22,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CommentLikeService {
 
-  private final CommentLikeRepository commentLikeRepository;
-  private final CommentRepository commentRepository;
-  private final UserRepository userRepository;
+    private final CommentLikeRepository commentLikeRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
-  /**
-   * 댓글 좋아요 등록
-   * @param userId 사용자 ID
-   * @param commentId 댓글 ID
-   */
-  public void likeComment(UUID userId, UUID commentId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    /**
+     * 댓글 좋아요 등록
+     * @param userId 사용자 ID
+     * @param commentId 댓글 ID
+     */
+    public void likeComment(UUID userId, UUID commentId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-    Comment comment = commentRepository.findById(commentId)
-        .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
 
-    if (commentLikeRepository.existsByUserAndComment(user, comment)) {
-      throw new CommentLikeAlreadyExistsException();
-    }
+        if (commentLikeRepository.existsByUserAndComment(user, comment)) {
+          throw new CommentLikeAlreadyExistsException();
+        }
 
-    commentLikeRepository.save(
-        CommentLike.builder()
-            .user(user)
-            .comment(comment)
-            .build()
-    );
+        commentLikeRepository.save(
+            CommentLike.builder()
+                .user(user)
+                .comment(comment)
+                .build()
+        );
   }
 
   /**
@@ -55,16 +55,16 @@ public class CommentLikeService {
    * @param userId 사용자 ID
    * @param commentId 댓글 ID
    */
-  public void unlikeComment(UUID userId, UUID commentId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    public void unlikeComment(UUID userId, UUID commentId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-    Comment comment = commentRepository.findById(commentId)
-        .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
 
-    CommentLike commentLike = commentLikeRepository.findByUserAndComment(user, comment)
-        .orElseThrow(CommentLikeNotFoundException::new);
+        CommentLike commentLike = commentLikeRepository.findByUserAndComment(user, comment)
+            .orElseThrow(CommentLikeNotFoundException::new);
 
-    commentLikeRepository.delete(commentLike);
-  }
+        commentLikeRepository.delete(commentLike);
+    }
 }
