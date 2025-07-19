@@ -88,7 +88,7 @@ CREATE TABLE articles
     id            UUID PRIMARY KEY,
 
     -- Columns
-    source        VARCHAR(10)  NOT NULL,
+    source        VARCHAR(30)  NOT NULL,
     original_link VARCHAR(300) NOT NULL,
     title         VARCHAR(100) NOT NULL,
     summary       TEXT         NOT NULL,
@@ -97,6 +97,7 @@ CREATE TABLE articles
     view_count    BIGINT       NOT NULL,
     is_deleted    BOOLEAN DEFAULT FALSE,
     created_at    TIMESTAMPTZ  NOT NULL,
+    version       BIGINT       NOT NULL DEFAULT 0,
 
     -- Unique Key
     CONSTRAINT uk_article_link UNIQUE (original_link),

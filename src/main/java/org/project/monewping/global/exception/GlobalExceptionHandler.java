@@ -2,6 +2,7 @@ package org.project.monewping.global.exception;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
@@ -10,7 +11,6 @@ import org.project.monewping.domain.interest.exception.DuplicateKeywordException
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
-import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
@@ -392,4 +392,25 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    /**
+     * 뉴스 기사를 찾을 수 없을 때 발생하는 예외를 처리합니다.
+     *
+     * <p>해당 예외가 발생하면 HTTP 404 Not Found 상태 코드와 함께
+     * 오류 코드 "ARTICLE_NOT_FOUND" 및 예외 메시지를 포함한
+     * {@link ErrorResponse}를 반환합니다.</p>
+     *
+     * @param ex 처리할 {@link ArticleNotFoundException}
+     * @return HTTP 404 상태 코드와 오류 메시지를 담은 {@link ResponseEntity<ErrorResponse>}
+     */
+    @ExceptionHandler(ArticleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleArticleNotFoundException(ArticleNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.NOT_FOUND,
+            "ARTICLE_NOT_FOUND",
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
 }

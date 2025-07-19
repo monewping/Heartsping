@@ -30,6 +30,7 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
@@ -457,5 +458,74 @@ public class ArticlesServiceTest {
         List<String> result = articleService.getAllSources();
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("논리 삭제 - 존재하는 기사일 경우 삭제 플래그 및 마스킹 처리 후 저장")
+    void softDelete_Success() {
+        // given
+        UUID articleId = UUID.randomUUID();
+        Articles article = Articles.builder()
+            .id(articleId)
+            .title("Original Title")
+            .summary("Original Summary")
+            .originalLink("http://original.link")
+            .deleted(false)
+            .build();
+
+        given(articlesRepository.findByIdAndDeletedFalse(articleId)).willReturn(Optional.of(article));
+
+        // when
+        articleService.softDelete(articleId);
+
+        // then
+        assertThat(article.isDeleted()).isTrue();
+        assertThat(article.getTitle()).isEqualTo("[ 삭제된 기사 ]");
+        assertThat(article.getSummary()).isEqualTo("해당 기사는 삭제되었습니다.");
+        assertThat(article.getOriginalLink()).startsWith("404 Not Found");
+        // articlesRepository.save 호출은 entity 상태 변경 감지로 생략 가능하나, 필요하면 verify 추가
+    }
+
+    @Test
+    @DisplayName("논리 삭제 - 존재하지 않는 기사일 경우 ArticleNotFoundException 예외 발생")
+    void softDelete_NotFound() {
+        // given
+        UUID articleId = UUID.randomUUID();
+        given(articlesRepository.findByIdAndDeletedFalse(articleId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> articleService.softDelete(articleId))
+            .isInstanceOf(ArticleNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("물리 삭제 - 존재하는 기사일 경우 기사 삭제 수행")
+    void hardDelete_Success() {
+        // given
+        UUID articleId = UUID.randomUUID();
+        Articles article = Articles.builder()
+            .id(articleId)
+            .deleted(false)
+            .build();
+
+        given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
+
+        // when
+        articleService.hardDelete(articleId);
+
+        // then
+        verify(articlesRepository).delete(article);
+    }
+
+    @Test
+    @DisplayName("물리 삭제 - 존재하지 않는 기사일 경우 ArticleNotFoundException 예외 발생")
+    void hardDelete_NotFound() {
+        // given
+        UUID articleId = UUID.randomUUID();
+        given(articlesRepository.findById(articleId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> articleService.hardDelete(articleId))
+            .isInstanceOf(ArticleNotFoundException.class);
     }
 }
