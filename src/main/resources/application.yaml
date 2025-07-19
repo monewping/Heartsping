@@ -54,6 +54,19 @@ management:
     env:
       enabled: true
 
+info:
+  app:
+    name: Heartsping
+  java:
+    version: ${java.version}
+  spring-boot:
+    version: 3.4.4
+  datasource:
+    url: ${spring.datasource.url}
+    driver: ${spring.datasource.driver-class-name}
+  jpa:
+    ddl-auto: ${spring.jpa.properties.hibernate.ddl-auto}
+
 server:
   port: ${PORT:8080}
   address: 0.0.0.0
