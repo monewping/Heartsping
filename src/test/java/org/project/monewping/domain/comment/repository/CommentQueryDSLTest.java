@@ -56,10 +56,11 @@ class CommentQueryDSLTest {
             "DESC",
             null,
             null,
-            3
+            null,
+            5
         );
 
-        assertThat(comments).hasSize(4);
+        assertThat(comments).hasSize(5);
         assertThat(comments.get(0).getCreatedAt()).isAfterOrEqualTo(comments.get(1).getCreatedAt());
         assertThat(comments.get(1).getCreatedAt()).isAfterOrEqualTo(comments.get(2).getCreatedAt());
     }
@@ -73,10 +74,11 @@ class CommentQueryDSLTest {
             "ASC",
             null,
             null,
-            3
+            null,
+            5
         );
 
-        assertThat(comments).hasSize(4);
+        assertThat(comments).hasSize(5);
         assertThat(comments.get(0).getCreatedAt()).isBeforeOrEqualTo(comments.get(1).getCreatedAt());
         assertThat(comments.get(1).getCreatedAt()).isBeforeOrEqualTo(comments.get(2).getCreatedAt());
     }
@@ -88,6 +90,7 @@ class CommentQueryDSLTest {
             articleId,
             "likeCount",
             "ASC",
+            null,
             null,
             null,
             5
