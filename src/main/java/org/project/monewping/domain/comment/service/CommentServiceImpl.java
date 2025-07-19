@@ -1,5 +1,6 @@
 package org.project.monewping.domain.comment.service;
 
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,9 @@ import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
@@ -29,6 +33,7 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
+    private final UserRepository userRepository;
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -37,9 +42,10 @@ public class CommentServiceImpl implements CommentService {
         String direction,
         String cursor,
         String after,
+        String afterId,
         int limit
     ) {
-        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, limit);
+        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, afterId, limit);
         List<CommentResponseDto> response = comments.stream()
             .map(commentMapper::toResponseDto)
             .toList();
@@ -64,12 +70,30 @@ public class CommentServiceImpl implements CommentService {
             hasNext
         );
     }
+
     // 댓글 등록
     @Override
     public void registerComment(CommentRegisterRequestDto requestDto) {
-        Comment comment = commentMapper.toEntity(requestDto);
+        // 유저 정보 조회
+        User user = userRepository.findById(requestDto.getUserId())
+            .orElseThrow(() -> new UserNotFoundException(
+                "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId().toString()
+            ));
+
+        Instant now = Instant.now();
+        Comment comment = Comment.builder()
+            .articleId(requestDto.getArticleId())
+            .userId(requestDto.getUserId())
+            .userNickname(user.getNickname())
+            .content(requestDto.getContent())
+            .createdAt(now)
+            .updatedAt(now)
+            .likeCount(0)
+            .isDeleted(false)
+            .build();
+
         commentRepository.save(comment);
-        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}", requestDto.getArticleId(), requestDto.getUserId());
+        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}", requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
     }
 
     // 논리 삭제
