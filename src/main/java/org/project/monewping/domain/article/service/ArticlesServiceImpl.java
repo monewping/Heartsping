@@ -152,7 +152,6 @@ public class ArticlesServiceImpl implements ArticlesService {
      *
      * @param articleId 삭제할 기사 ID
      */
-    @Transactional
     public void softDelete(UUID articleId) {
         Articles article = articlesRepository.findByIdAndDeletedFalse(articleId)
             .orElseThrow(() -> {
@@ -171,7 +170,6 @@ public class ArticlesServiceImpl implements ArticlesService {
      *
      * @param articleId 삭제할 기사 ID
      */
-    @Transactional
     public void hardDelete(UUID articleId) {
         Articles article = articlesRepository.findById(articleId)
             .orElseThrow(() -> {
