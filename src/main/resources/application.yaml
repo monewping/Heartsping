@@ -31,6 +31,11 @@ spring:
         use_sql_comments: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # Batch 설정
+  batch:
+    jdbc:
+      initialize-schema: always
+
 logging:
   level:
     org.project.monewping: debug

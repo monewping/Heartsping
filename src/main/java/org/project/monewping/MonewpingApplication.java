@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Slf4j
 @EnableScheduling
 @SpringBootApplication
+@EnableScheduling
 public class MonewpingApplication {
 
     public static void main(String[] args) {
