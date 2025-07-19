@@ -1,7 +1,6 @@
 package org.project.monewping.domain.comment.mapper;
 
 import org.project.monewping.domain.comment.domain.Comment;
-import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 
 /**
@@ -10,5 +9,4 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
  */
 public interface CommentMapper {
     CommentResponseDto toResponseDto(Comment comment);
-    Comment toEntity(CommentRegisterRequestDto requestDto);
 }
