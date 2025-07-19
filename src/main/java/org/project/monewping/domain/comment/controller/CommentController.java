@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.http.ResponseEntity;
@@ -79,5 +80,22 @@ public class CommentController {
         commentService.deleteCommentPhysically(commentId, userId);
         log.info("[CommentController] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 댓글을 수정합니다.
+     *
+     * @param commentId 댓글 ID (UUID)
+     * @param request 댓글 수정 요청 DTO
+     * @return HTTP 200 OK 응답
+     */
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<Void> updateComment(
+        @PathVariable UUID commentId,
+        @RequestParam UUID userId, // 본인 확인을 위해 userId 추가
+        @RequestBody @Valid CommentUpdateRequestDto request
+    ) {
+        commentService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok().build();
     }
 }
