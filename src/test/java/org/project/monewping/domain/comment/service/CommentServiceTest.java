@@ -151,6 +151,18 @@ class CommentServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
+        when(commentMapper.toEntity(eq(requestDto), eq(userNickname)))
+            .thenReturn(Comment.builder()
+                .articleId(articleId)
+                .userId(userId)
+                .userNickname(userNickname)
+                .content("테스트 댓글입니다.")
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .likeCount(0)
+                .isDeleted(false)
+                .build());
+
         commentService.registerComment(requestDto);
 
         verify(commentRepository).save(any(Comment.class));
