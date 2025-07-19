@@ -1,9 +1,12 @@
 package org.project.monewping.domain.comment.service;
 
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
+import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.global.dto.CursorPageResponse;
+import org.springframework.stereotype.Service;
 
 /**
  * 댓글 서비스 인터페이스
@@ -30,4 +33,6 @@ public interface CommentService {
     // 댓글 물리 삭제
     void deleteCommentPhysically(UUID commentId, UUID userId);
 
+    // 댓글 수정
+    void updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request);
 }
