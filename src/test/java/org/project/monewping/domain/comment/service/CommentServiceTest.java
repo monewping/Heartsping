@@ -88,16 +88,22 @@ class CommentServiceTest {
         testResponseDtos = Arrays.asList(
             new CommentResponseDto(
                 testComments.get(0).getId(),
-                testComments.get(0).getContent(),
+                testComments.get(0).getArticleId(),
+                testComments.get(0).getUserId(),
                 testComments.get(0).getUserNickname(),
+                testComments.get(0).getContent(),
                 testComments.get(0).getLikeCount(),
+                false,
                 testComments.get(0).getCreatedAt().toString()
             ),
             new CommentResponseDto(
                 testComments.get(1).getId(),
-                testComments.get(1).getContent(),
+                testComments.get(1).getArticleId(),
+                testComments.get(1).getUserId(),
                 testComments.get(1).getUserNickname(),
+                testComments.get(1).getContent(),
                 testComments.get(1).getLikeCount(),
+                false,
                 testComments.get(1).getCreatedAt().toString()
             )
         );
@@ -167,7 +173,6 @@ class CommentServiceTest {
 
         verify(commentRepository).save(any(Comment.class));
     }
-
 
     @Test
     @DisplayName("댓글 조회 성공 - 모든 파라미터 포함")

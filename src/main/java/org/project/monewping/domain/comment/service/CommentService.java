@@ -24,7 +24,7 @@ public interface CommentService {
     );
 
     // 댓글 등록
-    void registerComment(CommentRegisterRequestDto requestDto);
+    CommentResponseDto registerComment(CommentRegisterRequestDto requestDto);
 
     // 댓글 논리 삭제
     void deleteComment(UUID commentId, UUID userId);
@@ -33,5 +33,6 @@ public interface CommentService {
     void deleteCommentPhysically(UUID commentId, UUID userId);
 
     // 댓글 수정
-    void updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request);
+    CommentResponseDto updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request);
+
 }
