@@ -9,6 +9,7 @@ package org.project.monewping.domain.notification.exception;
  * </p>
  */
 public class UnsupportedResourceTypeException extends RuntimeException {
+
     public UnsupportedResourceTypeException(String resourceType) {
         super("지원하지 않는 리소스 타입입니다: " + resourceType);
     }

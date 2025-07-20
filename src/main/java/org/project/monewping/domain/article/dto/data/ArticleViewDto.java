@@ -55,10 +55,10 @@ public record ArticleViewDto(
     String articleSummary,
 
     @Min(value = 0)
-    long articleCommentCount,
+    Long articleCommentCount,
 
     @Min(value = 0)
-    long articleViewCount
+    Long articleViewCount
 ) {
 
 }

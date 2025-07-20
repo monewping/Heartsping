@@ -5,6 +5,12 @@ spring:
   profiles:
     active: default
 
+  devtools:
+    restart:
+      # 기본 제외 패턴 유지하고 추가로 mapper 클래스 제외
+      additional-exclude: "**/mapper/**/*MapperImpl.class"
+      log-condition-evaluation-delta: true
+
   # DB 접속 정보
   datasource:
     url: jdbc:postgresql://localhost:5432/monewpingdb
@@ -23,6 +29,12 @@ spring:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Batch 설정
+  batch:
+    jdbc:
+      initialize-schema: always
 
 logging:
   level:
@@ -53,9 +65,5 @@ server:
 
 naver:
   api:
-    client-id: w77BI41SmIuc2Nfm3L4d
-    client-secret: nDx6IuyH3i
-
-data:
-  mongodb:
-    uri: mongodb://localhost:27017/monewping
+    client-id: ${NAVER_CLIENT_ID:test-client-id}
+    client-secret: ${NAVER_CLIENT_SECRET:test-client-secret}

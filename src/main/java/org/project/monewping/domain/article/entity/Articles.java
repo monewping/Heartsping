@@ -7,11 +7,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.global.base.BaseEntity;
 
 @Entity
@@ -26,7 +28,7 @@ public class Articles extends BaseEntity {
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 30)
     private String source;
 
     @Column(name = "original_link", nullable = false, length = 300, unique = true)
@@ -49,5 +51,21 @@ public class Articles extends BaseEntity {
 
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
+
+    // 논리 삭제 시 적용될 마스킹
+    public void softDeleteWithMasking() {
+        this.title = "[ 삭제된 기사 ]";
+        this.summary = "해당 기사는 삭제되었습니다.";
+        this.originalLink = "404 Not Found - " + this.getId();
+        this.deleted = true;
+    }
+
+    public void updateInterest(Interest interest) {
+        this.interest = interest;
+    }
 
 }

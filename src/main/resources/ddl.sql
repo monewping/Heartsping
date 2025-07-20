@@ -46,19 +46,20 @@ CREATE TABLE interests
     updated_at       TIMESTAMPTZ  NOT NULL
 
 );
+
 -- keywords Table
     CREATE TABLE keywords
         (
         -- Primary Key
         id UUID PRIMARY KEY,
 
-        -- Columns
-        name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+    -- Columns
+    name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL,
 
-        -- Foreign Key
-        interest_id UUID NOT NULL,
-        FOREIGN KEY (interest_id) REFERENCES interests (id) ON DELETE CASCADE
-        );
+    -- Foreign Key
+    interest_id UUID NOT NULL,
+    FOREIGN KEY (interest_id) REFERENCES interests (id) ON DELETE CASCADE
+);
 
 
 -- interest_subscriptions Table
@@ -84,18 +85,19 @@ CREATE TABLE interest_subscriptions
 CREATE TABLE articles
 (
     -- Primary Key
-    id UUID PRIMARY KEY,
+    id            UUID PRIMARY KEY,
 
     -- Columns
-    source VARCHAR(10) NOT NULL,
+    source        VARCHAR(30)  NOT NULL,
     original_link VARCHAR(300) NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    summary TEXT NOT NULL,
-    published_at DATE NOT NULL,
-    comment_count BIGINT NOT NULL,
-    view_count BIGINT NOT NULL,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL,
+    title         VARCHAR(100) NOT NULL,
+    summary       TEXT         NOT NULL,
+    published_at  DATE         NOT NULL,
+    comment_count BIGINT       NOT NULL,
+    view_count    BIGINT       NOT NULL,
+    is_deleted    BOOLEAN DEFAULT FALSE,
+    created_at    TIMESTAMPTZ  NOT NULL,
+    version       BIGINT       NOT NULL DEFAULT 0,
 
     -- Unique Key
     CONSTRAINT uk_article_link UNIQUE (original_link),
