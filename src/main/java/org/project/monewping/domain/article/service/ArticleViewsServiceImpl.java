@@ -59,6 +59,9 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
                 return new ArticleNotFoundException(articleId);
             });
 
+        article.increaseViewCount();
+        log.info("기사 조회수 증가: articleId = {}, newViewCount = {}", articleId, article.getViewCount());
+
         // 2. 엔티티 생성 및 저장
         log.info("기사 조회 정보 생성 : viewedBy = {}, articleId = {}, createdAt = {}", viewedBy, articleId, LocalDateTime.now());
         ArticleViews articleViews = ArticleViews.builder()
