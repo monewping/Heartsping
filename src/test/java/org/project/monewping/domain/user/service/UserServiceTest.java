@@ -276,14 +276,15 @@ class UserServiceTest {
     @DisplayName("잘못된 비밀번호로 로그인 시 LoginFailedException을 발생시킨다")
     void login_WrongPassword_ThrowsException() {
         // given
-        given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(savedUser));
+        LoginRequest wrongPasswordRequest = new LoginRequest("test@example.com", "wrongpassword");
+        given(userRepository.findByEmail(wrongPasswordRequest.email())).willReturn(Optional.of(savedUser));
 
         // when & then
-        assertThatThrownBy(() -> userService.login(loginRequest))
+        assertThatThrownBy(() -> userService.login(wrongPasswordRequest))
                 .isInstanceOf(LoginFailedException.class)
                 .hasMessage("이메일 또는 비밀번호가 일치하지 않습니다.");
 
-        verify(userRepository).findByEmail(loginRequest.email());
+        verify(userRepository).findByEmail(wrongPasswordRequest.email());
     }
 
     /**

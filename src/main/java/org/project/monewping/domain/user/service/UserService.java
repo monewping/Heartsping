@@ -113,7 +113,6 @@ public class UserService {
      * 비밀번호를 검증합니다.
      * 
      * @param rawPassword     입력된 원본 비밀번호
-     * @param encodedPassword 데이터베이스에 저장된 암호화된 비밀번호
      * @throws LoginFailedException 비밀번호가 일치하지 않는 경우
      */
     private void validatePassword(String rawPassword, String storedPassword) {
