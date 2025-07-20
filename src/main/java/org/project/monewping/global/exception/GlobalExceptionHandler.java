@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
+import org.project.monewping.domain.comment.exception.CommentLikeNotFoundException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
@@ -429,6 +431,29 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+
+    /**
+     * 댓글 좋아요가 이미 존재할 때 발생하는 예외 처리
+     *
+     * @param ex 처리할 CommentLikeAlreadyExistsException
+     * @return 400 Bad Request 상태와 오류 메시지를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(CommentLikeAlreadyExistsException.class)
+    public ResponseEntity<String> handleCommentLikeAlreadyExists(CommentLikeAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    /**
+     * 댓글 좋아요를 취소하려 했으나 존재하지 않을 때 발생하는 예외 처리
+     *
+     * @param ex 처리할 CommentLikeNotFoundException
+     * @return 404 Not Found 상태와 오류 메시지를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(CommentLikeNotFoundException.class)
+    public ResponseEntity<String> handleCommentLikeNotFound(CommentLikeNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
 }

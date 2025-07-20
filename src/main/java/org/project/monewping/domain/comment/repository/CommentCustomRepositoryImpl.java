@@ -17,15 +17,19 @@ public class CommentCustomRepositoryImpl implements CommentCustomRepository {
     private final EntityManager em;
 
     @Override
-    public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, int limit) {
+    public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, String afterId, int limit) {
         String orderColumn = getOrderColumn(orderBy);
         String sortDirection = getSortDirection(direction);
 
-        StringBuilder sql = new StringBuilder("SELECT c FROM Comment c WHERE c.articleId = :articleId AND c.isDeleted = false");
+        StringBuilder sql = new StringBuilder(
+            "SELECT DISTINCT c FROM Comment c " +
+                "WHERE c.articleId = :articleId " +
+                "AND c.isDeleted = false"
+        );
 
-        if (after != null) {
-            sql.append(" AND c.").append(orderColumn).append(" ");
-            sql.append("ASC".equalsIgnoreCase(sortDirection) ? "> :after" : "< :after");
+        if (after != null && afterId != null) {
+            sql.append(" AND (c.").append(orderColumn).append(", c.id) ");
+            sql.append("ASC".equalsIgnoreCase(sortDirection) ? "> (:after, :afterId)" : "< (:after, :afterId)");
         }
 
         sql.append(" ORDER BY c.").append(orderColumn).append(" ").append(sortDirection);
@@ -34,13 +38,14 @@ public class CommentCustomRepositoryImpl implements CommentCustomRepository {
         TypedQuery<Comment> query = em.createQuery(sql.toString(), Comment.class);
         query.setParameter("articleId", articleId);
 
-        if (after != null) {
+        if (after != null && afterId != null) {
             try {
                 if ("createdAt".equalsIgnoreCase(orderBy)) {
                     query.setParameter("after", Instant.parse(after));
                 } else if ("likeCount".equalsIgnoreCase(orderBy)) {
                     query.setParameter("after", Integer.parseInt(after));
                 }
+                query.setParameter("afterId", UUID.fromString(afterId));
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("after 파라미터는 ISO8601 형식이어야 합니다.", e);
             } catch (NumberFormatException e) {
@@ -48,7 +53,7 @@ public class CommentCustomRepositoryImpl implements CommentCustomRepository {
             }
         }
 
-        return query.setMaxResults(limit + 1).getResultList();
+        return query.setMaxResults(limit).getResultList();
     }
 
     private String getOrderColumn(String orderBy) {

@@ -1,7 +1,6 @@
 package org.project.monewping.domain.comment.mapper;
 
 import java.time.Instant;
-import java.util.UUID;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class CommentMapperImpl implements CommentMapper {
 
     @Override
-    public Comment toEntity(CommentRegisterRequestDto requestDto) {
+    public Comment toEntity(CommentRegisterRequestDto requestDto, String userNickname) {
         if (requestDto == null) {
             return null;
         }
@@ -22,7 +21,7 @@ public class CommentMapperImpl implements CommentMapper {
         return Comment.builder()
             .articleId(requestDto.getArticleId())
             .userId(requestDto.getUserId())
-            .userNickname(requestDto.getUserNickname())
+            .userNickname(userNickname)
             .content(requestDto.getContent())
             .likeCount(0)
             .createdAt(now)
@@ -41,7 +40,7 @@ public class CommentMapperImpl implements CommentMapper {
             comment.getContent(),
             comment.getUserNickname(),
             comment.getLikeCount(),
-            comment.getCreatedAt()
+            comment.getCreatedAt().toString()
         );
     }
 }

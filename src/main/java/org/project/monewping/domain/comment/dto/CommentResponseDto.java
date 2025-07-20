@@ -13,7 +13,7 @@ public record CommentResponseDto(
     String content,
     String userNickname,
     int likeCount,
-    Instant createdAt
+    String createdAt
 ) {
 
 }

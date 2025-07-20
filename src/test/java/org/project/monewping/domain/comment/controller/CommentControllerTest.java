@@ -63,14 +63,14 @@ class CommentControllerTest {
                 "첫 번째 댓글입니다.",
                 "사용자1",
                 5,
-                Instant.now().minus(Duration.ofHours(1))
+                Instant.now().minus(Duration.ofHours(1)).toString()
             ),
             new CommentResponseDto(
                 UUID.randomUUID(),
                 "두 번째 댓글입니다.",
                 "사용자2",
                 3,
-                Instant.now().minus(Duration.ofHours(1))
+                Instant.now().minus(Duration.ofHours(1)).toString()
             )
         );
 
@@ -91,6 +91,7 @@ class CommentControllerTest {
             eq(testArticleId),
             eq("createdAt"),
             eq("DESC"),
+            eq(null),
             eq(null),
             eq(null),
             eq(50)
@@ -120,6 +121,7 @@ class CommentControllerTest {
     void getComments_Success_WithAllParameters() throws Exception {
         String cursor = "test_cursor";
         String after = "2024-01-01T10:00:00";
+        String afterId = UUID.randomUUID().toString();
         Integer limit = 20;
 
         when(commentService.getComments(
@@ -128,6 +130,7 @@ class CommentControllerTest {
             eq("ASC"),
             eq(cursor),
             eq(after),
+            eq(afterId),
             eq(limit)
         )).thenReturn(testResponse);
 
@@ -137,6 +140,7 @@ class CommentControllerTest {
                 .param("direction", "ASC")
                 .param("cursor", cursor)
                 .param("after", after)
+                .param("afterId", afterId)
                 .param("limit", limit.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -162,6 +166,7 @@ class CommentControllerTest {
             any(UUID.class),
             any(String.class),
             any(String.class),
+            any(),
             any(),
             any(),
             any(Integer.class)
@@ -207,6 +212,7 @@ class CommentControllerTest {
             eq("createdAt"),
             eq("DESC"),
             eq(cursor),
+            eq(null),
             eq(null),
             eq(50)
         )).thenReturn(testResponse);
