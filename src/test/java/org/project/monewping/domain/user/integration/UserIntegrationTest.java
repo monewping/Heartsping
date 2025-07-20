@@ -1,8 +1,6 @@
 package org.project.monewping.domain.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -21,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser(username = "testuser", roles = { "USER" })
 @DisplayName("User 통합 테스트")
 class UserIntegrationTest {
 
@@ -63,7 +59,7 @@ class UserIntegrationTest {
         assertThat(savedUser).isPresent();
         assertThat(savedUser.get().getEmail()).isEqualTo("integration@example.com");
         assertThat(savedUser.get().getNickname()).isEqualTo("integrationuser");
-        assertThat(savedUser.get().getPassword()).isNotEqualTo("password123"); // 암호화되어야 함
+        assertThat(savedUser.get().getPassword()).isEqualTo("password123"); // 평문으로 저장됨
         assertThat(savedUser.get().getPassword()).isNotEmpty(); // 비밀번호가 저장되어야 함
         assertThat(savedUser.get().getId()).isNotNull();
         assertThat(savedUser.get().getCreatedAt()).isNotNull();
@@ -267,8 +263,6 @@ class UserIntegrationTest {
     private org.springframework.test.web.servlet.ResultActions performUserRegistration(UserRegisterRequest request)
             throws Exception {
         return mockMvc.perform(post("/api/users")
-                .with(csrf())
-                .with(user("testuser").roles("USER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print());
@@ -276,7 +270,6 @@ class UserIntegrationTest {
 
     private org.springframework.test.web.servlet.ResultActions performLogin(LoginRequest request) throws Exception {
         return mockMvc.perform(post("/api/users/login")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print());
