@@ -1,6 +1,5 @@
 package org.project.monewping.domain.article.fetcher;
 
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
@@ -28,43 +27,33 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
     private final RestTemplate restTemplate;
 
-    // 네이버 API 클라이언트 ID
     @Value("${naver.api.client-id}")
     private String clientId;
 
-    // 네이버 API 클라이언트 시크릿
     @Value("${naver.api.client-secret}")
     private String clientSecret;
 
     private static final String NAVER_NEWS_SEARCH_API = "https://openapi.naver.com/v1/search/news.json";
 
-    /**
-     * 네이버 뉴스 API를 호출하여 주어진 키워드로 뉴스 기사를 검색하고,
-     * 내부 저장 요청 DTO 리스트로 변환하여 반환합니다.
-     *
-     * @param keyword 검색 키워드 (예: "인공지능", "주식")
-     * @return 수집된 뉴스 기사의 {@link ArticleSaveRequest} 리스트
-     */
     @Override
     public List<ArticleSaveRequest> fetch(String keyword) {
-        log.info("Naver 뉴스 기사 수집 시작 = keyword : {}", keyword);
+        log.info("📰 [NaverFetcher] 뉴스 기사 수집 시작 - keyword: {}", keyword);
 
-        // 요청 헤더 구성
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Naver-Client-Id", clientId);
         headers.set("X-Naver-Client-Secret", clientSecret);
-
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        // URI 구성
         String uri = UriComponentsBuilder.fromHttpUrl(NAVER_NEWS_SEARCH_API)
             .queryParam("query", keyword)
             .queryParam("display", 10)
             .queryParam("sort", "date")
             .toUriString();
 
+        log.debug("🔗 [NaverFetcher] 호출 URI: {}", uri);
+        log.debug("🔐 [NaverFetcher] 헤더: X-Naver-Client-Id={}, X-Naver-Client-Secret={}", mask(clientId), mask(clientSecret));
+
         try {
-            // 네이버 뉴스 검색 API 호출
             ResponseEntity<NaverNewsResponse> response = restTemplate.exchange(
                 uri,
                 HttpMethod.GET,
@@ -72,26 +61,39 @@ public class NaverArticleFetcher implements ArticleFetcher {
                 NaverNewsResponse.class
             );
 
-            // 응답 결과 파싱 후 ArticleSaveRequest 리스트로 변환
-            return Optional.ofNullable(response.getBody())
-                .map(NaverNewsResponse::items)
-                .orElse(List.of())
-                .stream()
-                .map(item -> new ArticleSaveRequest(
-                    // InterestId는 이후 외부 주입
-                    null,
-                    "Naver",
-                    item.originalLink(),
-                    item.title(),
-                    item.description(),
-                    item.getPublishedAt()
-                ))
+            log.debug("✅ [NaverFetcher] 응답 수신 - Status: {}", response.getStatusCode());
+
+            if (response.getBody() == null || response.getBody().items() == null) {
+                log.warn("⚠️ [NaverFetcher] 응답은 성공했지만 뉴스 아이템이 비어 있습니다.");
+                return List.of();
+            }
+
+            List<ArticleSaveRequest> results = response.getBody().items().stream()
+                .map(item -> {
+                    log.debug("📄 [NaverFetcher] 기사 변환 - title: {}, publishedAt: {}", item.title(), item.getPublishedAt());
+                    return new ArticleSaveRequest(
+                        null,
+                        "Naver",
+                        item.originalLink(),
+                        item.title(),
+                        item.description(),
+                        item.getPublishedAt()
+                    );
+                })
                 .toList();
 
+            log.info("📦 [NaverFetcher] 기사 {}건 수집 완료", results.size());
+            return results;
+
         } catch (Exception e) {
-            log.error("Naver 뉴스 API 호출 실패", e);
+            log.error("❌ [NaverFetcher] Naver 뉴스 API 호출 실패", e);
             return List.of();
         }
+    }
 
+    // 보안 로그용 마스킹 함수
+    private String mask(String input) {
+        if (input == null || input.length() <= 4) return "****";
+        return input.substring(0, 2) + "****" + input.substring(input.length() - 2);
     }
 }
