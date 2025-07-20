@@ -3,6 +3,8 @@ package org.project.monewping.domain.comment.service;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -36,6 +38,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
     private final UserActivityService userActivityService;
+    private final ArticlesRepository articlesRepository;
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -90,10 +93,15 @@ public class CommentServiceImpl implements CommentService {
 
         // 사용자 활동 내역에 댓글 정보 추가
         try {
+            // 실제 기사 제목 가져오기
+            String articleTitle = articlesRepository.findById(savedComment.getArticleId())
+                .map(Articles::getTitle)
+                .orElse("삭제된 기사");
+
             UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
                 .id(savedComment.getId())
                 .articleId(savedComment.getArticleId())
-                .articleTitle("기사 제목") // TODO: 실제 기사 제목을 가져와야 함
+                .articleTitle(articleTitle)
                 .userId(savedComment.getUserId())
                 .userNickname(savedComment.getUserNickname())
                 .content(savedComment.getContent())
@@ -102,8 +110,8 @@ public class CommentServiceImpl implements CommentService {
                 .build();
 
             userActivityService.addComment(requestDto.getUserId(), commentInfo);
-            log.info("[CommentService] 사용자 활동 내역에 댓글 정보 추가 완료 - userId: {}, commentId: {}",
-                requestDto.getUserId(), savedComment.getId());
+            log.info("[CommentService] 사용자 활동 내역에 댓글 정보 추가 완료 - userId: {}, commentId: {}, articleTitle: {}",
+                requestDto.getUserId(), savedComment.getId(), articleTitle);
         } catch (Exception e) {
             log.warn("[CommentService] 사용자 활동 내역 업데이트 실패 - userId: {}, commentId: {}, error: {}",
                 requestDto.getUserId(), savedComment.getId(), e.getMessage());
