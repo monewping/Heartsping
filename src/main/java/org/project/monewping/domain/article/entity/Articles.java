@@ -68,4 +68,9 @@ public class Articles extends BaseEntity {
         this.interest = interest;
     }
 
+    public void increaseViewCount() {
+        this.viewCount += 1;
+    }
+
+
 }

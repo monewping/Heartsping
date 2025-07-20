@@ -54,7 +54,17 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         Interest interest = findInterestOrThrow(request.interestId());
 
-        Articles article = articlesMapper.toEntity(request, interest);
+        // source 소문자 변환 적용
+        ArticleSaveRequest normalizedRequest = new ArticleSaveRequest(
+            request.interestId(),
+            request.source() != null ? request.source().toLowerCase() : null,
+            request.originalLink(),
+            request.title(),
+            request.summary(),
+            request.publishedAt()
+        );
+
+        Articles article = articlesMapper.toEntity(normalizedRequest, interest);
         articlesRepository.save(article);
 
         log.info("뉴스 기사 저장 완료 = originalLink : {}", request.originalLink());
@@ -82,7 +92,19 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         List<String> existingLinks = findExistingOriginalLinks(incomingLinks);
 
-        List<Articles> articlesToSave = filterAndMapNewArticles(requests, existingLinks, interest);
+        // source 소문자 변환 적용
+        List<ArticleSaveRequest> normalizedRequests = requests.stream()
+            .map(req -> new ArticleSaveRequest(
+                req.interestId(),
+                req.source() != null ? req.source().toLowerCase() : null,
+                req.originalLink(),
+                req.title(),
+                req.summary(),
+                req.publishedAt()
+            ))
+            .toList();
+
+        List<Articles> articlesToSave = filterAndMapNewArticles(normalizedRequests, existingLinks, interest);
 
         articlesRepository.saveAll(articlesToSave);
 
