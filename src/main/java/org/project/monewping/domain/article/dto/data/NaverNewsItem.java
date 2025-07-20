@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.dto.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -16,6 +17,7 @@ import java.time.format.DateTimeFormatter;
  * @param description   기사 요약 (HTML 태그 포함 가능)
  * @param pubDate       발행일 (RFC 1123 포맷 문자열)
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record NaverNewsItem(
     String title,
     String originalLink,
