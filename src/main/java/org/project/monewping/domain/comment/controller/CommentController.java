@@ -57,10 +57,9 @@ public class CommentController {
      * 댓글을 등록합니다.
      */
     @PostMapping
-    public ResponseEntity<Void> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
-        commentService.registerComment(requestDto);
-        return ResponseEntity.status(201).build();
-    }
+    public ResponseEntity<CommentResponseDto> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
+        CommentResponseDto response = commentService.registerComment(requestDto);
+        return ResponseEntity.status(201).body(response);}
 
     /**
      * 댓글을 삭제합니다.
@@ -69,7 +68,7 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(
         @PathVariable UUID commentId,
-        @RequestParam UUID userId
+        @RequestHeader("Monew-Request-User-Id") UUID userId
     ) {
         commentService.deleteComment(commentId, userId);
         log.info("[CommentController] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
@@ -79,7 +78,7 @@ public class CommentController {
     @DeleteMapping("/{commentId}/hard")
     public ResponseEntity<Void> deleteCommentPhysically(
         @PathVariable UUID commentId,
-        @RequestParam UUID userId
+        @RequestHeader("Monew-Request-User-Id") UUID userId
     ) {
         commentService.deleteCommentPhysically(commentId, userId);
         log.info("[CommentController] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
@@ -94,12 +93,12 @@ public class CommentController {
      * @return HTTP 200 OK 응답
      */
     @PatchMapping("/{commentId}")
-    public ResponseEntity<Void> updateComment(
+    public ResponseEntity<CommentResponseDto> updateComment(
         @PathVariable UUID commentId,
-        @RequestParam UUID userId, // 본인 확인을 위해 userId 추가
+        @RequestHeader("Monew-Request-User-Id") UUID userId,
         @RequestBody @Valid CommentUpdateRequestDto request
     ) {
-        commentService.updateComment(commentId, userId, request);
-        return ResponseEntity.ok().build();
+        CommentResponseDto response = commentService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok(response);
     }
 }

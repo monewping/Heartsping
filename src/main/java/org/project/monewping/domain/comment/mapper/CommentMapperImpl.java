@@ -37,9 +37,12 @@ public class CommentMapperImpl implements CommentMapper {
         }
         return new CommentResponseDto(
             comment.getId(),
-            comment.getContent(),
+            comment.getArticleId(),
+            comment.getUserId(),
             comment.getUserNickname(),
+            comment.getContent(),
             comment.getLikeCount(),
+            false,
             comment.getCreatedAt().toString()
         );
     }
