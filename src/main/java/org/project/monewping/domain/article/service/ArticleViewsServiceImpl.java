@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,7 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
 
     private final ArticleViewsRepository articleViewsRepository;
     private final ArticlesRepository articlesRepository;
+    private final UserActivityService userActivityService;
 
     /**
      * 뉴스 기사 조회 기록을 등록한다.
@@ -70,6 +74,29 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
         log.info("기사 조회 정보 저장 : viewedBy = {}, articleId = {}", viewedBy, articleId);
         ArticleViews saved = articleViewsRepository.save(articleViews);
 
+        //  사용자 활동 내역에 기사 조회 정보 추가
+        try {
+          UserActivityDocument.ArticleViewInfo articleViewInfo = UserActivityDocument.ArticleViewInfo.builder()
+              .id(saved.getId())
+              .viewedBy(viewedBy)
+              .createdAt(Instant.now())
+              .articleId(article.getId())
+              .source(article.getSource())
+              .sourceUrl(article.getOriginalLink())
+              .articleTitle(article.getTitle())
+              .articlePublishedDate(article.getPublishedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+              .articleSummary(article.getSummary())
+              .articleCommentCount(article.getCommentCount())
+              .articleViewCount(article.getViewCount())
+              .build();
+
+          userActivityService.addArticleView(viewedBy, articleViewInfo);
+          log.info("사용자 활동 내역에 기사 조회 정보 추가 완료 : viewedBy = {}, articleId = {}", viewedBy, articleId);
+        } catch (Exception e) {
+          log.warn("사용자 활동 내역 업데이트 실패 : viewedBy = {}, articleId = {}, error = {}",
+              viewedBy, articleId, e.getMessage());
+        }
+        
         // 3. DTO 생성 및 반환
         log.info("뉴스 기사 정보 응답 : viewedBy = {}, articleId = {}, source = {}, title = {}",
             viewedBy, articleId, article.getSource(), article.getTitle());

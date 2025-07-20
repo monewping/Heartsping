@@ -8,14 +8,19 @@ spring:
   h2:
     console:
       enabled: true
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/monewping_test
   jpa:
     hibernate:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
+
+  # MongoDB 설정 (로컬 MongoDB 사용)
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: monewping_test
+      auto-index-creation: true
 
   devtools:
     restart:
@@ -31,3 +36,4 @@ logging:
     org.springframework.test: debug
     org.springframework.boot.devtools.restart: trace
     org.springframework.boot.devtools.classpath: trace
+    org.springframework.data.mongodb: debug

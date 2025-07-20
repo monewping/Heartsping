@@ -9,8 +9,11 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 
 import java.util.List;
@@ -26,6 +29,7 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
+    private final UserActivityService userActivityService;
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -63,10 +67,34 @@ public class CommentServiceImpl implements CommentService {
     }
     // 댓글 등록
     @Override
+    @Transactional
     public void registerComment(CommentRegisterRequestDto requestDto) {
         Comment comment = commentMapper.toEntity(requestDto);
-        commentRepository.save(comment);
-        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}", requestDto.getArticleId(), requestDto.getUserId());
+        Comment savedComment = commentRepository.save(comment);
+
+        // 사용자 활동 내역에 댓글 정보 추가
+        try {
+            UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
+                .id(savedComment.getId())
+                .articleId(savedComment.getArticleId())
+                .articleTitle("기사 제목") // TODO: 실제 기사 제목을 가져와야 함
+                .userId(savedComment.getUserId())
+                .userNickname(savedComment.getUserNickname())
+                .content(savedComment.getContent())
+                .likeCount(savedComment.getLikeCount())
+                .createdAt(savedComment.getCreatedAt())
+                .build();
+
+            userActivityService.addComment(requestDto.getUserId(), commentInfo);
+            log.info("[CommentService] 사용자 활동 내역에 댓글 정보 추가 완료 - userId: {}, commentId: {}",
+                requestDto.getUserId(), savedComment.getId());
+        } catch (Exception e) {
+            log.warn("[CommentService] 사용자 활동 내역 업데이트 실패 - userId: {}, commentId: {}, error: {}",
+                requestDto.getUserId(), savedComment.getId(), e.getMessage());
+        }
+
+        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}", requestDto.getArticleId(),
+                requestDto.getUserId());
     }
 
     // 논리 삭제

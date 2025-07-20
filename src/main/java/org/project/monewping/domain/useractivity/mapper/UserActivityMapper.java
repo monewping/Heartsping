@@ -14,13 +14,11 @@ public interface UserActivityMapper {
     /**
      * UserActivityDocument를 UserActivityDto로 변환
      */
-    @Mapping(source = "userId", target = "user.id")
+    @Mapping(source = "userId", target = "id")
+    @Mapping(source = "user.email", target = "email")
+    @Mapping(source = "user.nickname", target = "nickname")
+    @Mapping(source = "user.createdAt", target = "createdAt")
     UserActivityDto toDto(UserActivityDocument document);
-
-    /**
-     * UserActivityDocument.UserInfo를 UserActivityDto.UserInfo로 변환
-     */
-    UserActivityDto.UserInfo toUserInfoDto(UserActivityDocument.UserInfo userInfo);
 
     /**
      * UserActivityDocument.SubscriptionInfo를 UserActivityDto.SubscriptionDto로 변환

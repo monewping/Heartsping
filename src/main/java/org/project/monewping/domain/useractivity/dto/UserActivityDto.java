@@ -23,8 +23,17 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UserActivityDto {
 
-    @NotNull(message = "사용자 정보는 필수입니다.")
-    private UserInfo user;
+    @NotNull(message = "사용자 ID는 필수입니다.")
+    private UUID id;
+
+    @NotNull(message = "사용자 이메일은 필수입니다.")
+    private String email;
+
+    @NotNull(message = "사용자 닉네임은 필수입니다.")
+    private String nickname;
+
+    @NotNull(message = "가입 날짜는 필수입니다.")
+    private Instant createdAt;
 
     private List<SubscriptionDto> subscriptions;
 
@@ -36,27 +45,6 @@ public class UserActivityDto {
 
     @NotNull(message = "마지막 업데이트 시간은 필수입니다.")
     private Instant updatedAt;
-
-    /**
-     * 사용자 기본 정보
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UserInfo {
-        @NotNull(message = "사용자 ID는 필수입니다.")
-        private UUID id;
-
-        @NotNull(message = "사용자 이메일은 필수입니다.")
-        private String email;
-
-        @NotNull(message = "사용자 닉네임은 필수입니다.")
-        private String nickname;
-
-        @NotNull(message = "가입 날짜는 필수입니다.")
-        private Instant createdAt;
-    }
 
     /**
      * 구독 중인 관심사 정보
