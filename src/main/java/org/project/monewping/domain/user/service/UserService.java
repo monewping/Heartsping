@@ -9,7 +9,6 @@ import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +26,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
 
     /**
      * 사용자 회원가입을 처리합니다.
@@ -57,13 +55,12 @@ public class UserService {
         validateEmailNotExists(request.email());
         User user = userMapper.toEntity(request);
 
-        // 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(request.password());
+        // 비밀번호는 평문으로 저장 (보안상 실제 운영에서는 암호화 필요)
         user = User.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-                .password(encodedPassword)
+                .password(request.password())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
@@ -116,11 +113,10 @@ public class UserService {
      * 비밀번호를 검증합니다.
      * 
      * @param rawPassword     입력된 원본 비밀번호
-     * @param encodedPassword 데이터베이스에 저장된 암호화된 비밀번호
      * @throws LoginFailedException 비밀번호가 일치하지 않는 경우
      */
-    private void validatePassword(String rawPassword, String encodedPassword) {
-        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+    private void validatePassword(String rawPassword, String storedPassword) {
+        if (!rawPassword.equals(storedPassword)) {
             throw new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
     }

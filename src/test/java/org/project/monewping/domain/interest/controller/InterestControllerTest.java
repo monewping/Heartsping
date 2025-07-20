@@ -13,7 +13,6 @@ import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,7 +24,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -34,7 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest({InterestController.class, org.project.monewping.global.exception.GlobalExceptionHandler.class})
 @TestPropertySource(properties = "auditing.enabled=false")
-@WithMockUser
 class InterestControllerTest {
 
     @Autowired
@@ -89,7 +86,6 @@ class InterestControllerTest {
 
         mockMvc.perform(
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/interests")
-                        .with(csrf()) // CSRF 토큰 추가
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(requestBody)
         )
@@ -123,7 +119,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isOk())
@@ -151,7 +146,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", nonExistentId)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isNotFound())
@@ -175,7 +169,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isConflict())
@@ -196,7 +189,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isBadRequest())
@@ -216,7 +208,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isBadRequest())
@@ -236,7 +227,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(patch("/api/interests/{interestId}", interestId)
-                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
@@ -263,7 +253,6 @@ class InterestControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/api/interests/{interestId}/subscriptions", interestId)
-                .with(csrf()) // CSRF 토큰 추가
                 .header("Monew-Request-User-ID", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.interestId").value(interestId.toString()))
@@ -280,9 +269,7 @@ class InterestControllerTest {
         UUID interestId = UUID.randomUUID();
 
         // When & Then
-        mockMvc.perform(delete("/api/interests/{interestId}", interestId)
-                .with(csrf()) // CSRF 토큰 추가
-        )
+        mockMvc.perform(delete("/api/interests/{interestId}", interestId))
         .andExpect(status().isNoContent());
     }
 
@@ -296,9 +283,7 @@ class InterestControllerTest {
                 .given(interestService).delete(interestId);
 
         // When & Then
-        mockMvc.perform(delete("/api/interests/{interestId}", interestId)
-                .with(csrf()) // CSRF 토큰 추가
-        )
+        mockMvc.perform(delete("/api/interests/{interestId}", interestId))
         .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
         .andExpect(status().isNotFound());
     }
