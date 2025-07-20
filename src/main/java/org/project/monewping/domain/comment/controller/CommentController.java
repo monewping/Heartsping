@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/comments")
 @RequiredArgsConstructor
 public class CommentController {
+
     private final CommentService commentService;
+
     /**
      * 기사 ID에 해당하는 댓글 목록을 조회합니다.
      *
@@ -29,6 +32,7 @@ public class CommentController {
      * @param direction 정렬 방향 (ASC, DESC)
      * @param cursor 커서 값 (선택)
      * @param after after 값 (선택)
+     * @param afterId afterId 값 (선택, UUID)
      * @param limit 조회 개수 (기본값 50)
      * @return 커서 기반 댓글 목록 응답
      */
@@ -39,10 +43,11 @@ public class CommentController {
         @RequestParam(required = false, defaultValue = "DESC") String direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
+        @RequestParam(required = false) String afterId,
         @RequestParam(required = false, defaultValue = "50") Integer limit
-    )   {
+    ) {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
-            articleId, orderBy, direction, cursor, after, limit
+            articleId, orderBy, direction, cursor, after, afterId, limit
         );
         log.info("[CommentController] 댓글 목록 조회 완료 - articleId: {}, count: {}", articleId, response.size());
         return ResponseEntity.ok(response);
@@ -79,5 +84,22 @@ public class CommentController {
         commentService.deleteCommentPhysically(commentId, userId);
         log.info("[CommentController] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 댓글을 수정합니다.
+     *
+     * @param commentId 댓글 ID (UUID)
+     * @param request 댓글 수정 요청 DTO
+     * @return HTTP 200 OK 응답
+     */
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<Void> updateComment(
+        @PathVariable UUID commentId,
+        @RequestParam UUID userId, // 본인 확인을 위해 userId 추가
+        @RequestBody @Valid CommentUpdateRequestDto request
+    ) {
+        commentService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok().build();
     }
 }

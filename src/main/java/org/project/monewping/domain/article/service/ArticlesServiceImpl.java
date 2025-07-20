@@ -9,6 +9,7 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
@@ -143,6 +144,41 @@ public class ArticlesServiceImpl implements ArticlesService {
             totalCount,
             hasNext
         );
+    }
+
+    /**
+     * 논리 삭제를 수행합니다.
+     * 기사가 존재하지 않으면 예외가 발생합니다.
+     *
+     * @param articleId 삭제할 기사 ID
+     */
+    public void softDelete(UUID articleId) {
+        Articles article = articlesRepository.findByIdAndDeletedFalse(articleId)
+            .orElseThrow(() -> {
+                log.warn("뉴스 기사 논리 삭제 시도했으나, 기사 없음. articleId = {}", articleId);
+                return new ArticleNotFoundException(articleId);
+            });
+
+        article.softDeleteWithMasking();
+        log.info("뉴스 기사 논리 삭제 완료. articleId = {}", articleId);
+    }
+
+    /**
+     * 물리 삭제를 수행합니다.
+     * 연관된 ArticleViews도 함께 삭제됩니다.
+     * 기사가 존재하지 않으면 예외가 발생합니다.
+     *
+     * @param articleId 삭제할 기사 ID
+     */
+    public void hardDelete(UUID articleId) {
+        Articles article = articlesRepository.findById(articleId)
+            .orElseThrow(() -> {
+                log.warn("뉴스 기사 물리 삭제 시도했으나, 기사 없음. articleId = {}", articleId);
+                return new ArticleNotFoundException(articleId);
+            });
+
+        articlesRepository.delete(article);
+        log.info("뉴스 기사 물리 삭제 완료. articleId = {}", articleId);
     }
 
     /* 내부 헬퍼 메서드로 중복 코드 제거 */

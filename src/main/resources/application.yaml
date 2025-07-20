@@ -33,6 +33,11 @@ spring:
         use_sql_comments: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # Batch 설정
+  batch:
+    jdbc:
+      initialize-schema: always
+
   # MongoDB 설정
   data:
     mongodb:
@@ -70,5 +75,5 @@ server:
 
 naver:
   api:
-    client-id: ${NAVER_CLIENT_ID}
-    client-secret: ${NAVER_CLIENT_SECRET}
+    client-id: ${NAVER_CLIENT_ID:test-client-id}
+    client-secret: ${NAVER_CLIENT_SECRET:test-client-secret}

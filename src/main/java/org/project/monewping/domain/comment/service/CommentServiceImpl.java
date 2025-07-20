@@ -6,15 +6,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
+import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.useractivity.document.UserActivityDocument;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,11 +28,13 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
+    private final UserRepository userRepository;
     private final UserActivityService userActivityService;
 
     @Override
@@ -38,9 +44,10 @@ public class CommentServiceImpl implements CommentService {
         String direction,
         String cursor,
         String after,
+        String afterId,
         int limit
     ) {
-        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, limit);
+        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, afterId, limit);
         List<CommentResponseDto> response = comments.stream()
             .map(commentMapper::toResponseDto)
             .toList();
@@ -65,12 +72,21 @@ public class CommentServiceImpl implements CommentService {
             hasNext
         );
     }
+
     // 댓글 등록
     @Override
     @Transactional
     public void registerComment(CommentRegisterRequestDto requestDto) {
-        Comment comment = commentMapper.toEntity(requestDto);
+        // 유저 정보 조회
+        User user = userRepository.findById(requestDto.getUserId())
+            .orElseThrow(() -> new UserNotFoundException(
+                "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId().toString()
+            ));
+
+        Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
+
         Comment savedComment = commentRepository.save(comment);
+        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}", requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
 
         // 사용자 활동 내역에 댓글 정보 추가
         try {
@@ -124,5 +140,23 @@ public class CommentServiceImpl implements CommentService {
 
         commentRepository.delete(comment);
         log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+    }
+
+    // 댓글 수정
+    @Override
+    public void updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new CommentNotFoundException(commentId));
+
+        if (comment.isDeleted()) {
+            throw new CommentDeleteException("삭제된 댓글은 수정할 수 없습니다.");
+        }
+
+        // 본인 확인 (userId로)
+        if (!comment.getUserId().equals(userId)) {
+            throw new CommentDeleteException("본인의 댓글만 수정할 수 있습니다.");
+        }
+
+        comment.updateContent(request.content());
     }
 }

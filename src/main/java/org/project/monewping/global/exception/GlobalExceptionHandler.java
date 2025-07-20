@@ -2,18 +2,21 @@ package org.project.monewping.global.exception;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
+import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
+import org.project.monewping.domain.comment.exception.CommentLikeNotFoundException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
 import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
-import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
+import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -338,13 +341,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-   * 댓글 삭제 예외 처리
-   * <p>
-   * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
-   *
-   * @param ex CommentDeleteException
-   * @return 403 Forbidden 에러 응답
-   */
+     * 댓글 삭제 예외 처리
+     * <p>
+     * 본인이 작성하지 않은 댓글을 삭제 시도할 경우 403 Forbidden 응답을 반환한다.
+     *
+     * @param ex CommentDeleteException
+     * @return 403 Forbidden 에러 응답
+     */
     @ExceptionHandler(CommentDeleteException.class)
     public ResponseEntity<ErrorResponse> handleCommentDeleteException(CommentDeleteException ex) {
         ErrorResponse response = new ErrorResponse(
@@ -356,14 +359,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
-  /**
-   * 댓글 조회 실패 예외 처리
-   * <p>
-   * 존재하지 않는 댓글 ID로 삭제 또는 조회 시도할 경우 404 Not Found 응답을 반환한다.
-   *
-   * @param ex CommentNotFoundException
-   * @return 404 Not Found 에러 응답
-   */
+    /**
+     * 배치 작업 실행 중 발생한 {@link NotificationBatchRunException} 예외를 처리합니다.
+     *
+     * @param ex 발생한 예외 객체
+     * @return HTTP 500 상태 코드와 함께 에러 메시지를 포함한 {@link ErrorResponse}
+     */
+    @ExceptionHandler(NotificationBatchRunException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationBatchRunException(NotificationBatchRunException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * 댓글 조회 실패 예외 처리
+     * <p>
+     * 존재하지 않는 댓글 ID로 삭제 또는 조회 시도할 경우 404 Not Found 응답을 반환한다.
+     *
+     * @param ex CommentNotFoundException
+     * @return 404 Not Found 에러 응답
+     */
     @ExceptionHandler(CommentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
         ErrorResponse response = new ErrorResponse(
@@ -392,4 +412,48 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    /**
+     * 뉴스 기사를 찾을 수 없을 때 발생하는 예외를 처리합니다.
+     *
+     * <p>해당 예외가 발생하면 HTTP 404 Not Found 상태 코드와 함께
+     * 오류 코드 "ARTICLE_NOT_FOUND" 및 예외 메시지를 포함한
+     * {@link ErrorResponse}를 반환합니다.</p>
+     *
+     * @param ex 처리할 {@link ArticleNotFoundException}
+     * @return HTTP 404 상태 코드와 오류 메시지를 담은 {@link ResponseEntity<ErrorResponse>}
+     */
+    @ExceptionHandler(ArticleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleArticleNotFoundException(ArticleNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.NOT_FOUND,
+            "ARTICLE_NOT_FOUND",
+            ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+
+    /**
+     * 댓글 좋아요가 이미 존재할 때 발생하는 예외 처리
+     *
+     * @param ex 처리할 CommentLikeAlreadyExistsException
+     * @return 400 Bad Request 상태와 오류 메시지를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(CommentLikeAlreadyExistsException.class)
+    public ResponseEntity<String> handleCommentLikeAlreadyExists(CommentLikeAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    /**
+     * 댓글 좋아요를 취소하려 했으나 존재하지 않을 때 발생하는 예외 처리
+     *
+     * @param ex 처리할 CommentLikeNotFoundException
+     * @return 404 Not Found 상태와 오류 메시지를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(CommentLikeNotFoundException.class)
+    public ResponseEntity<String> handleCommentLikeNotFound(CommentLikeNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
 }

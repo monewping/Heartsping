@@ -4,49 +4,75 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.UUID;
-/**
- * 댓글 커스텀 레포지토리 구현체.
- * EntityManager를 이용하여 동적 JPQL로 커서 기반 댓글 목록 조회 기능을 제공합니다.
- */
 @Repository
 @RequiredArgsConstructor
 public class CommentCustomRepositoryImpl implements CommentCustomRepository {
 
     private final EntityManager em;
-    /**
-     * 기사 ID 및 커서 기반으로 댓글 목록을 조회합니다.
-     * 정렬 기준과 방향에 따라 커서 기반 페이지네이션을 수행하며,
-     * limit 개수만큼 댓글을 조회합니다.
-     */
-    @Override
-    public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, int limit) {
-        StringBuilder sql = new StringBuilder("SELECT c FROM Comment c WHERE c.articleId = :articleId");
 
-        if (after != null) {
-            sql.append(" AND c.createdAt ");
-            sql.append("ASC".equalsIgnoreCase(direction) ? "> :after" : "< :after");
+    @Override
+    public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, String afterId, int limit) {
+        String orderColumn = getOrderColumn(orderBy);
+        String sortDirection = getSortDirection(direction);
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT DISTINCT c FROM Comment c " +
+                "WHERE c.articleId = :articleId " +
+                "AND c.isDeleted = false"
+        );
+
+        if (after != null && afterId != null) {
+            sql.append(" AND (c.").append(orderColumn).append(", c.id) ");
+            sql.append("ASC".equalsIgnoreCase(sortDirection) ? "> (:after, :afterId)" : "< (:after, :afterId)");
         }
 
-        sql.append(" ORDER BY c.").append(orderBy).append(" ").append(direction.toUpperCase());
-        sql.append(", c.id ").append(direction.toUpperCase());
+        sql.append(" ORDER BY c.").append(orderColumn).append(" ").append(sortDirection);
+        sql.append(", c.id ").append(sortDirection);
 
         TypedQuery<Comment> query = em.createQuery(sql.toString(), Comment.class);
         query.setParameter("articleId", articleId);
 
-        if (after != null) {
+        if (after != null && afterId != null) {
             try {
-                query.setParameter("after", Instant.parse(after));
+                if ("createdAt".equalsIgnoreCase(orderBy)) {
+                    query.setParameter("after", Instant.parse(after));
+                } else if ("likeCount".equalsIgnoreCase(orderBy)) {
+                    query.setParameter("after", Integer.parseInt(after));
+                }
+                query.setParameter("afterId", UUID.fromString(afterId));
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("after 파라미터는 ISO8601 형식이어야 합니다.", e);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("orderBy가 likeCount일 경우 after는 숫자여야 합니다.", e);
             }
         }
 
-        return query.setMaxResults(limit + 1).getResultList();
+        return query.setMaxResults(limit).getResultList();
+    }
+
+    private String getOrderColumn(String orderBy) {
+        if ("createdAt".equalsIgnoreCase(orderBy)) {
+            return "createdAt";
+        } else if ("likeCount".equalsIgnoreCase(orderBy)) {
+            return "likeCount";
+        } else {
+            throw new IllegalArgumentException("허용되지 않는 orderBy 값: " + orderBy);
+        }
+    }
+
+    private String getSortDirection(String direction) {
+        if ("ASC".equalsIgnoreCase(direction)) {
+            return "ASC";
+        } else if ("DESC".equalsIgnoreCase(direction)) {
+            return "DESC";
+        } else {
+            throw new IllegalArgumentException("허용되지 않는 direction 값: " + direction);
+        }
     }
 }

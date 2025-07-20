@@ -13,12 +13,14 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.data.ArticleViewDto;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto;
+import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.service.ArticleRestoreService;
 import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -153,6 +155,34 @@ public class ArticleController {
         List<ArticleRestoreResultDto> restoreResults = articleRestoreService.restoreArticlesByRange(from, to);
 
         return ResponseEntity.ok(restoreResults);
+    }
+
+    /**
+     * 뉴스 기사를 논리 삭제합니다.
+     *
+     * @param articleId 삭제할 뉴스 기사 UUID
+     * @return HTTP 204 (No Content) 논리 삭제 성공 시
+     * @throws ArticleNotFoundException 뉴스 기사 없을 경우 404 반환
+     */
+    @DeleteMapping("/{articleId}")
+    public ResponseEntity<Void> softDelete(@PathVariable UUID articleId) {
+        log.info("뉴스 기사 논리 삭제 요청 : articleId = {}", articleId);
+        articlesService.softDelete(articleId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 뉴스 기사를 물리 삭제합니다.
+     *
+     * @param articleId 삭제할 뉴스 기사 UUID
+     * @return HTTP 204 (No Content) 물리 삭제 성공 시
+     * @throws ArticleNotFoundException 뉴스 기사 없을 경우 404 반환
+     */
+    @DeleteMapping("/{articleId}/hard")
+    public ResponseEntity<Void> hardDelete(@PathVariable UUID articleId) {
+        log.info("뉴스 기사 물리 삭제 요청 : articleId = {}", articleId);
+        articlesService.hardDelete(articleId);
+        return ResponseEntity.noContent().build();
     }
 
 }
