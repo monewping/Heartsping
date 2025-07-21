@@ -17,7 +17,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
+import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;

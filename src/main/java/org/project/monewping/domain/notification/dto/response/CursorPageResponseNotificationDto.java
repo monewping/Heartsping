@@ -1,7 +1,8 @@
-package org.project.monewping.domain.notification.dto;
+package org.project.monewping.domain.notification.dto.response;
 
 import java.time.Instant;
 import java.util.List;
+import org.project.monewping.domain.notification.dto.NotificationDto;
 
 /**
  * 알림 조회용 커서 기반 페이지네이션 응답 Dto
