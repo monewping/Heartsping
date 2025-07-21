@@ -59,7 +59,8 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentResponseDto> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
         CommentResponseDto response = commentService.registerComment(requestDto);
-        return ResponseEntity.status(201).body(response);}
+        return ResponseEntity.status(201).body(response);
+    }
 
     /**
      * 댓글을 삭제합니다.
@@ -93,12 +94,12 @@ public class CommentController {
      * @return HTTP 200 OK 응답
      */
     @PatchMapping("/{commentId}")
-    public ResponseEntity<CommentResponseDto> updateComment(
+    public ResponseEntity<Void> updateComment(
         @PathVariable UUID commentId,
         @RequestHeader("Monew-Request-User-Id") UUID userId,
         @RequestBody @Valid CommentUpdateRequestDto request
     ) {
-        CommentResponseDto response = commentService.updateComment(commentId, userId, request);
-        return ResponseEntity.ok(response);
+        commentService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok().build();
     }
 }
