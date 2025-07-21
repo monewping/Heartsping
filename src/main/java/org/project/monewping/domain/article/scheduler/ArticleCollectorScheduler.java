@@ -22,77 +22,64 @@ public class ArticleCollectorScheduler {
     private final ArticlesService articlesService;
 
     /**
-     * 매 시간 정각에 실행되는 뉴스 기사 수집 배치 작업입니다.
-     * <p>
-     * 모든 관심사를 조회하여 각 관심사의 키워드로 외부 API를 통해 기사를 수집하고,
-     * 중복을 제외한 기사를 저장합니다.
-     * <p>
-     * - 관심사 이름을 키워드로 사용하여 수집
-     * - 수집된 기사 리스트를 {@link ArticlesService#saveAll} 메서드를 통해 저장
-     * - 수집 시작 및 종료 시점, 관심사별 수집 건수에 대한 로그를 기록
+     * 매 시간마다 실행되는 뉴스 기사 수집 스케줄러입니다.
      *
-     * @throws RuntimeException 수집 중 예외 발생 시 로그로 기록하며 배치 수행 중단하지 않음
+     * 전체 관심사를 조회하여 각 관심사 이름을 키워드로 사용해
+     * 모든 수집기를 통해 기사 데이터를 수집하고, ArticlesService를 통해 저장합니다.
      */
     @Scheduled(cron = "0 0 * * * *")
     public void collectArticlesByInterest() {
-        log.info("[뉴스 기사 수집 배치 시작]");
+        log.info("[🗞️ 뉴스 기사 수집 배치 시작]");
 
         List<Interest> interests = interestRepository.findAll();
-        log.info("총 관심사 개수: {}", interests.size());
+        int totalSaved = 0;
 
-        int totalCount = 0;
-
+        // 모든 관심사에 대해 기사 수집 시도
         for (Interest interest : interests) {
-            String keyword = interest.getName();
-            UUID interestId = interest.getId();
-
-            log.info("관심사 수집 시작 = 키워드: '{}', 관심사ID: {}", keyword, interestId);
-
-            for (ArticleFetcher fetcher : articleFetchers) {
-                log.debug("수집기: {} - 키워드 '{}' 수집 시도", fetcher.getClass().getSimpleName(), keyword);
-
-                try {
-                    List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword);
-
-                    if (fetchedArticles == null) {
-                        log.warn("fetcher '{}'가 null 반환: 키워드 '{}'", fetcher.getClass().getSimpleName(), keyword);
-                        fetchedArticles = List.of();
-                    }
-
-                    List<ArticleSaveRequest> articlesToSave = fetchedArticles.stream()
-                        // interestId를 덮어쓰기 때문에 중복 생성은 걱정 없음
-                        .map(article -> new ArticleSaveRequest(
-                            interestId,
-                            article.source(),
-                            article.originalLink(),
-                            article.title(),
-                            article.summary(),
-                            article.publishedAt()
-                        ))
-                        .toList();
-
-                    if (articlesToSave.isEmpty()) {
-                        log.info("키워드 '{}' - fetcher '{}'에서 수집된 기사 없음", keyword, fetcher.getClass().getSimpleName());
-                        continue;
-                    }
-
-                    articlesService.saveAll(articlesToSave);
-
-                    int savedCount = articlesToSave.size();
-                    totalCount += savedCount;
-
-                    log.info("키워드 '{}' - fetcher '{}'에서 {}개 기사 저장 완료", keyword, fetcher.getClass().getSimpleName(), savedCount);
-
-                } catch (Exception e) {
-                    log.error("키워드 '{}' - fetcher '{}' 수행 중 예외 발생: {}",
-                        keyword, fetcher.getClass().getSimpleName(), e.getMessage(), e);
-                }
-            }
-
-            log.info("관심사 '{}' 수집 완료", keyword);
+            int saved = collectForInterest(interest);
+            totalSaved += saved;
         }
 
-        log.info("[뉴스 기사 수집 배치 종료] 총 저장된 기사 수: {}", totalCount);
+        log.info("[✅ 수집 완료] 전체 저장된 기사 수: {}", totalSaved);
+    }
+
+    /**
+     * 주어진 관심사에 대해 각 fetcher를 호출하여 기사를 수집하고 저장합니다.
+     *
+     * @param interest 수집 대상 관심사
+     * @return 저장된 기사 수
+     */
+    private int collectForInterest(Interest interest) {
+        UUID interestId = interest.getId();
+        String keyword = interest.getName();
+        int savedCount = 0;
+
+        log.info("▶ 관심사 '{}' ({}) 수집 시작", keyword, interestId);
+
+        for (ArticleFetcher fetcher : articleFetchers) {
+            try {
+                // 수집기별 기사 수집
+                List<ArticleSaveRequest> articles = fetcher.fetch(interestId, keyword);
+
+                if (articles.isEmpty()) {
+                    log.debug("⛔ 수집 결과 없음 - fetcher: {}", fetcher.getClass().getSimpleName());
+                    continue;
+                }
+
+                // 기사 저장
+                articlesService.saveAll(articles);
+                savedCount += articles.size();
+
+                log.info("✔️ '{}' - {}개 기사 저장 (Fetcher: {})", keyword, articles.size(), fetcher.getClass().getSimpleName());
+
+            } catch (Exception e) {
+                // 수집 실패 시 에러 로그 남기고 다음 fetcher로 진행
+                log.warn("❌ '{}' - fetcher '{}' 에러: {}", keyword, fetcher.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+
+        log.info("■ 관심사 '{}' 수집 완료 - 저장된 기사 수: {}", keyword, savedCount);
+        return savedCount;
     }
 
 }

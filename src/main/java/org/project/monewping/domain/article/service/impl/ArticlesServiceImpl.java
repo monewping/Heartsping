@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.service;
+package org.project.monewping.domain.article.service.impl;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,17 +10,20 @@ import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.exception.ArticleNotFoundException;
-import org.project.monewping.domain.article.exception.DuplicateArticleException;
 import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 뉴스 기사 관련 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -33,62 +36,64 @@ public class ArticlesServiceImpl implements ArticlesService {
     private final ArticlesMapper articlesMapper;
 
     /**
-     * 단일 뉴스 기사를 저장합니다.
-     * 중복된 originalLink가 존재할 경우 {@link DuplicateArticleException} 예외가 발생합니다.
-     *
-     * @param request 저장할 뉴스 기사 요청 DTO
-     * @throws DuplicateArticleException 원본 링크가 이미 존재하는 경우
-     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
-     * @throws IllegalArgumentException originalLink가 비어있을 경우
-     */
-    @Override
-    public void save(ArticleSaveRequest request) {
-        log.info("뉴스 기사 저장 시도 = originalLink : {}, interestId : {}", request.originalLink(), request.interestId());
-
-        validateOriginalLink(request.originalLink());
-
-        if (articlesRepository.existsByOriginalLink(request.originalLink())) {
-            log.warn("중복된 뉴스 기사 발견 = originalLink : {}", request.originalLink());
-            throw new DuplicateArticleException(request.originalLink());
-        }
-
-        Interest interest = findInterestOrThrow(request.interestId());
-
-        Articles article = articlesMapper.toEntity(request, interest);
-        articlesRepository.save(article);
-
-        log.info("뉴스 기사 저장 완료 = originalLink : {}", request.originalLink());
-    }
-
-    /**
      * 여러 뉴스 기사 요청을 받아 중복된 originalLink를 제외하고 저장합니다.
      *
-     * @param requests 뉴스 기사 요청 리스트
-     * @throws InterestNotFoundException 관심사를 찾을 수 없는 경우
+     * <p>동일 originalLink가 이미 DB에 존재하면 해당 기사는 저장하지 않습니다.
+     * 또한 originalLink가 null이거나 공백이면 무시됩니다.</p>
+     *
+     * @param requests 뉴스 기사 저장 요청 리스트
+     * @throws org.project.monewping.domain.article.exception.InterestNotFoundException 관심사를 찾을 수 없는 경우
      */
     @Override
+    @Transactional
     public void saveAll(List<ArticleSaveRequest> requests) {
         if (requests == null || requests.isEmpty()) {
-            log.info("뉴스 기사 저장 요청이 비어 있음. 처리 생략");
+            log.info("[saveAll] 저장 요청이 비어있음");
             return;
         }
 
+        // 관심사 ID는 모든 요청이 동일하다고 가정
         UUID interestId = requests.get(0).interestId();
-        log.info("뉴스 기사 일괄 저장 시도 = 관심사 ID : {}, 총 요청 수 : {}", interestId, requests.size());
-
         Interest interest = findInterestOrThrow(interestId);
 
-        List<String> incomingLinks = extractOriginalLinks(requests);
+        // 유효한 요청 필터링 ( originalLink null / 빈 값 제거 )
+        List<ArticleSaveRequest> validRequests = requests.stream()
+            .filter(req -> req.originalLink() != null && !req.originalLink().isBlank())
+            .toList();
 
-        List<String> existingLinks = findExistingOriginalLinks(incomingLinks);
+        if (validRequests.isEmpty()) {
+            log.info("[saveAll] 유효한 저장 대상 없음");
+            return;
+        }
 
-        List<Articles> articlesToSave = filterAndMapNewArticles(requests, existingLinks, interest);
+        // 요청 원본링크 리스트
+        List<String> originalLinks = validRequests.stream()
+            .map(ArticleSaveRequest::originalLink)
+            .toList();
 
+        // DB에 이미 존재하는 링크 조회
+        List<String> existingLinks = articlesRepository.findAllByOriginalLinkIn(originalLinks).stream()
+            .map(Articles::getOriginalLink)
+            .toList();
+
+        // 신규 요청만 필터링 후 엔티티 변환
+        List<Articles> articlesToSave = validRequests.stream()
+            .filter(req -> !existingLinks.contains(req.originalLink()))
+            .map(req -> articlesMapper.safeToEntity(req, interest))
+            .toList();
+
+        if (articlesToSave.isEmpty()) {
+            log.info("[saveAll] 저장할 신규 뉴스 기사 없음");
+            return;
+        }
+
+        // 저장
         articlesRepository.saveAll(articlesToSave);
 
-        log.info("뉴스 기사 저장 완료 = 저장된 기사 수 : {}, 중복 제외된 기사 수 : {}",
-            articlesToSave.size(), requests.size() - articlesToSave.size());
+        log.info("[saveAll] 뉴스 기사 저장 완료 - count: {}", articlesToSave.size());
     }
+
+
 
     /**
      * 뉴스 기사 목록을 검색 조건에 맞게 커서 기반 페이지네이션으로 조회합니다.
@@ -147,10 +152,11 @@ public class ArticlesServiceImpl implements ArticlesService {
     }
 
     /**
-     * 논리 삭제를 수행합니다.
-     * 기사가 존재하지 않으면 예외가 발생합니다.
+     * 뉴스 기사를 논리적으로 삭제합니다.
+     * 해당 기사는 실제로 삭제되지 않고, 마스킹된 채 DB에 유지됩니다.
      *
-     * @param articleId 삭제할 기사 ID
+     * @param articleId 삭제할 기사 UUID
+     * @throws ArticleNotFoundException 해당 ID의 기사가 존재하지 않는 경우
      */
     public void softDelete(UUID articleId) {
         Articles article = articlesRepository.findByIdAndDeletedFalse(articleId)
@@ -164,11 +170,11 @@ public class ArticlesServiceImpl implements ArticlesService {
     }
 
     /**
-     * 물리 삭제를 수행합니다.
-     * 연관된 ArticleViews도 함께 삭제됩니다.
-     * 기사가 존재하지 않으면 예외가 발생합니다.
+     * 뉴스 기사를 DB에서 완전히 삭제합니다.
+     * 연관된 조회 기록도 함께 삭제되어야 합니다.
      *
-     * @param articleId 삭제할 기사 ID
+     * @param articleId 삭제할 기사 UUID
+     * @throws ArticleNotFoundException 해당 ID의 기사가 존재하지 않는 경우
      */
     public void hardDelete(UUID articleId) {
         Articles article = articlesRepository.findById(articleId)
@@ -183,24 +189,13 @@ public class ArticlesServiceImpl implements ArticlesService {
 
     /* 내부 헬퍼 메서드로 중복 코드 제거 */
 
-    /**
-     * originalLink가 null이거나 빈 문자열인지 검사합니다.
-     *
-     * @param originalLink 검사할 뉴스 기사 원본 링크
-     * @throws IllegalArgumentException originalLink가 null이거나 빈 문자열인 경우 발생
-     */
-    private void validateOriginalLink(String originalLink) {
-        if (originalLink == null || originalLink.isBlank()) {
-            throw new IllegalArgumentException("originalLink는 필수입니다");
-        }
-    }
 
     /**
-     * 관심사 ID를 기반으로 {@link Interest} 엔티티를 조회합니다.
+     * 관심사 UUID를 기반으로 Interest 엔티티를 조회합니다.
      *
-     * @param interestId 관심사 UUID
-     * @return 조회된 Interest 엔티티
-     * @throws InterestNotFoundException 해당 관심사를 찾지 못했을 경우 발생
+     * @param interestId 관심사 ID
+     * @return 조회된 Interest
+     * @throws InterestNotFoundException 존재하지 않는 경우
      */
     private Interest findInterestOrThrow(UUID interestId) {
         return interestRepository.findById(interestId)
@@ -208,44 +203,10 @@ public class ArticlesServiceImpl implements ArticlesService {
     }
 
     /**
-     * 뉴스 기사 요청 리스트에서 originalLink만 추출합니다.
+     * 저장된 뉴스 기사들의 출처(source)를 중복 제거 후 반환합니다.
      *
-     * @param requests 뉴스 기사 저장 요청 리스트
-     * @return originalLink 리스트
+     * @return 중복 없는 출처 목록
      */
-    private List<String> extractOriginalLinks(List<ArticleSaveRequest> requests) {
-        return requests.stream()
-            .map(ArticleSaveRequest::originalLink)
-            .toList();
-    }
-
-    /**
-     * 데이터베이스에서 이미 존재하는 originalLink 목록을 조회합니다.
-     *
-     * @param links 비교할 originalLink 리스트
-     * @return 기존에 존재하는 originalLink 리스트
-     */
-    private List<String> findExistingOriginalLinks(List<String> links) {
-        return articlesRepository.findAllByOriginalLinkIn(links).stream()
-            .map(Articles::getOriginalLink)
-            .toList();
-    }
-
-    /**
-     * 기존에 존재하는 originalLink를 제외하고 신규 뉴스 기사 엔티티 리스트로 변환합니다.
-     *
-     * @param requests 원본 뉴스 기사 요청 리스트
-     * @param existingLinks 이미 존재하는 originalLink 리스트
-     * @param interest 연관된 관심사 엔티티
-     * @return 저장 대상 뉴스 기사 엔티티 리스트
-     */
-    private List<Articles> filterAndMapNewArticles(List<ArticleSaveRequest> requests, List<String> existingLinks, Interest interest) {
-        return requests.stream()
-            .filter(req -> !existingLinks.contains(req.originalLink()))
-            .map(req -> articlesMapper.toEntity(req, interest))
-            .toList();
-    }
-
     public List<String> getAllSources() {
         List<String> sources = articlesRepository.findDistinctSources();
         // 중복 제거
