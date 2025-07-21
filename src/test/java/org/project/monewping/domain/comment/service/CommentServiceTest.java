@@ -132,7 +132,7 @@ class CommentServiceTest {
 
         assertThat(result.content()).hasSize(2);
         assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
-        assertThat(result.nextIdAfter()).isEqualTo(Math.abs(testComments.get(1).getId().getMostSignificantBits()));
+        assertThat(result.nextAfter()).isEqualTo(Math.abs(testComments.get(1).getId().getMostSignificantBits()));
         assertThat(result.size()).isEqualTo(2);
         assertThat(result.totalElements()).isEqualTo(2L);
         assertThat(result.hasNext()).isFalse();
@@ -222,7 +222,7 @@ class CommentServiceTest {
 
         assertThat(result.content()).isEmpty();
         assertThat(result.nextCursor()).isNull();
-        assertThat(result.nextIdAfter()).isNull();
+        assertThat(result.nextAfter()).isNull();
         assertThat(result.size()).isEqualTo(0);
         assertThat(result.totalElements()).isEqualTo(0L);
         assertThat(result.hasNext()).isFalse();

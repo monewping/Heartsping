@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.service.impl;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -131,9 +132,11 @@ public class ArticlesServiceImpl implements ArticlesService {
             .toList();
 
         String nextCursor = null;
+        String nextAfter = null;
         if (hasNext) {
             Articles lastArticle = page.get(page.size() - 1);
             nextCursor = lastArticle.getId().toString();
+            nextAfter = lastArticle.getPublishedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
 
         long totalCount = articlesRepository.countArticles(request);
@@ -143,8 +146,8 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         return new CursorPageResponse<>(
             dtoList,
-            null,
             nextCursor,
+            nextAfter,
             dtoList.size(),
             totalCount,
             hasNext
