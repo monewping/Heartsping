@@ -3,6 +3,8 @@ package org.project.monewping.domain.comment.service;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -33,6 +35,8 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
+    private final ArticlesRepository articlesRepository;
+
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -83,6 +87,11 @@ public class CommentServiceImpl implements CommentService {
                 "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId()
             ));
 
+        // 🔥 기사 댓글 수 증가
+        Articles article = articlesRepository.findById(requestDto.getArticleId())
+            .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + requestDto.getArticleId()));
+        article.increaseCommentCount();
+
         Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
         Comment saved = commentRepository.save(comment);
 
@@ -104,8 +113,15 @@ public class CommentServiceImpl implements CommentService {
 
         comment.delete();
         commentRepository.save(comment);
+
+        // 🔥 기사 댓글 수 감소
+        Articles article = articlesRepository.findById(comment.getArticleId())
+            .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + comment.getArticleId()));
+        article.decreaseCommentCount();
+
         log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
     }
+
 
     // 물리 삭제
     @Override
@@ -118,8 +134,15 @@ public class CommentServiceImpl implements CommentService {
         }
 
         commentRepository.delete(comment);
+
+        // 🔥 기사 댓글 수 감소
+        Articles article = articlesRepository.findById(comment.getArticleId())
+            .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + comment.getArticleId()));
+        article.decreaseCommentCount();
+
         log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
     }
+
 
     // 댓글 수정
     @Override
