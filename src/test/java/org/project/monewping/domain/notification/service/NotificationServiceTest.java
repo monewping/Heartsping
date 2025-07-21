@@ -22,7 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
+import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;

@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.project.monewping.domain.notification.dto.CursorPageResponseNotificationDto;
+import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
