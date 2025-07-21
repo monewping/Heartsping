@@ -1,5 +1,7 @@
 package org.project.monewping.domain.article.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.project.monewping.domain.article.dto.data.NaverNewsItem;
 
@@ -11,7 +13,9 @@ import org.project.monewping.domain.article.dto.data.NaverNewsItem;
  *
  * @param items 기사 항목 리스트
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record NaverNewsResponse(
+    @JsonProperty("items")
     List<NaverNewsItem> items
 ) {
 

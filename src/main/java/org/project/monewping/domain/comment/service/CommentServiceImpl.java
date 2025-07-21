@@ -50,6 +50,11 @@ public class CommentServiceImpl implements CommentService {
         String afterId,
         int limit
     ) {
+        // 기본값 50 적용
+        if (limit <= 0) {
+            limit = 50;
+        }
+
         List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, afterId, limit);
         List<CommentResponseDto> response = comments.stream()
             .map(commentMapper::toResponseDto)
@@ -79,14 +84,14 @@ public class CommentServiceImpl implements CommentService {
     // 댓글 등록
     @Override
     @Transactional
-    public void registerComment(CommentRegisterRequestDto requestDto) {
-        // 유저 정보 조회
+    public CommentResponseDto registerComment(CommentRegisterRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
             .orElseThrow(() -> new UserNotFoundException(
-                "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId().toString()
+                "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId()
             ));
 
         Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
+        Comment saved = commentRepository.save(comment);
 
         Comment savedComment = commentRepository.save(comment);
         log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}", requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
@@ -117,8 +122,11 @@ public class CommentServiceImpl implements CommentService {
                 requestDto.getUserId(), savedComment.getId(), e.getMessage());
         }
 
-        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}", requestDto.getArticleId(),
-                requestDto.getUserId());
+        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
+            requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
+
+        return commentMapper.toResponseDto(saved);
+
     }
 
     // 논리 삭제
@@ -152,7 +160,7 @@ public class CommentServiceImpl implements CommentService {
 
     // 댓글 수정
     @Override
-    public void updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request) {
+    public CommentResponseDto updateComment(UUID commentId, UUID userId, CommentUpdateRequestDto request) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new CommentNotFoundException(commentId));
 
@@ -160,11 +168,13 @@ public class CommentServiceImpl implements CommentService {
             throw new CommentDeleteException("삭제된 댓글은 수정할 수 없습니다.");
         }
 
-        // 본인 확인 (userId로)
         if (!comment.getUserId().equals(userId)) {
             throw new CommentDeleteException("본인의 댓글만 수정할 수 있습니다.");
         }
 
         comment.updateContent(request.content());
+
+        log.info("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
+        return commentMapper.toResponseDto(comment);
     }
 }

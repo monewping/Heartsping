@@ -35,25 +35,32 @@ public class ArticleCollectorScheduler {
      */
     @Scheduled(cron = "0 0 * * * *")
     public void collectArticlesByInterest() {
-        log.info("[ 뉴스 기사 수집 배치 시작 ]");
+        log.info("[뉴스 기사 수집 배치 시작]");
 
         List<Interest> interests = interestRepository.findAll();
+        log.info("총 관심사 개수: {}", interests.size());
+
         int totalCount = 0;
 
         for (Interest interest : interests) {
             String keyword = interest.getName();
             UUID interestId = interest.getId();
 
+            log.info("관심사 수집 시작 = 키워드: '{}', 관심사ID: {}", keyword, interestId);
+
             for (ArticleFetcher fetcher : articleFetchers) {
+                log.debug("수집기: {} - 키워드 '{}' 수집 시도", fetcher.getClass().getSimpleName(), keyword);
+
                 try {
                     List<ArticleSaveRequest> fetchedArticles = fetcher.fetch(keyword);
 
-                    // 방어코드: null일 경우 빈 리스트로 초기화
                     if (fetchedArticles == null) {
+                        log.warn("fetcher '{}'가 null 반환: 키워드 '{}'", fetcher.getClass().getSimpleName(), keyword);
                         fetchedArticles = List.of();
                     }
 
                     List<ArticleSaveRequest> articlesToSave = fetchedArticles.stream()
+                        // interestId를 덮어쓰기 때문에 중복 생성은 걱정 없음
                         .map(article -> new ArticleSaveRequest(
                             interestId,
                             article.source(),
@@ -65,21 +72,27 @@ public class ArticleCollectorScheduler {
                         .toList();
 
                     if (articlesToSave.isEmpty()) {
-                        log.info("관심사 키워드 '{}'에 대해 0개 기사 수집 완료", keyword);
-                        continue; // 빈 리스트면 저장 호출 안 함
+                        log.info("키워드 '{}' - fetcher '{}'에서 수집된 기사 없음", keyword, fetcher.getClass().getSimpleName());
+                        continue;
                     }
 
                     articlesService.saveAll(articlesToSave);
-                    totalCount += articlesToSave.size();
 
-                    log.info("관심사 키워드 '{}'에 대해 {}개 기사 수집 완료", keyword, articlesToSave.size());
+                    int savedCount = articlesToSave.size();
+                    totalCount += savedCount;
+
+                    log.info("키워드 '{}' - fetcher '{}'에서 {}개 기사 저장 완료", keyword, fetcher.getClass().getSimpleName(), savedCount);
+
                 } catch (Exception e) {
-                    log.error("기사 수집 중 예외 발생 = 키워드 : '{}', 에러 : {}", keyword, e.getMessage(), e);
+                    log.error("키워드 '{}' - fetcher '{}' 수행 중 예외 발생: {}",
+                        keyword, fetcher.getClass().getSimpleName(), e.getMessage(), e);
                 }
             }
+
+            log.info("관심사 '{}' 수집 완료", keyword);
         }
 
-        log.info("[ 뉴스 기사 수집 배치 종료 ] 총 수집 시도 기사 수 : {}", totalCount);
+        log.info("[뉴스 기사 수집 배치 종료] 총 저장된 기사 수: {}", totalCount);
     }
 
 }

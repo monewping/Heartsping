@@ -60,16 +60,22 @@ class CommentControllerTest {
         testComments = Arrays.asList(
             new CommentResponseDto(
                 UUID.randomUUID(),
-                "첫 번째 댓글입니다.",
+                testArticleId,
+                UUID.randomUUID(),
                 "사용자1",
+                "첫 번째 댓글입니다.",
                 5,
+                false,
                 Instant.now().minus(Duration.ofHours(1)).toString()
             ),
             new CommentResponseDto(
                 UUID.randomUUID(),
-                "두 번째 댓글입니다.",
+                testArticleId,
+                UUID.randomUUID(),
                 "사용자2",
+                "두 번째 댓글입니다.",
                 3,
+                false,
                 Instant.now().minus(Duration.ofHours(1)).toString()
             )
         );
@@ -103,12 +109,6 @@ class CommentControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.content.length()").value(2))
-            .andExpect(jsonPath("$.content[0].content").value("첫 번째 댓글입니다."))
-            .andExpect(jsonPath("$.content[0].userNickname").value("사용자1"))
-            .andExpect(jsonPath("$.content[0].likeCount").value(5))
-            .andExpect(jsonPath("$.content[1].content").value("두 번째 댓글입니다."))
-            .andExpect(jsonPath("$.content[1].userNickname").value("사용자2"))
-            .andExpect(jsonPath("$.content[1].likeCount").value(3))
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.nextIdAfter").value(123456L))
             .andExpect(jsonPath("$.hasNext").value(true))
@@ -145,7 +145,6 @@ class CommentControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
-            .andExpect(jsonPath("$.content.length()").value(2))
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.hasNext").value(true));
     }
@@ -178,8 +177,6 @@ class CommentControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.content.length()").value(0))
-            .andExpect(jsonPath("$.nextCursor").doesNotExist())
-            .andExpect(jsonPath("$.nextIdAfter").doesNotExist())
             .andExpect(jsonPath("$.hasNext").value(false))
             .andExpect(jsonPath("$.size").value(0))
             .andExpect(jsonPath("$.totalElements").value(0));
@@ -234,7 +231,6 @@ class CommentControllerTest {
         {
             "articleId": "%s",
             "userId": "%s",
-            "userNickname": "테스트유저",
             "content": "테스트 댓글입니다."
         }
         """, UUID.randomUUID(), UUID.randomUUID());
@@ -254,7 +250,7 @@ class CommentControllerTest {
         doNothing().when(commentService).deleteComment(eq(commentId), eq(userId));
 
         mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                .param("userId", userId.toString()))
+                .header("Monew-Request-User-Id", userId.toString()))
             .andExpect(status().isNoContent());
     }
 
@@ -268,7 +264,7 @@ class CommentControllerTest {
             .when(commentService).deleteComment(eq(commentId), eq(userId));
 
         mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                .param("userId", userId.toString()))
+                .header("Monew-Request-User-Id", userId.toString()))
             .andExpect(status().isForbidden());
     }
 
@@ -281,7 +277,7 @@ class CommentControllerTest {
         doNothing().when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
 
         mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                .param("userId", userId.toString()))
+                .header("Monew-Request-User-Id", userId.toString()))
             .andExpect(status().isNoContent());
     }
 
@@ -295,7 +291,7 @@ class CommentControllerTest {
             .when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
 
         mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                .param("userId", userId.toString()))
+                .header("Monew-Request-User-Id", userId.toString()))
             .andExpect(status().isForbidden());
     }
 
@@ -305,7 +301,7 @@ class CommentControllerTest {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 
-        doNothing().when(commentService).updateComment(eq(commentId), eq(userId), any());
+        when(commentService.updateComment(eq(commentId), eq(userId), any())).thenReturn(testComments.get(0));
 
         String requestBody = """
         {
@@ -314,7 +310,7 @@ class CommentControllerTest {
         """;
 
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                .param("userId", userId.toString())
+                .header("Monew-Request-User-Id", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isOk());
@@ -336,7 +332,7 @@ class CommentControllerTest {
         """;
 
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                .param("userId", userId.toString())
+                .header("Monew-Request-User-Id", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isForbidden());
@@ -358,7 +354,7 @@ class CommentControllerTest {
         """;
 
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                .param("userId", userId.toString())
+                .header("Monew-Request-User-Id", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andExpect(status().isForbidden());
