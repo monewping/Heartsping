@@ -22,11 +22,11 @@ public record ArticleSaveRequest(
     UUID interestId,
 
     @NotBlank(message = "출처는 공백일 수 없습니다.")
-    @Size(max = 10, message = "출처는 최대 10자까지 허용됩니다.")
+    @Size(max = 30, message = "출처는 최대 30자까지 허용됩니다.")
     String source,
 
     @NotBlank(message = "원본 기사 링크는 공백일 수 없습니다")
-    @Size(max = 300, message = "원본 기사 링크는 최대 300자까지 허용됩니다.")
+    @Size(max = 500, message = "원본 기사 링크는 최대 500자까지 허용됩니다.")
     String originalLink,
 
     @NotBlank(message = "제목은 공백일 수 없습니다.")

@@ -7,7 +7,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +30,7 @@ public class Articles extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String source;
 
-    @Column(name = "original_link", nullable = false, length = 300, unique = true)
+    @Column(name = "original_link", nullable = false, length = 500, unique = true)
     private String originalLink;
 
     @Column(nullable = false, length = 100)
@@ -51,10 +50,6 @@ public class Articles extends BaseEntity {
 
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
-
-    @Version
-    @Column(nullable = false, columnDefinition = "bigint default 0")
-    private Long version;
 
     // 논리 삭제 시 적용될 마스킹
     public void softDeleteWithMasking() {
