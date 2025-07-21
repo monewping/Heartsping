@@ -7,6 +7,7 @@ import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserActivityService userActivityService;
 
     /**
      * 사용자 회원가입을 처리합니다.
@@ -66,6 +68,21 @@ public class UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        
+        // MongoDB에 사용자 활동 내역 초기화
+        try {
+            userActivityService.initializeUserActivity(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getNickname(),
+                savedUser.getCreatedAt()
+            );
+            log.info("사용자 활동 내역 초기화 완료 - userId: {}, email: {}", savedUser.getId(), savedUser.getEmail());
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 초기화 실패 - userId: {}, error: {}", savedUser.getId(), e.getMessage());
+            // MongoDB 초기화 실패해도 회원가입은 성공으로 처리
+        }
+        
         return userMapper.toResponse(savedUser);
     }
 

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.useractivity.dto.UserActivityDto;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,5 +42,21 @@ public class UserActivityController {
 
         log.info("사용자 활동 내역 조회 완료. userId: {}", userId);
         return ResponseEntity.ok(userActivity);
+    }
+
+    /**
+     * 사용자 활동 내역을 삭제합니다.
+     * 
+     * @param userId 사용자 ID
+     * @return HTTP 204 (No Content)
+     */
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUserActivity(@PathVariable UUID userId) {
+        log.info("사용자 활동 내역 삭제 요청. userId: {}", userId);
+
+        userActivityService.deleteUserActivity(userId);
+
+        log.info("사용자 활동 내역 삭제 완료. userId: {}", userId);
+        return ResponseEntity.noContent().build();
     }
 }
