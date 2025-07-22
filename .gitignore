@@ -48,3 +48,12 @@ logs/
 backup/
 *.bak
 *.backup
+
+# AWS 관련 (혹시 몰라 미리 추가)
+.aws/
+aws-credentials
+*.pem
+*.key
+
+# 로컬 설정 파일 (추후 application.yaml 나눌 때 대비)
+application-dev.yaml
