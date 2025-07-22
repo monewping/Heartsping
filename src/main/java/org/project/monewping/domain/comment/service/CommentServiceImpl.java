@@ -44,6 +44,11 @@ public class CommentServiceImpl implements CommentService {
         String afterId,
         int limit
     ) {
+        // 기본값 50 적용
+        if (limit <= 0) {
+            limit = 50;
+        }
+
         List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, afterId, limit);
         List<CommentResponseDto> response = comments.stream()
             .map(commentMapper::toResponseDto)
