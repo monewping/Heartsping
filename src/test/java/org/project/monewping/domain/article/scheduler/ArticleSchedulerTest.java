@@ -22,6 +22,7 @@ import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.KeywordRepository;
 
+@DisplayName("ArticleScheduler 테스트")
 public class ArticleSchedulerTest {
 
     @Mock
