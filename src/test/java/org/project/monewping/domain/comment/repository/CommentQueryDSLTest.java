@@ -42,51 +42,44 @@ class CommentQueryDSLTest {
                 .content("댓글내용" + i)
                 .likeCount(i)
                 .isDeleted(false)
-                .createdAt(Instant.now().plusSeconds(i))
-                .updatedAt(Instant.now().plusSeconds(i))
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build());
         }
-        comments = commentRepository.findComments(articleId, "DESC", null, 10); // 전체 조회 후 저장
+        comments = commentRepository.findComments(articleId, "DESC", null, 10);
     }
 
-    // 통과 확인했는데, Clean - Build 과정을 거치면 안될 때가 있음....
-//    @Test
-//    @DisplayName("댓글 목록 조회 - 최신순 (createdAt DESC)")
-//    void findComments_desc_success() {
-//        List<Comment> result = commentRepository.findComments(
-//            articleId,
-//            "DESC",
-//            null,
-//            3
-//        );
-//
-//        assertThat(result).hasSize(3);
-//        assertThat(result.get(0).getCreatedAt()).isAfterOrEqualTo(result.get(1).getCreatedAt());
-//    }
-//
-//    @Test
-//    @DisplayName("댓글 목록 조회 - 커서 페이지네이션 다음 페이지 (DESC)")
-//    void findComments_nextPage_desc_success() {
-//        Comment cursorComment = comments.get(2); // 커서 기준 댓글
-//        String afterId = cursorComment.getId().toString();
-//
-//        List<Comment> nextPage = commentRepository.findComments(
-//            articleId,
-//            "DESC",
-//            afterId,
-//            2
-//        );
-//
-//        assertThat(nextPage).hasSizeLessThanOrEqualTo(2);
-//        for (Comment comment : nextPage) {
-//            boolean isBefore = comment.getCreatedAt().isBefore(cursorComment.getCreatedAt());
-//            boolean isSameTimeButSmallerId = comment.getCreatedAt().equals(cursorComment.getCreatedAt()) &&
-//                comment.getId().compareTo(cursorComment.getId()) < 0;
-//
-//            assertThat(isBefore || isSameTimeButSmallerId)
-//                .as("comment: " + comment.getId() + " should be before cursor " + cursorComment.getId())
-//                .isTrue();
-//        }
-//    }
+    @Test
+    @DisplayName("댓글 목록 조회 - createdAt DESC 정렬")
+    void findComments_desc_success() {
+        List<Comment> result = commentRepository.findCommentsByCreatedAtCursor(
+            articleId,
+            null,
+            3
+        );
 
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).getCreatedAt())
+            .isAfterOrEqualTo(result.get(1).getCreatedAt());
+        assertThat(result.get(1).getCreatedAt())
+            .isAfterOrEqualTo(result.get(2).getCreatedAt());
+    }
+
+    @Test
+    @DisplayName("댓글 목록 조회 - 커서 기반 다음 페이지 조회 (createdAt DESC)")
+    void findComments_nextPage_desc_success() {
+        Comment cursorComment = comments.get(2);
+        Instant afterCreatedAt = cursorComment.getCreatedAt();
+
+        List<Comment> nextPage = commentRepository.findCommentsByCreatedAtCursor(
+            articleId,
+            afterCreatedAt,
+            2
+        );
+
+        assertThat(nextPage).hasSizeLessThanOrEqualTo(2);
+        for (Comment comment : nextPage) {
+            assertThat(comment.getCreatedAt()).isBefore(cursorComment.getCreatedAt());
+        }
+    }
 }

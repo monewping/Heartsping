@@ -109,68 +109,65 @@ class CommentServiceTest {
             )
         );
     }
-//
-//    @Test
-//    @DisplayName("댓글 조회 성공 - createdAt 기준 기본 파라미터")
-//    void getComments_Success_WithCreatedAtCursor() {
-//        int limit = 51; // 실제 서비스 호출 limit와 맞춰야 함
-//
-//        when(commentRepository.findCommentsByCreatedAtCursor(
-//            eq(testArticleId),
-//            eq(null),
-//            eq(limit)
-//        )).thenReturn(testComments);
-//
-//        when(commentRepository.countByArticleId(testArticleId)).thenReturn((long) testComments.size());
-//
-//        for (int i = 0; i < testComments.size(); i++) {
-//            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
-//        }
-//
-//        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-//            testArticleId, "createdAt", "DESC", null, null, limit
-//        );
-//
-//        assertThat(result.content()).hasSize(testComments.size());
-//        assertThat(result.nextCursor()).isEqualTo(testComments.get(testComments.size() - 1).getId().toString());
-//        assertThat(result.size()).isEqualTo(testComments.size());
-//        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
-//        assertThat(result.hasNext()).isFalse();
-//    }
-//
-//    @Test
-//    @DisplayName("댓글 조회 성공 - likeCount 기준 커서 조회")
-//    void getComments_Success_WithLikeCountCursor() {
-//        int limit = 20;
-//        int queryLimit = limit + 1; // 서비스가 내부적으로 limit+1로 조회한다고 가정
-//
-//        // 실제 서비스에서 호출할 UUID (필요시 setUp()에서 초기화한 값 사용)
-//        UUID articleId = testArticleId;
-//
-//        // stub: 실제 호출되는 인자와 일치하게 세팅
-//        when(commentRepository.findCommentsByLikeCountCursor(
-//            eq(articleId),    // 실제 articleId 값 사용
-//            eq(null),         // cursor 값 null 로 가정
-//            eq(queryLimit)    // 서비스에서 limit+1 로 호출할 가능성 높음
-//        )).thenReturn(testComments);
-//
-//        when(commentRepository.countByArticleId(articleId)).thenReturn((long) testComments.size());
-//
-//        for (int i = 0; i < testComments.size(); i++) {
-//            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
-//        }
-//
-//        // 실제 서비스 호출 시 limit 는 20, 내부에서 21로 쿼리 호출할 것이라 가정
-//        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-//            articleId, "likeCount", "ASC", null, null, limit
-//        );
-//
-//        assertThat(result.content()).hasSize(testComments.size());
-//        assertThat(result.nextCursor()).isEqualTo(testComments.get(testComments.size() - 1).getId().toString());
-//        assertThat(result.size()).isEqualTo(testComments.size());
-//        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
-//        assertThat(result.hasNext()).isFalse();
-//    }
+    @Test
+    @DisplayName("댓글 조회 성공 - createdAt 기준 기본 파라미터")
+    void getComments_Success_WithCreatedAtCursor() {
+        int limit = 51; // 내부적으로 limit+1
+
+        when(commentRepository.findCommentsByCreatedAtCursor(
+            eq(testArticleId),
+            eq(null),
+            eq(limit)
+        )).thenReturn(testComments);
+
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn((long) testComments.size());
+        for (int i = 0; i < testComments.size(); i++) {
+            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+        }
+
+        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
+            testArticleId, "createdAt", "DESC", null, null, limit - 1
+        );
+
+        assertThat(result.content()).hasSize(testComments.size());
+        assertThat(result.nextCursor()).isEqualTo(testComments.get(testComments.size() - 1).getCreatedAt().toString());
+        assertThat(result.size()).isEqualTo(testComments.size());
+        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
+        assertThat(result.hasNext()).isFalse();
+    }
+
+
+    @Test
+    @DisplayName("댓글 조회 성공 - likeCount 기준 커서 조회")
+    void getComments_Success_WithLikeCountCursor() {
+        int limit = 20;
+        int queryLimit = limit + 1;
+
+        UUID articleId = testArticleId;
+
+        when(commentRepository.findCommentsByLikeCountCursor(
+            eq(articleId),
+            eq(null),
+            eq(queryLimit)
+        )).thenReturn(testComments);
+
+        when(commentRepository.countByArticleId(articleId)).thenReturn((long) testComments.size());
+
+        for (int i = 0; i < testComments.size(); i++) {
+            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+        }
+
+        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
+            articleId, "likeCount", "ASC", null, null, limit
+        );
+
+        assertThat(result.content()).hasSize(testComments.size());
+        assertThat(result.nextCursor()).isEqualTo(String.valueOf(testComments.get(testComments.size() - 1).getLikeCount()));
+        assertThat(result.size()).isEqualTo(testComments.size());
+        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
+        assertThat(result.hasNext()).isFalse();
+    }
+
 
     @Test
     @DisplayName("댓글 등록 성공")
