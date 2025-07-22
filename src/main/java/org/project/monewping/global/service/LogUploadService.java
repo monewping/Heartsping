@@ -59,21 +59,28 @@ public class LogUploadService {
     private String prefix;
 
     /**
-     * 지정된 날짜의 로그 파일을 S3에 업로드합니다.
+     * 지정된 날짜의 모든 로그 파일을 S3에 업로드합니다.
      * 
      * <p>업로드 과정:</p>
      * <ol>
-     *     <li>지정된 날짜의 로그 파일 경로를 생성합니다</li>
-     *     <li>파일 존재 여부를 확인합니다</li>
-     *     <li>파일이 존재하면 S3에 업로드합니다</li>
+     *     <li>지정된 날짜의 모든 로그 파일 경로를 생성합니다</li>
+     *     <li>각 파일 존재 여부를 확인합니다</li>
+     *     <li>존재하는 파일들을 S3에 업로드합니다</li>
      *     <li>업로드 결과를 로그로 기록합니다</li>
      * </ol>
      * 
+     * <p>업로드되는 로그 파일들:</p>
+     * <ul>
+     *     <li>일반 로그: monewping-{date}.log</li>
+     *     <li>에러 로그: monewping-error-{date}.log</li>
+     *     <li>SQL 로그: monewping-sql-{date}.log</li>
+     * </ul>
+     * 
      * <p>예외 처리:</p>
      * <ul>
-     *     <li>파일이 존재하지 않으면 경고 로그만 남기고 종료합니다</li>
-     *     <li>IOException 발생 시 에러 로그를 남기고 종료합니다</li>
-     *     <li>기타 예외 발생 시 에러 로그를 남기고 종료합니다</li>
+     *     <li>파일이 존재하지 않으면 해당 파일만 건너뜁니다</li>
+     *     <li>IOException 발생 시 에러 로그를 남기고 계속 진행합니다</li>
+     *     <li>기타 예외 발생 시 에러 로그를 남기고 계속 진행합니다</li>
      *     <li>모든 경우에 애플리케이션은 정상적으로 계속 실행됩니다</li>
      * </ul>
      * 
@@ -82,53 +89,66 @@ public class LogUploadService {
     public void uploadLogFile(LocalDate date) {
         log.info(SERVICE_NAME + "로그 파일 S3 업로드 시작: 날짜={}", date);
 
-        try {
-            Path logFile = getLogFilePath(date);
+        // 업로드할 로그 파일 목록
+        String[] logTypes = {"", "-error", "-sql"};
+        int uploadedCount = 0;
 
-            if (!logFileExists(logFile)) {
-                log.warn(SERVICE_NAME + "업로드할 로그 파일이 존재하지 않습니다: {}", logFile);
-                return;
+        for (String logType : logTypes) {
+            try {
+                Path logFile = getLogFilePath(date, logType);
+
+                if (!logFileExists(logFile)) {
+                    log.warn(SERVICE_NAME + "업로드할 로그 파일이 존재하지 않습니다: {}", logFile);
+                    continue;
+                }
+
+                String s3Key = generateS3Key(date, logType);
+                byte[] fileContent = Files.readAllBytes(logFile);
+
+                s3Client.putObject(PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(s3Key)
+                        .contentType("text/plain")
+                        .build(), RequestBody.fromBytes(fileContent));
+
+                log.info(SERVICE_NAME + "로그 파일 S3 업로드 완료: type={}, bucket={}, key={}, size={} bytes",
+                        logType.isEmpty() ? "general" : logType.substring(1), bucketName, s3Key, fileContent.length);
+                uploadedCount++;
+
+            } catch (IOException e) {
+                log.error(SERVICE_NAME + "로그 파일 S3 업로드 실패: type={}, 날짜={}", 
+                        logType.isEmpty() ? "general" : logType.substring(1), date, e);
+            } catch (Exception e) {
+                log.error(SERVICE_NAME + "로그 파일 S3 업로드 중 예외 발생: type={}, 날짜={}", 
+                        logType.isEmpty() ? "general" : logType.substring(1), date, e);
             }
-
-            String s3Key = generateS3Key(date);
-            byte[] fileContent = Files.readAllBytes(logFile);
-
-            s3Client.putObject(PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(s3Key)
-                    .contentType("text/plain")
-                    .build(), RequestBody.fromBytes(fileContent));
-
-            log.info(SERVICE_NAME + "로그 파일 S3 업로드 완료: buckets={}, key={}, size={} bytes",
-                    bucketName, s3Key, fileContent.length);
-
-        } catch (IOException e) {
-            log.error(SERVICE_NAME + "로그 파일 S3 업로드 실패: 날짜={}", date, e);
-        } catch (Exception e) {
-            log.error(SERVICE_NAME + "로그 파일 S3 업로드 중 예외 발생: 날짜={}", date, e);
         }
+
+        log.info(SERVICE_NAME + "로그 파일 S3 업로드 완료: 날짜={}, 업로드된 파일 수={}", date, uploadedCount);
     }
 
     /**
      * 지정된 날짜의 로그 파일 경로를 생성합니다.
      * 
      * @param date 로그 파일 날짜
+     * @param logType 로그 타입 ("", "-error", "-sql")
      * @return 로그 파일의 전체 경로
      */
-    private Path getLogFilePath(LocalDate date) {
+    private Path getLogFilePath(LocalDate date, String logType) {
         String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        return Paths.get(logPath, logFileName + "." + dateStr + ".log");
+        return Paths.get(logPath, logFileName + logType + "-" + dateStr + ".log");
     }
 
     /**
      * S3에 업로드할 파일의 키(경로)를 생성합니다.
      * 
      * @param date 로그 파일 날짜
-     * @return S3 객체 키 (예: application-logs/monewping-2025-01-20.log)
+     * @param logType 로그 타입 ("", "-error", "-sql")
+     * @return S3 객체 키 (예: application-logs/2025-07-22/monewping-2025-07-22.log)
      */
-    private String generateS3Key(LocalDate date) {
+    private String generateS3Key(LocalDate date, String logType) {
         String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        return String.format("%s/%s-%s.log", prefix, logFileName, dateStr);
+        return String.format("%s/%s/%s-%s.log", prefix, dateStr, logFileName + logType, dateStr);
     }
 
     /**
