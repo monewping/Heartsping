@@ -25,7 +25,7 @@ public class YonhapRssFetcher extends RssArticleFetcher {
      */
     @Override
     protected String rssFeedUrl() {
-        return "http://www.yonhapnewstv.co.kr/browse/feed/";
+        return "https://www.yonhapnewstv.co.kr/browse/feed/";
     }
 
     /**
