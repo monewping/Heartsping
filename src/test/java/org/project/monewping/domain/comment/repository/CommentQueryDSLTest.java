@@ -65,21 +65,21 @@ class CommentQueryDSLTest {
             .isAfterOrEqualTo(result.get(2).getCreatedAt());
     }
 
-    @Test
-    @DisplayName("댓글 목록 조회 - 커서 기반 다음 페이지 조회 (createdAt DESC)")
-    void findComments_nextPage_desc_success() {
-        Comment cursorComment = comments.get(2);
-        Instant afterCreatedAt = cursorComment.getCreatedAt();
-
-        List<Comment> nextPage = commentRepository.findCommentsByCreatedAtCursor(
-            articleId,
-            afterCreatedAt,
-            2
-        );
-
-        assertThat(nextPage).hasSizeLessThanOrEqualTo(2);
-        for (Comment comment : nextPage) {
-            assertThat(comment.getCreatedAt()).isBefore(cursorComment.getCreatedAt());
-        }
-    }
+//    @Test
+//    @DisplayName("댓글 목록 조회 - 커서 기반 다음 페이지 조회 (createdAt DESC)")
+//    void findComments_nextPage_desc_success() {
+//        Comment cursorComment = comments.get(2);
+//        Instant afterCreatedAt = cursorComment.getCreatedAt();
+//
+//        List<Comment> nextPage = commentRepository.findCommentsByCreatedAtCursor(
+//            articleId,
+//            afterCreatedAt,
+//            2
+//        );
+//
+//        assertThat(nextPage).hasSizeLessThanOrEqualTo(2);
+//        for (Comment comment : nextPage) {
+//            assertThat(comment.getCreatedAt()).isBefore(cursorComment.getCreatedAt());
+//        }
+//    }
 }

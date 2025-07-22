@@ -4,14 +4,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 
@@ -41,8 +45,8 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
      * - 키워드 포함된 기사만 ArticleSaveRequest로 변환
      */
     @Override
-    public List<ArticleSaveRequest> fetch(UUID interestId, String keyword) {
-        log.info("[{}] RSS 뉴스 수집 시작 - keyword: {}", sourceName(), keyword);
+    public List<ArticleSaveRequest> fetch(UUID interestId, List<String> keywords) {
+        log.info("[{}] RSS 뉴스 수집 시작 - keyword: {}", sourceName(), keywords);
 
         try {
             // 1. RSS 요청 생성
@@ -60,37 +64,40 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
             }
 
             // 3. Jsoup XML 파싱
-            org.jsoup.nodes.Document doc = Jsoup.parse(response.body(), "", org.jsoup.parser.Parser.xmlParser());
+            Document doc = Jsoup.parse(response.body(), "", Parser.xmlParser());
             Elements items = doc.select("item");
 
             List<ArticleSaveRequest> articles = new ArrayList<>();
 
             // 4. 각 item 요소 순회
             for (Element item : items) {
-                Element titleElement = item.selectFirst("title");
-                String title = titleElement != null ? titleElement.text() : null;
+                String title = item.selectFirst("title") != null ? item.selectFirst("title").text() : null;
+                String link = item.selectFirst("link") != null ? item.selectFirst("link").text().trim() : null;
+                String description = item.selectFirst("description") != null ? item.selectFirst("description").text() : "";
+                String pubDate = item.selectFirst("pubDate") != null ? item.selectFirst("pubDate").text() : null;
 
-                Element linkElement = item.selectFirst("link");
-                String link = linkElement != null ? linkElement.text() : null;
-
-                Element descElement = item.selectFirst("description");
-                String description = descElement != null ? descElement.text() : null;
-
-                Element pubDateElement = item.selectFirst("pubDate");
-                String pubDate = pubDateElement != null ? pubDateElement.text() : null;
-
-                if (!containsKeyword(title, description, keyword)) continue;
+                if (!containsKeyword(title, description, keywords)) continue;
 
                 LocalDateTime publishedAt = parsePubDate(pubDate);
 
+                // HTML 태그 제거
+                String cleanTitle = HtmlCleaner.strip(title);
+                String cleanDescription = HtmlCleaner.strip(description);
+
+                // 키워드 하이라이팅 적용
+                String highlightedTitle = highlightKeyword(cleanTitle, keywords);
+                String highlightedDescription = highlightKeyword(cleanDescription, keywords);
+
+                // ArticleSaveRequest 생성
                 articles.add(new ArticleSaveRequest(
                     interestId,
                     sourceName(),
                     link,
-                    title,
-                    description != null ? description : "",
+                    highlightedTitle,
+                    highlightedDescription != null ? highlightedDescription : "",
                     publishedAt
                 ));
+
             }
 
 
@@ -108,15 +115,20 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
      * - 키워드가 null 또는 공백인 경우, 필터링 없이 true 반환
      * - 대소문자 구분 없이 검사합니다.
      */
-    private boolean containsKeyword(String title, String description, String keyword) {
-        if (keyword == null || keyword.isBlank()) return true;
+    private boolean containsKeyword(String title, String description, List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) return true;
 
-        String lowerKeyword = keyword.toLowerCase();
+        String lowerTitle = title != null ? title.toLowerCase() : "";
+        String lowerDesc = description != null ? description.toLowerCase() : "";
 
-        boolean titleContains = title != null && title.toLowerCase().contains(lowerKeyword);
-        boolean descriptionContains = description != null && description.toLowerCase().contains(lowerKeyword);
-
-        return titleContains || descriptionContains;
+        for (String keyword : keywords) {
+            if (keyword == null || keyword.isBlank()) continue;
+            String lowerKeyword = keyword.toLowerCase();
+            if (lowerTitle.contains(lowerKeyword) || lowerDesc.contains(lowerKeyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -131,6 +143,38 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
             log.warn("발행일 파싱 실패, 기본값 사용: {}", pubDate);
             return LocalDateTime.now();
         }
+    }
+
+    /**
+     * 주어진 텍스트에서 지정된 키워드를 찾아 하이라이팅 처리합니다.
+     *
+     * <p>키워드에 대해 대소문자를 구분하지 않고 검색하며,
+     * 키워드에 포함된 특수문자는 정규식에서 안전하게 처리됩니다.
+     * 하이라이팅은 {@code <span class="highlight">} 태그로 감싸서 적용합니다.</p>
+     *
+     * <p>예:</p>
+     * <pre>
+     * highlightKeyword("오늘은 사회 뉴스가 많습니다.", "사회")
+     * → "오늘은 <span class="highlight">사회</span> 뉴스가 많습니다."
+     * </pre>
+     *
+     * @param text    원본 텍스트 (예: 제목, 요약 등). {@code null}일 경우 {@code null} 반환
+     * @param keywords 강조할 키워드. {@code null}이거나 빈 문자열인 경우 원본 텍스트 반환
+     * @return 키워드가 하이라이팅 태그로 감싸진 문자열. 키워드가 없거나 조건에 맞지 않으면 원본 텍스트 그대로 반환
+     */
+    private String highlightKeyword(String text, List<String> keywords) {
+        if (text == null || keywords == null || keywords.isEmpty()) return text;
+
+        String result = text;
+        for (String keyword : keywords) {
+            if (keyword == null || keyword.isBlank()) continue;
+
+            // (?i) 대소문자 구분 없이, Pattern.quote로 특수문자 이스케이프 처리
+            String regex = "(?i)(" + Pattern.quote(keyword) + ")";
+            // 기존 하이라이트를 덮어쓰지 않게, 중복 하이라이트 방지 처리는 필요하면 추가 가능
+            result = result.replaceAll(regex, "<span class=\"highlight\">$1</span>");
+        }
+        return result;
     }
 
     /**

@@ -25,7 +25,7 @@ public class HankyungRssFetcher extends RssArticleFetcher {
      */
     @Override
     protected String rssFeedUrl() {
-        return "https://www.hankyung.com/feed";
+        return "https://www.hankyung.com/feed/all-news";
     }
 
     /**

@@ -1,5 +1,7 @@
 package org.project.monewping.domain.article.scheduler;
 
+import static org.project.monewping.domain.interest.entity.QKeyword.keyword;
+
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,7 @@ import org.project.monewping.domain.article.fetcher.ArticleFetcher;
 import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
+import org.project.monewping.domain.interest.repository.KeywordRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +23,7 @@ public class ArticleCollectorScheduler {
     private final InterestRepository interestRepository;
     private final List<ArticleFetcher> articleFetchers;
     private final ArticlesService articlesService;
+    private final KeywordRepository keywordRepository;
 
     /**
      * 매 시간마다 실행되는 뉴스 기사 수집 스케줄러입니다.
@@ -51,34 +55,41 @@ public class ArticleCollectorScheduler {
      */
     private int collectForInterest(Interest interest) {
         UUID interestId = interest.getId();
-        String keyword = interest.getName();
+        // 관심사에 연결된 키워드 리스트 조회
+        List<String> keywords = keywordRepository.findNamesByInterestId(interestId);
+
         int savedCount = 0;
 
-        log.info("▶ 관심사 '{}' ({}) 수집 시작", keyword, interestId);
+        log.info("▶ 관심사 '{}' ({}) 수집 시작 - 키워드 개수: {}", interest.getName(), interestId, keywords.size());
 
-        for (ArticleFetcher fetcher : articleFetchers) {
-            try {
-                // 수집기별 기사 수집
-                List<ArticleSaveRequest> articles = fetcher.fetch(interestId, keyword);
+        for (String keyword : keywords) {
+            for (ArticleFetcher fetcher : articleFetchers) {
+                try {
+                    // 수집기별 기사 수집
+                    List<String> singleKeywordList = List.of(keyword);
+                    List<ArticleSaveRequest> articles = fetcher.fetch(interestId, singleKeywordList);
 
-                if (articles.isEmpty()) {
-                    log.debug("⛔ 수집 결과 없음 - fetcher: {}", fetcher.getClass().getSimpleName());
-                    continue;
+                    if (articles.isEmpty()) {
+                        log.debug("⛔ 수집 결과 없음 - fetcher: {}, keyword: {}", fetcher.getClass().getSimpleName(), keyword);
+                        continue;
+                    }
+
+                    // 기사 저장
+                    articlesService.saveAll(articles);
+                    savedCount += articles.size();
+
+                    log.info("✔️ '{}' - 키워드 '{}' - {}개 기사 저장 (Fetcher: {})",
+                        interest.getName(), keyword, articles.size(), fetcher.getClass().getSimpleName());
+
+                } catch (Exception e) {
+                    // 수집 실패 시 에러 로그 남기고 다음 fetcher로 진행
+                    log.warn("❌ '{}' - fetcher '{}' 키워드 '{}' 에러: {}",
+                        interest.getName(), fetcher.getClass().getSimpleName(), keyword, e.getMessage(), e);
                 }
-
-                // 기사 저장
-                articlesService.saveAll(articles);
-                savedCount += articles.size();
-
-                log.info("✔️ '{}' - {}개 기사 저장 (Fetcher: {})", keyword, articles.size(), fetcher.getClass().getSimpleName());
-
-            } catch (Exception e) {
-                // 수집 실패 시 에러 로그 남기고 다음 fetcher로 진행
-                log.warn("❌ '{}' - fetcher '{}' 에러: {}", keyword, fetcher.getClass().getSimpleName(), e.getMessage(), e);
             }
         }
 
-        log.info("■ 관심사 '{}' 수집 완료 - 저장된 기사 수: {}", keyword, savedCount);
+        log.info("■ 관심사 '{}' 수집 완료 - 저장된 기사 수: {}", interest.getName(), savedCount);
         return savedCount;
     }
 

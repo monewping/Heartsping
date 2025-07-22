@@ -43,14 +43,14 @@ public class NaverArticleFetcher implements ArticleFetcher {
      * 네이버 뉴스 API를 통해 주어진 키워드의 뉴스 기사를 수집합니다.
      *
      * @param interestId 관심사 ID
-     * @param keyword    검색 키워드
+     * @param keywords    검색 키워드
      * @return {@link ArticleSaveRequest} 리스트
      */
     @Override
-    public List<ArticleSaveRequest> fetch(UUID interestId, String keyword) {
+    public List<ArticleSaveRequest> fetch(UUID interestId, List<String> keywords) {
         // 요청 URL 생성
         String url = UriComponentsBuilder.fromHttpUrl(NAVER_API_URL)
-            .queryParam("query", keyword)
+            .queryParam("query", keywords != null && !keywords.isEmpty() ? keywords.get(0) : "")
             .queryParam("display", 100)
             .build()
             .toUriString();
@@ -69,7 +69,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
             // 응답 성공 여부 확인
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                log.warn("❗️ 네이버 뉴스 응답 실패 - status={}, keyword={}", response.getStatusCode(), keyword);
+                log.warn("❗️ 네이버 뉴스 응답 실패 - status={}, keyword={}", response.getStatusCode(), keywords);
                 return List.of();
             }
 
@@ -78,7 +78,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
             // 키워드 필터링 및 ArticleSaveRequest로 매핑
             return items.stream()
-                .filter(item -> containsKeyword(item, keyword))
+                .filter(item -> containsKeyword(item, keywords))
                 .map(item -> new ArticleSaveRequest(
                     interestId,
                     "Naver",
@@ -91,7 +91,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
         } catch (Exception e) {
             // 예외 발생 시 로깅 후 빈 리스트 반환
-            log.error("❌ 네이버 뉴스 수집 실패 - keyword={}", keyword, e);
+            log.error("❌ 네이버 뉴스 수집 실패 - keyword={}", keywords, e);
             return List.of();
         }
     }
@@ -100,15 +100,24 @@ public class NaverArticleFetcher implements ArticleFetcher {
      * 주어진 뉴스 항목의 제목 또는 설명에 키워드가 포함되어 있는지 확인합니다.
      *
      * @param item    뉴스 항목
-     * @param keyword 검색 키워드
+     * @param keywords 검색 키워드
      * @return 키워드 포함 여부
      */
-    private boolean containsKeyword(NaverNewsItem item, String keyword) {
+    private boolean containsKeyword(NaverNewsItem item, List<String> keywords) {
         String title = HtmlCleaner.strip(item.title());
         String desc = HtmlCleaner.strip(item.description());
-        String lowerKeyword = keyword.toLowerCase();
-        return (title != null && title.toLowerCase().contains(lowerKeyword)) ||
-            (desc != null && desc.toLowerCase().contains(lowerKeyword));
+
+        String lowerTitle = title != null ? title.toLowerCase() : "";
+        String lowerDesc = desc != null ? desc.toLowerCase() : "";
+
+        for (String keyword : keywords) {
+            if (keyword == null || keyword.isBlank()) continue;
+            String lowerKeyword = keyword.toLowerCase();
+            if (lowerTitle.contains(lowerKeyword) || lowerDesc.contains(lowerKeyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
