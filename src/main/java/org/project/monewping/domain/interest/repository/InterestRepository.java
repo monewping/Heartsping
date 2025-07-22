@@ -3,6 +3,7 @@ package org.project.monewping.domain.interest.repository;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -35,4 +36,8 @@ public interface InterestRepository extends JpaRepository<Interest, UUID>, Inter
      */
     @Query("SELECT i.name FROM Interest i")
     List<String> findAllNames();
+
+    @Query("SELECT i.name FROM Interest i " +
+            "WHERE i.name LIKE %:searchName%")
+    List<String> findNamesByRoughMatch(@Param("searchName") String searchName);
 } 

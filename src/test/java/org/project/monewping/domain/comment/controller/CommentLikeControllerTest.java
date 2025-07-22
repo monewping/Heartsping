@@ -36,8 +36,8 @@ class CommentLikeControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentLikeController)
-            .setControllerAdvice(new GlobalExceptionHandler())
-            .build();
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -49,8 +49,8 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                .header("Monew-Request-User-ID", userId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -61,11 +61,11 @@ class CommentLikeControllerTest {
         UUID userId = UUID.randomUUID();
 
         doThrow(new CommentLikeAlreadyExistsException())
-            .when(commentLikeService).likeComment(userId, commentId);
+                .when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                .header("Monew-Request-User-ID", userId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
@@ -78,8 +78,8 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                .header("Monew-Request-User-ID", userId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -90,11 +90,11 @@ class CommentLikeControllerTest {
         UUID userId = UUID.randomUUID();
 
         doThrow(new CommentLikeNotFoundException())
-            .when(commentLikeService).unlikeComment(userId, commentId);
+                .when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                .header("Monew-Request-User-ID", userId.toString())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 }

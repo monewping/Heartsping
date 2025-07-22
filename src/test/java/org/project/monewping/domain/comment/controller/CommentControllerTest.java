@@ -248,7 +248,7 @@ class CommentControllerTest {
         UUID userId = UUID.randomUUID();
         doNothing().when(commentService).deleteComment(eq(commentId), eq(userId));
         mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                        .param("userId", userId.toString()))
+                        .header("Monew-Request-User-Id", userId.toString()))
                 .andExpect(status().isNoContent());
     }
     @Test
@@ -259,7 +259,7 @@ class CommentControllerTest {
         doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
                 .when(commentService).deleteComment(eq(commentId), eq(userId));
         mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                        .param("userId", userId.toString()))
+                        .header("Monew-Request-User-Id", userId.toString()))
                 .andExpect(status().isForbidden());
     }
     @Test
@@ -269,7 +269,7 @@ class CommentControllerTest {
         UUID userId = UUID.randomUUID();
         doNothing().when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
         mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                        .param("userId", userId.toString()))
+                        .header("Monew-Request-User-Id", userId.toString()))
                 .andExpect(status().isNoContent());
     }
     @Test
@@ -280,7 +280,7 @@ class CommentControllerTest {
         doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
                 .when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
         mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                        .param("userId", userId.toString()))
+                        .header("Monew-Request-User-Id", userId.toString()))
                 .andExpect(status().isForbidden());
     }
     @DisplayName("댓글 수정 성공")
@@ -288,14 +288,14 @@ class CommentControllerTest {
     void updateComment_Success() throws Exception {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        doNothing().when(commentService).updateComment(eq(commentId), eq(userId), any());
+        when(commentService.updateComment(eq(commentId), eq(userId), any())).thenReturn(testComments.get(0));
         String requestBody = """
         {
             "content": "수정된 댓글입니다."
         }
         """;
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .param("userId", userId.toString())
+                        .header("Monew-Request-User-Id", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk());
@@ -313,7 +313,7 @@ class CommentControllerTest {
         }
         """;
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .param("userId", userId.toString())
+                        .header("Monew-Request-User-Id", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isForbidden());
@@ -331,7 +331,7 @@ class CommentControllerTest {
         }
         """;
         mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .param("userId", userId.toString())
+                        .header("Monew-Request-User-Id", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isForbidden());
