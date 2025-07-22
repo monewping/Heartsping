@@ -1,6 +1,7 @@
 package org.project.monewping.domain.article.fetcher;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,8 @@ public class NaverArticleFetcher implements ArticleFetcher {
     private String clientSecret;
 
     private static final String NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json";
+    private static final int MAX_TOTAL_COUNT = 300;
+    private static final int DISPLAY_COUNT = 50;
 
     /**
      * 네이버 뉴스 API를 통해 주어진 키워드의 뉴스 기사를 수집합니다.
@@ -48,58 +51,79 @@ public class NaverArticleFetcher implements ArticleFetcher {
      */
     @Override
     public List<ArticleSaveRequest> fetch(UUID interestId, List<String> keywords) {
-        // 요청 URL 생성
-        String url = UriComponentsBuilder.fromHttpUrl(NAVER_API_URL)
-            .queryParam("query", keywords != null && !keywords.isEmpty() ? keywords.get(0) : "")
-            .queryParam("display", 100)
-            .build()
-            .toUriString();
 
-        // HTTP 헤더 구성
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Naver-Client-Id", clientId);
-        headers.set("X-Naver-Client-Secret", clientSecret);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        List<ArticleSaveRequest> result = new ArrayList<>();
 
-        try {
-            // 네이버 뉴스 API 호출
-            ResponseEntity<NaverNewsResponse> response = restTemplate.exchange(
-                url, HttpMethod.GET, new HttpEntity<>(headers), NaverNewsResponse.class
-            );
+        // 여러 번 요청 (최대 300개, 50개씩)
+        for (int start = 1; start <= MAX_TOTAL_COUNT; start += DISPLAY_COUNT) {
+            // 요청 URL 생성
+            String url = UriComponentsBuilder.fromHttpUrl(NAVER_API_URL)
+                .queryParam("query", keywords != null && !keywords.isEmpty() ? keywords.get(0) : "")
+                .queryParam("display", DISPLAY_COUNT)
+                .queryParam("start", start)
+                .build()
+                .toUriString();
 
-            // 응답 성공 여부 확인
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                log.warn("❗️ 네이버 뉴스 응답 실패 - status={}, keyword={}", response.getStatusCode(), keywords);
-                return List.of();
+            // HTTP 헤더 구성
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Naver-Client-Id", clientId);
+            headers.set("X-Naver-Client-Secret", clientSecret);
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+            try {
+                // 네이버 뉴스 API 호출
+                ResponseEntity<NaverNewsResponse> response = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(headers), NaverNewsResponse.class
+                );
+
+                // 응답 성공 여부 확인
+                if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    log.warn("❗️ 네이버 뉴스 응답 실패 - status={}, keyword={}, start={}", response.getStatusCode(), keywords, start);
+                    break;
+                }
+
+                // 기사 항목 리스트 추출
+                List<NaverNewsItem> items = response.getBody().items();
+
+                // 더 이상 기사가 없다면 종료
+                if (items == null || items.isEmpty()) {
+                    log.info("✔️ 더 이상 수집할 기사가 없습니다 - keyword={}, start={}", keywords, start);
+                    break;
+                }
+
+                // 키워드 필터링 및 ArticleSaveRequest로 매핑하여 누적
+                List<ArticleSaveRequest> filtered = items.stream()
+                    .filter(item -> containsKeyword(item, keywords))
+                    .map(item -> new ArticleSaveRequest(
+                        interestId,
+                        "Naver",
+                        item.originalLink(),
+                        HtmlCleaner.strip(item.title()),
+                        HtmlCleaner.strip(item.description()),
+                        LocalDateTime.now()
+                    ))
+                    .toList();
+
+                result.addAll(filtered);
+
+                // 마지막 요청이 100개 미만이면 더 이상 수집 불필요 (네이버 응답 제한)
+                if (items.size() < DISPLAY_COUNT) {
+                    break;
+                }
+
+            } catch (Exception e) {
+                log.error("❌ 네이버 뉴스 수집 실패 - keyword={}, start={}", keywords, start, e);
+                break; // 예외 발생 시 반복 중단
             }
-
-            // 기사 항목 리스트 추출
-            List<NaverNewsItem> items = response.getBody().items();
-
-            // 키워드 필터링 및 ArticleSaveRequest로 매핑
-            return items.stream()
-                .filter(item -> containsKeyword(item, keywords))
-                .map(item -> new ArticleSaveRequest(
-                    interestId,
-                    "Naver",
-                    item.originalLink(),
-                    HtmlCleaner.strip(item.title()),
-                    HtmlCleaner.strip(item.description()),
-                    LocalDateTime.now()
-                ))
-                .toList();
-
-        } catch (Exception e) {
-            // 예외 발생 시 로깅 후 빈 리스트 반환
-            log.error("❌ 네이버 뉴스 수집 실패 - keyword={}", keywords, e);
-            return List.of();
         }
+
+        return result;
     }
 
     /**
      * 주어진 뉴스 항목의 제목 또는 설명에 키워드가 포함되어 있는지 확인합니다.
      *
-     * @param item    뉴스 항목
+     * @param item     뉴스 항목
      * @param keywords 검색 키워드
      * @return 키워드 포함 여부
      */
@@ -119,5 +143,4 @@ public class NaverArticleFetcher implements ArticleFetcher {
         }
         return false;
     }
-
 }
