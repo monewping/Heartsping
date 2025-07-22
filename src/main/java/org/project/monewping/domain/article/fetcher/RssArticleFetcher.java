@@ -111,9 +111,15 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
     }
 
     /**
-     * 주어진 제목 또는 요약 중 하나라도 키워드를 포함하는지 확인합니다.
-     * - 키워드가 null 또는 공백인 경우, 필터링 없이 true 반환
-     * - 대소문자 구분 없이 검사합니다.
+     * 제목 또는 요약(description)에 주어진 키워드 중 하나라도 포함되어 있는지 여부를 확인합니다.
+     *
+     * <p>대소문자를 구분하지 않으며, 키워드가 비어 있거나 null이면 항상 {@code true}를 반환합니다.
+     * 제목 또는 요약이 null인 경우에도 빈 문자열로 처리하여 검사합니다.
+     *
+     * @param title 기사 제목 (null 허용)
+     * @param description 기사 요약 또는 설명 (null 허용)
+     * @param keywords 포함 여부를 확인할 키워드 리스트 (null 또는 빈 경우 전체 통과)
+     * @return 제목 또는 설명에 하나 이상의 키워드가 포함되어 있으면 {@code true}, 그렇지 않으면 {@code false}
      */
     private boolean containsKeyword(String title, String description, List<String> keywords) {
         if (keywords == null || keywords.isEmpty()) return true;
@@ -146,21 +152,15 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
     }
 
     /**
-     * 주어진 텍스트에서 지정된 키워드를 찾아 하이라이팅 처리합니다.
+     * 텍스트 내에서 지정된 키워드들을 찾아 <strong> 태그로 감싸 볼드 처리합니다.
      *
-     * <p>키워드에 대해 대소문자를 구분하지 않고 검색하며,
-     * 키워드에 포함된 특수문자는 정규식에서 안전하게 처리됩니다.
-     * 하이라이팅은 {@code <span class="highlight">} 태그로 감싸서 적용합니다.</p>
+     * <p>대소문자를 구분하지 않으며, 여러 키워드가 주어질 경우 모두 순차적으로 강조됩니다.
      *
-     * <p>예:</p>
-     * <pre>
-     * highlightKeyword("오늘은 사회 뉴스가 많습니다.", "사회")
-     * → "오늘은 <span class="highlight">사회</span> 뉴스가 많습니다."
-     * </pre>
+     * <p>예: "AI is powerful" → 키워드 "ai" → 결과: "&lt;strong&gt;AI&lt;/strong&gt; is powerful"
      *
-     * @param text    원본 텍스트 (예: 제목, 요약 등). {@code null}일 경우 {@code null} 반환
-     * @param keywords 강조할 키워드. {@code null}이거나 빈 문자열인 경우 원본 텍스트 반환
-     * @return 키워드가 하이라이팅 태그로 감싸진 문자열. 키워드가 없거나 조건에 맞지 않으면 원본 텍스트 그대로 반환
+     * @param text 강조할 대상 문자열. {@code null} 이면 그대로 반환됩니다.
+     * @param keywords 강조할 키워드 리스트. {@code null} 또는 비어 있으면 강조 없이 원문 반환합니다.
+     * @return 키워드가 강조된 HTML 문자열
      */
     private String highlightKeyword(String text, List<String> keywords) {
         if (text == null || keywords == null || keywords.isEmpty()) return text;
@@ -169,10 +169,8 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
         for (String keyword : keywords) {
             if (keyword == null || keyword.isBlank()) continue;
 
-            // (?i) 대소문자 구분 없이, Pattern.quote로 특수문자 이스케이프 처리
             String regex = "(?i)(" + Pattern.quote(keyword) + ")";
-            // 기존 하이라이트를 덮어쓰지 않게, 중복 하이라이트 방지 처리는 필요하면 추가 가능
-            result = result.replaceAll(regex, "<span class=\"highlight\">$1</span>");
+            result = result.replaceAll(regex, "<strong>$1</strong>");
         }
         return result;
     }

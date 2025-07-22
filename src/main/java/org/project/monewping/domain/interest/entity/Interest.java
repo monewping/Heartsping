@@ -38,11 +38,6 @@ public class Interest extends BaseUpdatableEntity {
     @Builder.Default
     private List<Keyword> keywords = new ArrayList<>();
 
-    @Version
-    @Column(name = "version", nullable = false)
-    @Builder.Default
-    private Long version = 0L;
-
     public Interest(String name, Long subscriberCount, List<Keyword> keywords) {
         this.name = name;
         this.subscriberCount = subscriberCount;

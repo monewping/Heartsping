@@ -30,35 +30,42 @@ public class RssArticleFetcherTest {
               <description>Daily stock market summary</description>
               <pubDate>Mon, 15 Jul 2024 11:00:00 GMT</pubDate>
             </item>
+            <item>
+              <title>Sports news</title>
+              <link>http://example.com/article3</link>
+              <description>Some sports content</description>
+              <pubDate>Mon, 15 Jul 2024 12:00:00 GMT</pubDate>
+            </item>
           </channel>
         </rss>
         """;
 
     @Test
-    @DisplayName("키워드를 포함한 기사만 필터링하여 반환해야 한다")
-    void shouldFilterArticlesByKeyword() throws Exception {
+    @DisplayName("키워드 리스트 중 하나라도 포함된 기사만 필터링하여 반환해야 한다")
+    void shouldFilterArticlesByKeywords() throws Exception {
         // given
         UUID interestId = UUID.randomUUID();
+        List<String> keywords = List.of("AI", "stock");
+
         HttpClient mockClient = mockHttpClientReturning(RSS_SAMPLE, 200);
         RssArticleFetcher fetcher = new TestRssFetcher(mockClient);
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(interestId, "ai");
+        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keywords);
 
         // then
+        // 기사 1, 2는 키워드 포함, 기사 3은 미포함이므로 결과에는 1,2만 있어야 함
         assertThat(result).hasSize(2);
 
-        // 첫 번째 기사
-        assertThat(result.get(0).title()).containsIgnoringCase("AI");
-        assertThat(result.get(0).originalLink()).isEqualTo("http://example.com/article1");
-        assertThat(result.get(0).source()).isEqualTo("TestNews");
+        assertThat(result).extracting(ArticleSaveRequest::originalLink)
+            .containsExactlyInAnyOrder("http://example.com/article1", "http://example.com/article2");
 
-        // 두 번째 기사도 키워드 포함 확인 (title 또는 summary 중 하나라도)
-        assertThat(result.get(1).title()).isEqualTo("Stock market update");
-        assertThat(result.get(1).originalLink()).isEqualTo("http://example.com/article2");
-        assertThat(result.get(1).source()).isEqualTo("TestNews");
+        // 기사 1은 'AI' 키워드 포함
+        assertThat(result.get(0).title().toLowerCase()).containsAnyOf("ai", "stock");
+
+        // 기사 2는 'stock' 키워드 포함
+        assertThat(result.get(1).title().toLowerCase()).containsAnyOf("ai", "stock");
     }
-
 
     @Test
     @DisplayName("HTTP 200이 아닌 경우 빈 리스트를 반환해야 한다")
@@ -68,7 +75,7 @@ public class RssArticleFetcherTest {
         RssArticleFetcher fetcher = new TestRssFetcher(mockClient);
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(UUID.randomUUID(), "ai");
+        List<ArticleSaveRequest> result = fetcher.fetch(UUID.randomUUID(), List.of("AI"));
 
         // then
         assertThat(result).isEmpty();
@@ -82,7 +89,7 @@ public class RssArticleFetcherTest {
         RssArticleFetcher fetcher = new TestRssFetcher(mockClient);
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(UUID.randomUUID(), "ai");
+        List<ArticleSaveRequest> result = fetcher.fetch(UUID.randomUUID(), List.of("AI"));
 
         // then
         assertThat(result).isEmpty();

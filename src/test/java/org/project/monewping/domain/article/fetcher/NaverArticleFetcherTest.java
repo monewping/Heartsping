@@ -38,11 +38,11 @@ public class NaverArticleFetcherTest {
     }
 
     @Test
-    @DisplayName("정상 응답 시 키워드 포함된 기사만 반환해야 한다")
+    @DisplayName("정상 응답 시 키워드 리스트 중 하나라도 포함된 기사만 반환해야 한다")
     void fetch_shouldReturnFilteredArticles() {
         // given
         UUID interestId = UUID.randomUUID();
-        String keyword = "AI";
+        List<String> keywords = List.of("AI", "경제");
 
         NaverNewsItem item1 = new NaverNewsItem(
             "AI changes the world",
@@ -50,12 +50,17 @@ public class NaverArticleFetcherTest {
             "AI is everywhere"
         );
         NaverNewsItem item2 = new NaverNewsItem(
-            "Sports news",
+            "경제 뉴스 속보",
             "http://original.com/2",
-            "No AI here"
+            "경제 성장률 발표"
+        );
+        NaverNewsItem item3 = new NaverNewsItem(
+            "Sports news",
+            "http://original.com/3",
+            "No relevant keywords"
         );
 
-        NaverNewsResponse responseBody = new NaverNewsResponse(List.of(item1, item2));
+        NaverNewsResponse responseBody = new NaverNewsResponse(List.of(item1, item2, item3));
 
         ResponseEntity<NaverNewsResponse> responseEntity =
             new ResponseEntity<>(responseBody, HttpStatus.OK);
@@ -68,12 +73,13 @@ public class NaverArticleFetcherTest {
         )).thenReturn(responseEntity);
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keyword);
+        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keywords);
 
         // then
         assertThat(result).extracting(ArticleSaveRequest::originalLink)
-            .contains("http://original.com/1", "http://original.com/2");
-
+            .containsExactlyInAnyOrder("http://original.com/1", "http://original.com/2");
+        assertThat(result).extracting(ArticleSaveRequest::originalLink)
+            .doesNotContain("http://original.com/3");
     }
 
     @Test
@@ -81,7 +87,7 @@ public class NaverArticleFetcherTest {
     void fetch_shouldReturnEmptyListOnErrorStatus() {
         // given
         UUID interestId = UUID.randomUUID();
-        String keyword = "AI";
+        List<String> keywords = List.of("AI");
 
         ResponseEntity<NaverNewsResponse> responseEntity =
             new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -94,7 +100,7 @@ public class NaverArticleFetcherTest {
         )).thenReturn(responseEntity);
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keyword);
+        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keywords);
 
         // then
         assertThat(result).isEmpty();
@@ -105,7 +111,7 @@ public class NaverArticleFetcherTest {
     void fetch_shouldReturnEmptyListOnException() {
         // given
         UUID interestId = UUID.randomUUID();
-        String keyword = "AI";
+        List<String> keywords = List.of("AI");
 
         when(restTemplate.exchange(
             anyString(),
@@ -115,7 +121,7 @@ public class NaverArticleFetcherTest {
         )).thenThrow(new RuntimeException("Network error"));
 
         // when
-        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keyword);
+        List<ArticleSaveRequest> result = fetcher.fetch(interestId, keywords);
 
         // then
         assertThat(result).isEmpty();
