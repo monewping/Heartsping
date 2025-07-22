@@ -3,6 +3,7 @@ package org.project.monewping.global.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.global.service.LogUploadService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "aws.s3.enabled", havingValue = "true")
 public class LogUploadScheduler {
 
     private static final String SCHEDULER_NAME = "[LogUploadService] ";

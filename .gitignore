@@ -38,3 +38,13 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# 로그 파일
+logs/
+*.log
+*.log.*
+
+# 백업 파일
+backup/
+*.bak
+*.backup
