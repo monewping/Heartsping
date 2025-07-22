@@ -31,7 +31,7 @@ public class ArticleCollectorScheduler {
      * 전체 관심사를 조회하여 각 관심사 이름을 키워드로 사용해
      * 모든 수집기를 통해 기사 데이터를 수집하고, ArticlesService를 통해 저장합니다.
      */
-    @Scheduled(cron = "0 */2 * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void collectArticlesByInterest() {
         log.info("[🗞️ 뉴스 기사 수집 배치 시작]");
 

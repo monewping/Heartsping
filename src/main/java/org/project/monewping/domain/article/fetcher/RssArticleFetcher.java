@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -83,6 +82,11 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
                 // HTML 태그 제거
                 String cleanTitle = HtmlCleaner.strip(title);
                 String cleanDescription = HtmlCleaner.strip(description);
+
+                // [수정] 내용이 비어 있다면 마스킹 처리
+                if (cleanDescription == null || cleanDescription.isBlank()) {
+                    cleanDescription = descriptionFallback();
+                }
 
                 // 키워드 하이라이팅 적용
                 String highlightedTitle = highlightKeyword(cleanTitle, keywords);
@@ -174,6 +178,12 @@ public abstract class RssArticleFetcher implements ArticleFetcher {
         }
         return result;
     }
+
+    // description이 비어있다면 제공될 마스킹 문구
+    protected String descriptionFallback() {
+        return "[ 제공된 뉴스 기사의 요약 내용 없음 ]";
+    }
+
 
     /**
      * 하위 클래스가 구현해야 할 RSS 피드 URL
