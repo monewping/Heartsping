@@ -157,8 +157,8 @@ public class BasicNotificationService implements NotificationService {
      *
      * <p>
      *     이 메서드는 Notification 엔티티에서 {@code confirmed = false}인 레코드를 찾아
-     *     {@code confirmed = true}로 업데이트하며, 처리된 알림의 개수를 로그로 기록합니다.
-     *     사용자 정보가 존재하지 않는 경우
+     *     {@code confirmed = true}와 {@code updatedAt = CURRENT_TIMESTAMP}로 업데이트하며
+     *     처리된 알림의 개수를 로그로 기록합니다.
      * </p>
      *
      * @param userId 확인 처리를 수행할 사용자의 ID
@@ -179,8 +179,9 @@ public class BasicNotificationService implements NotificationService {
      * 주어진 userId와 notificationId에 해당하는 알림을 확인된 상태로 변경합니다.
      *
      * <p>
-     *     트랜잭션 내에서 Dirty Checking으로 변경된 confirmed 필드를
-     *     커밋 시점에 자동으로 DB에 반영합니다.
+     *     특정 알림의 confirmed와 updatedAt 필드를
+     *     {@code confirmed = true}와 {@code updatedAt = CURRENT_TIMESTAMP}로 업데이트합니다.
+     *     수정된 엔티티를 로그로 기록합니다.
      * </p>
      *
      * @param userId 조회할 대상 사용자의 ID
