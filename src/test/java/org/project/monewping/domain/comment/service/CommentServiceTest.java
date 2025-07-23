@@ -3,6 +3,7 @@ package org.project.monewping.domain.comment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -108,35 +109,65 @@ class CommentServiceTest {
             )
         );
     }
-
     @Test
-    @DisplayName("댓글 조회 성공 - 기본 파라미터")
-    void getComments_Success_WithDefaultParameters() {
-        when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("createdAt"),
-            eq("DESC"),
-            eq(null),
-            eq(null),
-            eq(null),
-            eq(50)
-        )).thenReturn(testComments);
-        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
+    @DisplayName("댓글 조회 성공 - createdAt 기준 기본 파라미터")
+    void getComments_Success_WithCreatedAtCursor() {
+        int limit = 51; // 내부적으로 limit+1
 
-        when(commentMapper.toResponseDto(testComments.get(0))).thenReturn(testResponseDtos.get(0));
-        when(commentMapper.toResponseDto(testComments.get(1))).thenReturn(testResponseDtos.get(1));
+        when(commentRepository.findCommentsByCreatedAtCursor(
+            eq(testArticleId),
+            eq(null),
+            eq(limit)
+        )).thenReturn(testComments);
+
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn((long) testComments.size());
+        for (int i = 0; i < testComments.size(); i++) {
+            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+        }
 
         CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            testArticleId, "createdAt", "DESC", null, null, null, 50
+            testArticleId, "createdAt", "DESC", null, null, limit - 1
         );
 
-        assertThat(result.content()).hasSize(2);
-        assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
-        assertThat(result.nextIdAfter()).isEqualTo(Math.abs(testComments.get(1).getId().getMostSignificantBits()));
-        assertThat(result.size()).isEqualTo(2);
-        assertThat(result.totalElements()).isEqualTo(2L);
+        assertThat(result.content()).hasSize(testComments.size());
+        assertThat(result.nextCursor()).isEqualTo(testComments.get(testComments.size() - 1).getCreatedAt().toString());
+        assertThat(result.size()).isEqualTo(testComments.size());
+        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
         assertThat(result.hasNext()).isFalse();
     }
+
+
+    @Test
+    @DisplayName("댓글 조회 성공 - likeCount 기준 커서 조회")
+    void getComments_Success_WithLikeCountCursor() {
+        int limit = 20;
+        int queryLimit = limit + 1;
+
+        UUID articleId = testArticleId;
+
+        when(commentRepository.findCommentsByLikeCountCursor(
+            eq(articleId),
+            eq(null),
+            eq(queryLimit)
+        )).thenReturn(testComments);
+
+        when(commentRepository.countByArticleId(articleId)).thenReturn((long) testComments.size());
+
+        for (int i = 0; i < testComments.size(); i++) {
+            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+        }
+
+        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
+            articleId, "likeCount", "ASC", null, null, limit
+        );
+
+        assertThat(result.content()).hasSize(testComments.size());
+        assertThat(result.nextCursor()).isEqualTo(String.valueOf(testComments.get(testComments.size() - 1).getLikeCount()));
+        assertThat(result.size()).isEqualTo(testComments.size());
+        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
+        assertThat(result.hasNext()).isFalse();
+    }
+
 
     @Test
     @DisplayName("댓글 등록 성공")
@@ -175,54 +206,23 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 조회 성공 - 모든 파라미터 포함")
-    void getComments_Success_WithAllParameters() {
-        String cursor = "test_cursor";
-        String after = "2024-01-01T10:00:00";
-        String afterId = UUID.randomUUID().toString();
-        int limit = 20;
-
-        when(commentRepository.findComments(
-            eq(testArticleId),
-            eq("likeCount"),
-            eq("ASC"),
-            eq(cursor),
-            eq(after),
-            eq(afterId),
-            eq(limit)
-        )).thenReturn(testComments);
-        when(commentRepository.countByArticleId(testArticleId)).thenReturn(2L);
-
-        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            testArticleId, "likeCount", "ASC", cursor, after, afterId, limit
-        );
-
-        assertThat(result.content()).hasSize(2);
-        assertThat(result.nextCursor()).isEqualTo(testComments.get(1).getId().toString());
-        assertThat(result.hasNext()).isFalse();
-    }
-
-    @Test
     @DisplayName("댓글 조회 성공 - 빈 결과")
     void getComments_Success_EmptyResult() {
-        when(commentRepository.findComments(
+        when(commentRepository.findCommentsByCreatedAtCursor(
             any(UUID.class),
-            any(String.class),
-            any(String.class),
             any(),
-            any(),
-            any(),
-            any(Integer.class)
-        )).thenReturn(Arrays.asList());
+            anyInt()
+        )).thenReturn(List.of());
+
         when(commentRepository.countByArticleId(testArticleId)).thenReturn(0L);
 
         CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            testArticleId, "createdAt", "DESC", null, null, null, 50
+            testArticleId, "createdAt", "DESC", null, null, 50
         );
 
         assertThat(result.content()).isEmpty();
         assertThat(result.nextCursor()).isNull();
-        assertThat(result.nextIdAfter()).isNull();
+        assertThat(result.nextAfter()).isNull();
         assertThat(result.size()).isEqualTo(0);
         assertThat(result.totalElements()).isEqualTo(0L);
         assertThat(result.hasNext()).isFalse();

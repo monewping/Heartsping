@@ -27,6 +27,7 @@ import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.impl.ArticleViewsServiceImpl;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.springframework.test.util.ReflectionTestUtils;
 
