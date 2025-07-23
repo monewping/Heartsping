@@ -151,7 +151,7 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.save(comment);
         log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
 
-        createLikeNotification(commentId);
+        deactivateLikeNotification(commentId);
     }
 
     // 물리 삭제
@@ -167,7 +167,7 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.delete(comment);
         log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
 
-        createLikeNotification(commentId);
+        deactivateLikeNotification(commentId);
     }
 
     // 댓글 수정
@@ -199,7 +199,7 @@ public class CommentServiceImpl implements CommentService {
      *
      * @param commentId 비활성화할 알림이 연결된 댓글의 UUID
      */
-    private void createLikeNotification(UUID commentId) {
+    private void deactivateLikeNotification(UUID commentId) {
         notificationRepository.deactivateByResourceId(commentId);
 
         List<Notification> deactivated = notificationRepository.findByResourceIdAndActiveFalse(commentId);

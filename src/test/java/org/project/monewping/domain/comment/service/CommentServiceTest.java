@@ -32,6 +32,7 @@ import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
@@ -59,6 +60,7 @@ class CommentServiceTest {
 
     private UUID testArticleId;
     private UUID testUserId;
+    private UUID testCommentId;
     private List<Comment> testComments;
     private List<CommentResponseDto> testResponseDtos;
 
@@ -66,6 +68,7 @@ class CommentServiceTest {
     void setUp() {
         testArticleId = UUID.randomUUID();
         testUserId = UUID.randomUUID();
+        testCommentId = UUID.randomUUID();
 
         testComments = Arrays.asList(
             Comment.builder()
@@ -401,5 +404,34 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.updateComment(commentId, userId, request))
             .isInstanceOf(CommentDeleteException.class)
             .hasMessageContaining("삭제된 댓글은 수정할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 - 비활성화된 알림 로그 출력")
+    void deleteComment_LogsDeactivatedNotifications() {
+        // given
+        Comment comment = Comment.builder()
+            .id(testCommentId)
+            .userId(testUserId)
+            .isDeleted(false)
+            .updatedAt(Instant.now())
+            .build();
+        given(commentRepository.findById(testCommentId)).willReturn(Optional.of(comment));
+
+        doNothing().when(notificationRepository).deactivateByResourceId(testCommentId);
+
+        Notification notification = Notification.builder()
+            .id(UUID.randomUUID())
+            .content("테스트 알림")
+            .updatedAt(Instant.now())
+            .build();
+        given(notificationRepository.findByResourceIdAndActiveFalse(testCommentId)).willReturn(List.of(notification));
+
+        // when
+        commentService.deleteComment(testCommentId, testUserId);
+
+        // then
+        verify(notificationRepository).deactivateByResourceId(testCommentId);
+        verify(notificationRepository).findByResourceIdAndActiveFalse(testCommentId);
     }
 }
