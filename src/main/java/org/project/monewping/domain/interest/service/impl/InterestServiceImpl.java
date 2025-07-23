@@ -156,16 +156,18 @@ public class InterestServiceImpl implements InterestService {
     }
 
     /**
-     * Jaro-Winkler 유사도를 사용하여 80% 이상 유사한 관심사 이름을 찾습니다.
+     * 입력된 관심사 이름과 유사한 기존 관심사 이름을 찾아 반환합니다.
      *
-     * <p>모든 기존 관심사 이름과 비교하여 유사도가 0.8 이상인 것을 반환합니다.</p>
-     * @param newName 새로운 관심사 이름
-     * @return 유사한 관심사 이름 리스트
+     * <p>DB에서 이름 일부가 포함된 후보군만 1차로 조회한 뒤,
+     * Jaro-Winkler 유사도(0.8 이상)로 2차 필터링하여 최종적으로 유사한 이름만 반환합니다.</p>
+     *
+     * @param newName 새로 등록하려는 관심사 이름
+     * @return 유사도가 0.8 이상인 기존 관심사 이름 리스트
      */
     private List<String> findSimilarInterestNames(String newName) {
-        List<String> allNames = interestRepository.findAllNames();
+        List<String> candidates = interestRepository.findNamesByRoughMatch(newName);
         
-        return allNames.stream()
+        return candidates.stream()
                 .filter(existingName -> calculateSimilarity(newName, existingName) >= SIMILARITY_THRESHOLD)
                 .collect(Collectors.toList());
     }
