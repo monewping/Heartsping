@@ -44,7 +44,6 @@ CREATE TABLE interests
     subscriber_count BIGINT       NOT NULL,
     created_at       TIMESTAMPTZ  NOT NULL,
     updated_at       TIMESTAMPTZ  NOT NULL
-
 );
 
 -- keywords Table
