@@ -88,7 +88,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Modifying(clearAutomatically = true)
     @Query("""
         UPDATE Notification n
-            SET n.confirmed = true
+            SET n.confirmed = true,
+                n.updatedAt = CURRENT_TIMESTAMP
         WHERE n.userId = :userId
             AND n.confirmed = false
         """)
