@@ -47,10 +47,10 @@ class ArticlesEntityTest {
         long viewCount = 100L;
         boolean deleted = false;
         long version = 1L;
-        
+
         // when
-        Articles articles = new Articles(interest, source, originalLink, title, summary, publishedAt, commentCount, viewCount, deleted, version);
-        
+        Articles articles = new Articles(interest, source, originalLink, title, summary, publishedAt, commentCount, viewCount, deleted);
+
         // then
         assertThat(articles.getTitle()).isEqualTo(title);
         assertThat(articles.getSummary()).isEqualTo(summary);
@@ -61,7 +61,6 @@ class ArticlesEntityTest {
         assertThat(articles.getCommentCount()).isEqualTo(commentCount);
         assertThat(articles.getViewCount()).isEqualTo(viewCount);
         assertThat(articles.isDeleted()).isEqualTo(deleted);
-        assertThat(articles.getVersion()).isEqualTo(version);
     }
 
     @Test

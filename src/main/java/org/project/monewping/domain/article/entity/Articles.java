@@ -52,10 +52,6 @@ public class Articles extends BaseEntity {
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
 
-    @Version
-    @Column(nullable = false, columnDefinition = "bigint default 0")
-    private Long version;
-
     // 논리 삭제 시 적용될 마스킹
     public void softDeleteWithMasking() {
         this.title = "[ 삭제된 기사 ]";
