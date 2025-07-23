@@ -8,9 +8,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: monewping
+          MONGO_INITDB_DATABASE: monewping
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
       NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+      SPRING_DATA_MONGODB_URI: mongodb://admin:monewping@localhost:27017/monewping?authSource=admin
 
     steps:
       - name: Checkout code
@@ -25,8 +41,35 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Wait for MongoDB to be ready
+        run: |
+          echo "Waiting for MongoDB to be ready..."
+          for i in {1..30}; do
+            if mongosh --eval "db.adminCommand('ping')" mongodb://admin:monewping@localhost:27017/monewping?authSource=admin > /dev/null 2>&1; then
+              echo "MongoDB is ready!"
+              break
+            fi
+            echo "Waiting for MongoDB... ($i/30)"
+            sleep 2
+          done
+
       - name: Build with Gradle and check coverage
-        run: ./gradlew clean build check
+        run: ./gradlew clean build check --parallel --build-cache
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dorg.gradle.daemon=false"
+
+      - name: Generate JaCoCo coverage report
+        run: ./gradlew jacocoTestReport
+
+      - name: Check coverage threshold
+        run: |
+          echo "Checking coverage threshold..."
+          if [ -f "build/reports/jacoco/test/jacocoTestReport.xml" ]; then
+            echo "Coverage report found"
+          else
+            echo "Coverage report not found"
+            exit 1
+          fi
 
       - name: Upload JaCoCo coverage report
         uses: actions/upload-artifact@v4
