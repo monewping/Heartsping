@@ -47,10 +47,10 @@ public class ArticlesServiceImpl implements ArticlesService {
      */
     @Override
     @Transactional
-    public void saveAll(List<ArticleSaveRequest> requests) {
+    public int saveAll(List<ArticleSaveRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             log.info("[saveAll] 저장 요청이 비어있음");
-            return;
+            return 0;
         }
 
         // 관심사 ID는 모든 요청이 동일하다고 가정
@@ -64,7 +64,7 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         if (validRequests.isEmpty()) {
             log.info("[saveAll] 유효한 저장 대상 없음");
-            return;
+            return 0;
         }
 
         // 요청 원본링크 리스트
@@ -85,13 +85,14 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         if (articlesToSave.isEmpty()) {
             log.info("[saveAll] 저장할 신규 뉴스 기사 없음");
-            return;
+            return 0;
         }
 
         // 저장
         articlesRepository.saveAll(articlesToSave);
 
         log.info("[saveAll] 뉴스 기사 저장 완료 - count: {}", articlesToSave.size());
+        return articlesToSave.size();
     }
 
 
