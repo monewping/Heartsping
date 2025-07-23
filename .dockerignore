@@ -75,3 +75,12 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# 11. AWS 관련 (혹시 몰라 미리 추가)
+.aws/
+aws-credentials
+*.pem
+*.key
+
+# 12. 로컬 설정 파일 (추후 application.yaml 나눌 때 대비)
+application-dev.yaml
