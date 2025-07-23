@@ -14,7 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.monewping.domain.notification.batch.NotificationBatchScheduler;
+import org.project.monewping.domain.notification.batch.NotificationDeletionScheduler;
 import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -22,8 +22,8 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.JobLauncher;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("NotificationBatchScheduler 단위 테스트")
-public class NotificationBatchSchedulerTest {
+@DisplayName("NotificationDeletionScheduler 단위 테스트")
+public class NotificationDeletionSchedulerTest {
 
     @Mock
     private JobLauncher jobLauncher;
@@ -32,7 +32,7 @@ public class NotificationBatchSchedulerTest {
     private Job deleteOldNotificationsJob;
 
     @InjectMocks
-    private NotificationBatchScheduler scheduler;
+    private NotificationDeletionScheduler scheduler;
 
     @Test
     @DisplayName("runJob 호출 시 JobLauncher.run이 호출되어야 한다")
