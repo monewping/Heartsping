@@ -117,7 +117,7 @@ public class CommentServiceImpl implements CommentService {
         );
     }
 
-        // 댓글 등록
+    // 댓글 등록
     @Override
     public CommentResponseDto registerComment(CommentRegisterRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
