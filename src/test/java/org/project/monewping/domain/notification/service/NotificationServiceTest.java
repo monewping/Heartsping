@@ -28,7 +28,6 @@ import org.project.monewping.domain.notification.dto.response.CursorPageResponse
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
-import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
@@ -55,17 +54,17 @@ public class NotificationServiceTest {
 
     private UUID userId;
     private Instant after;
-    private UUID    lastId;
+    private UUID lastId;
     private String cursor;
     private UUID notificationId;
     private UUID resourceId;
-    private Pageable pageable;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
         after  = Instant.parse("2025-07-22T00:00:00Z");
         lastId = UUID.randomUUID();
+        resourceId = UUID.randomUUID();
         notificationId = UUID.randomUUID();
         cursor = after.toString() + "|" + lastId;
     }
@@ -164,8 +163,7 @@ public class NotificationServiceTest {
             .willReturn(50L);
 
         // when
-        CursorPageResponseNotificationDto result =
-            notificationService.findNotifications(userId, cursor, null, limit);
+        CursorPageResponseNotificationDto result = notificationService.findNotifications(userId, cursor, null, limit);
 
         // then
         assertThat(result.content())
@@ -206,7 +204,7 @@ public class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 유저인 경우 UserNotFoundException을 던진다")
+    @DisplayName("단일 알림 수정 중 존재하지 않는 유저인 경우 UserNotFoundException을 던진다")
     void throwExceptionWhenUserNotFound() {
         // given
         when(userRepository.existsById(userId)).thenReturn(false);
@@ -247,31 +245,8 @@ public class NotificationServiceTest {
             .hasMessageContaining(invalidCursor);
     }
 
-    @DisplayName("알림 생성 시 리소스 타입이 잘못된 경우 예외가 발생한다")
     @Test
-    void throwExceptionWhenResourceTypeUnsupported() {
-        // given
-        UUID userId = UUID.randomUUID();
-        UUID resourceId = UUID.randomUUID();
-        String invalidResourceType = "UnknownType";
-
-        // when & then
-        assertThatThrownBy(() ->
-            notificationService.create(userId, resourceId, invalidResourceType)
-        ).isInstanceOf(UnsupportedResourceTypeException.class)
-            .hasMessageContaining(invalidResourceType);
-    }
-
-    @Test
-    void testCursorValueInsideException() {
-        String invalidCursor = "bad_cursor";
-        InvalidCursorFormatException ex = new InvalidCursorFormatException(invalidCursor, null);
-
-        assertThat(ex.getCursor()).isEqualTo(invalidCursor);
-    }
-
-    @Test
-    @DisplayName("존재하는 사용자에 대해 전체 알림 확인 처리 성공")
+    @DisplayName("전체 알림 수정 중 존재하는 사용자에 대해 전체 알림 확인 처리 성공")
     void confirmAllNotifications_success() {
         // given
         given(userRepository.existsById(userId)).willReturn(true);

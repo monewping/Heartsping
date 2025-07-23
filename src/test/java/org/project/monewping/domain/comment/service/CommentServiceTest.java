@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.BDDMockito.given;
@@ -12,6 +13,7 @@ import static org.mockito.BDDMockito.given;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +32,7 @@ import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
@@ -47,6 +50,9 @@ class CommentServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private CommentServiceImpl commentService;
@@ -243,10 +249,18 @@ class CommentServiceTest {
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
+        doNothing().when(notificationRepository)
+            .deactivateByResourceId(commentId);
+        given(notificationRepository.findByResourceIdAndActiveFalse(commentId))
+            .willReturn(Collections.emptyList());
+
         commentService.deleteComment(commentId, userId);
 
         assertThat(comment.getIsDeleted()).isTrue();
         verify(commentRepository).save(comment);
+
+        verify(notificationRepository).deactivateByResourceId(commentId);
+        verify(notificationRepository).findByResourceIdAndActiveFalse(commentId);
     }
 
     @Test
@@ -285,9 +299,16 @@ class CommentServiceTest {
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
+        doNothing().when(notificationRepository)
+            .deactivateByResourceId(commentId);
+        given(notificationRepository.findByResourceIdAndActiveFalse(commentId))
+            .willReturn(Collections.emptyList());
+
         commentService.deleteCommentPhysically(commentId, userId);
 
         verify(commentRepository).delete(comment);
+        verify(notificationRepository).deactivateByResourceId(commentId);
+        verify(notificationRepository).findByResourceIdAndActiveFalse(commentId);
     }
 
     @Test

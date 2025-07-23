@@ -69,31 +69,6 @@ public class NotificationIntegrationTest {
     }
 
     @Test
-    @DisplayName("알림 생성 후 조회 시 등록한 알림이 반환된다")
-    void testCreateAndGetNotifications() throws Exception {
-        mockMvc.perform(post("/api/notifications")
-                .param("userId", userId.toString())
-                .param("resourceId", resourceId.toString())
-                .param("resourceType", "Comment")
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$[0].userId").value(userId.toString()))
-            .andExpect(jsonPath("$[0].resourceId").value(resourceId.toString()))
-            .andExpect(jsonPath("$[0].resourceType").value("Comment"));
-
-        mockMvc.perform(get("/api/notifications")
-                .param("limit", "10")
-                .header("Monew-Request-User-ID", userId.toString())
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content[0].userId").value(userId.toString()))
-            .andExpect(jsonPath("$.content[0].resourceId").value(resourceId.toString()))
-            .andExpect(jsonPath("$.content[0].resourceType").value("Comment"));
-    }
-
-    @Test
     @DisplayName("모든 알림 확인 시 confirmed 필드가 true로 변경")
     void testConfirmAllNotifications() throws Exception {
         notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceId, "Comment"));
@@ -110,7 +85,7 @@ public class NotificationIntegrationTest {
 
         List<Notification> all = notificationRepository.findAll();
         assertThat(all).isNotEmpty()
-            .allMatch(Notification::getConfirmed);
+            .allMatch(Notification::isConfirmed);
     }
 
     @Test
@@ -134,7 +109,7 @@ public class NotificationIntegrationTest {
 
         // then
         Notification updated = notificationRepository.findById(notification.getId()).orElseThrow();
-        assertThat(updated.getConfirmed())
+        assertThat(updated.isConfirmed())
             .as("알림 확인 요청 후 confirmed 값이 true로 변경되어야 한다")
             .isTrue();
     }

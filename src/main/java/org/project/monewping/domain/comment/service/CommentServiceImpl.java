@@ -210,8 +210,7 @@ public class CommentServiceImpl implements CommentService {
         }
 
         deactivated.forEach(notification ->
-            log.debug("비활성화된 알림 → id: {}, content: {}, updatedAt: {}",
-                notification.getId(), notification.getContent(), notification.getUpdatedAt())
+            log.debug("비활성화된 알림 → id: {}, content: {}, updatedAt: {}", notification.getId(), notification.getContent(), notification.getUpdatedAt())
         );
     }
 }
