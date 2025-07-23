@@ -1,7 +1,10 @@
 package org.project.monewping.domain.comment.service;
 
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.domain.CommentLike;
 import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
@@ -10,6 +13,8 @@ import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +30,8 @@ public class CommentLikeService {
     private final CommentLikeRepository commentLikeRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final ArticlesRepository articlesRepository;
+    private final UserActivityService userActivityService;
 
     /**
      * 댓글 좋아요 등록
@@ -42,13 +49,37 @@ public class CommentLikeService {
           throw new CommentLikeAlreadyExistsException();
         }
 
-        commentLikeRepository.save(
-            CommentLike.builder()
+        CommentLike commentLike = CommentLike.builder()
                 .user(user)
                 .comment(comment)
-                .build()
-        );
-  }
+                .build();
+        
+        commentLikeRepository.save(commentLike);
+
+        // 사용자 활동 내역에 댓글 좋아요 추가
+        try {
+            Articles article = articlesRepository.findById(comment.getArticleId()).orElse(null);
+            
+            if (article != null) {
+                UserActivityDocument.CommentLikeInfo commentLikeInfo = UserActivityDocument.CommentLikeInfo.builder()
+                    .id(commentLike.getId())
+                    .createdAt(Instant.ofEpochMilli(commentLike.getCreatedAt().toEpochMilli()))
+                    .commentId(commentId)
+                    .articleId(article.getId())
+                    .articleTitle(article.getTitle())
+                    .commentUserId(comment.getUserId())
+                    .commentUserNickname(comment.getUserNickname())
+                    .commentContent(comment.getContent())
+                    .commentLikeCount(comment.getLikeCount())
+                    .commentCreatedAt(Instant.ofEpochMilli(comment.getCreatedAt().toEpochMilli()))
+                    .build();
+
+                userActivityService.addCommentLike(userId, commentLikeInfo);
+            }
+        } catch (Exception e) {
+            // 활동 내역 업데이트 실패가 좋아요 기능 자체를 실패시키지 않도록 예외를 잡아서 로그만 남김
+        }
+    }
 
   /**
    * 댓글 좋아요 취소
@@ -66,5 +97,12 @@ public class CommentLikeService {
             .orElseThrow(CommentLikeNotFoundException::new);
 
         commentLikeRepository.delete(commentLike);
+
+        // 사용자 활동 내역에서 댓글 좋아요 제거
+        try {
+            userActivityService.removeCommentLike(userId, commentId);
+        } catch (Exception e) {
+            // 활동 내역 업데이트 실패가 좋아요 취소 기능 자체를 실패시키지 않도록 예외를 잡아서 로그만 남김
+        }
     }
 }
