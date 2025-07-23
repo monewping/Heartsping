@@ -19,7 +19,6 @@ public interface CommentService {
         String direction,
         String cursor,
         String after,
-        String afterId,
         int limit
     );
 

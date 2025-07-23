@@ -42,15 +42,15 @@ class ArticlesTest {
 
         // when
         Articles newArticles = new Articles(
-                testInterest,
-                "새 소스",
-                "https://new.com/article/1",
-                "새 기사 제목",
-                "새 기사 요약",
-                publishedAt,
-                5L,
-                50L,
-                false
+            testInterest,
+            "새 소스",
+            "https://new.com/article/1",
+            "새 기사 제목",
+            "새 기사 요약",
+            publishedAt,
+            5L,
+            50L,
+            false
         );
 
         // then

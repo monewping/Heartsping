@@ -1,5 +1,6 @@
 package org.project.monewping.global.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
@@ -7,16 +8,17 @@ import java.util.List;
  *
  * @param <T>           콘텐츠 타입
  * @param content       현재 페이지의 데이터 목록
- * @param nextIdAfter   다음 페이지의 시작 ID (옵셔널)
  * @param nextCursor    다음 페이지를 위한 커서 토큰
+ * @param nextAfter   다음 페이지의 시작 ID (옵셔널)
  * @param size          현재 페이지 크기
  * @param totalElements 전체 요소 수
  * @param hasNext       다음 페이지 존재 여부
  */
 public record CursorPageResponse<T>(
         List<T> content,
-        Long nextIdAfter,
         String nextCursor,
+        @JsonProperty("nextAfter")
+        String nextAfter,
         int size,
         long totalElements,
         boolean hasNext) {

@@ -20,6 +20,7 @@ import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.impl.ArticleBackupServiceImpl;
 import org.project.monewping.domain.article.storage.ArticleBackupStorage;
 import org.project.monewping.domain.interest.entity.Interest;
 

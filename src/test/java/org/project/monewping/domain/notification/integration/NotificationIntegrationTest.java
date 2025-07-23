@@ -68,8 +68,8 @@ public class NotificationIntegrationTest {
         resourceId = UUID.randomUUID();
     }
 
-    @DisplayName("알림 생성 후 조회 시 등록한 알림이 반환된다")
     @Test
+    @DisplayName("알림 생성 후 조회 시 등록한 알림이 반환된다")
     void testCreateAndGetNotifications() throws Exception {
         mockMvc.perform(post("/api/notifications")
                 .param("userId", userId.toString())
@@ -94,6 +94,7 @@ public class NotificationIntegrationTest {
     }
 
     @Test
+    @DisplayName("모든 알림 확인 시 confirmed 필드가 true로 변경")
     void testConfirmAllNotifications() throws Exception {
         notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceId, "Comment"));
         notificationRepository.save(new Notification(userId, "골프와 관련된 기사가 2건 등록되었습니다.", resourceId, "Article"));

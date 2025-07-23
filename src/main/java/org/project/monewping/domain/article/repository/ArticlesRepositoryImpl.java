@@ -78,36 +78,44 @@ public class ArticlesRepositoryImpl implements ArticlesRepositoryCustom {
         BooleanBuilder builder = buildSearchPredicateWithoutCursor(article, request);
 
         // 커서 기반 조건 추가
-        if (request.cursor() != null) {
-            UUID cursorId = UUID.fromString(request.cursor());
-            boolean asc = "ASC".equalsIgnoreCase(request.direction());
+        if (request.cursor() != null && !request.cursor().isBlank()) {
+            UUID cursorId = null;
+            try {
+                cursorId = UUID.fromString(request.cursor());
+            } catch (IllegalArgumentException e) {
+                // cursorId = null;
+            }
 
-            if ("publishDate".equalsIgnoreCase(request.orderBy())) {
-                if (asc) {
+            if (cursorId != null) { // 여기 조건 수정
+                boolean asc = "ASC".equalsIgnoreCase(request.direction());
+
+                if ("publishDate".equalsIgnoreCase(request.orderBy())) {
                     if (request.after() != null) {
-                        builder.and(
-                            article.publishedAt.gt(request.after())
-                                .or(article.publishedAt.eq(request.after()).and(article.id.gt(cursorId)))
-                        );
+                        // 커서 조건 생성
+                        BooleanBuilder cursorCondition = new BooleanBuilder();
+
+                        if (asc) {
+                            cursorCondition.or(article.publishedAt.gt(request.after()));
+                            cursorCondition.or(
+                                article.publishedAt.eq(request.after())
+                                    .and(article.id.gt(cursorId))
+                            );
+                        } else {
+                            cursorCondition.or(article.publishedAt.lt(request.after()));
+                            cursorCondition.or(
+                                article.publishedAt.eq(request.after())
+                                    .and(article.id.lt(cursorId))
+                            );
+                        }
+
+                        builder.and(cursorCondition);
                     } else {
-                        builder.and(article.id.gt(cursorId));
+                        // after 가 없을 때 단순 id 비교
+                        builder.and(asc ? article.id.gt(cursorId) : article.id.lt(cursorId));
                     }
                 } else {
-                    if (request.after() != null) {
-                        builder.and(
-                            article.publishedAt.lt(request.after())
-                                .or(article.publishedAt.eq(request.after()).and(article.id.lt(cursorId)))
-                        );
-                    } else {
-                        builder.and(article.id.lt(cursorId));
-                    }
-                }
-            } else {
-                // publishDate 이외 정렬 시 단순 id 비교
-                if (asc) {
-                    builder.and(article.id.gt(cursorId));
-                } else {
-                    builder.and(article.id.lt(cursorId));
+                    // publishDate 이외 정렬 시 단순 id 비교
+                    builder.and(asc ? article.id.gt(cursorId) : article.id.lt(cursorId));
                 }
             }
         }
