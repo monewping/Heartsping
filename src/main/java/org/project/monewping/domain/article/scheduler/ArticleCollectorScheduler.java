@@ -85,11 +85,11 @@ public class ArticleCollectorScheduler {
                     }
 
                     // 기사 저장
-                    articlesService.saveAll(articles);
-                    savedCount += articles.size();
+                    int saveNum = articlesService.saveAll(articles);
+                    savedCount += saveNum;
 
                     log.info("'{}' - 키워드 '{}' - {}개 기사 저장 (Fetcher: {})",
-                        interest.getName(), keyword, articles.size(), fetcher.getClass().getSimpleName());
+                        interest.getName(), keyword, saveNum, fetcher.getClass().getSimpleName());
 
                 } catch (Exception e) {
                     // 수집 실패 시 에러 로그 남기고 다음 fetcher로 진행
