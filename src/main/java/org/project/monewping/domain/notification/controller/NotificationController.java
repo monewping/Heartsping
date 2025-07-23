@@ -1,12 +1,9 @@
 package org.project.monewping.domain.notification.controller;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.project.monewping.domain.notification.dto.NotificationDto;
-import org.project.monewping.domain.notification.dto.request.CreateNotificationRequestDto;
 import org.project.monewping.domain.notification.dto.request.GetNotificationsRequestDto;
 import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.service.NotificationService;
@@ -17,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,22 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private final NotificationService notificationService;
-
-    @PostMapping
-    public ResponseEntity<List<NotificationDto>> testCreate(
-        @ModelAttribute @Valid CreateNotificationRequestDto createNotificationRequestDto
-    ) {
-        UUID userId = createNotificationRequestDto.userId();
-        UUID resourceId = createNotificationRequestDto.resourceId();
-        String resourceType = createNotificationRequestDto.resourceType();
-        log.info("userId = {}, resourceId = {}, resourceType = {}",userId, resourceId, resourceType);
-
-        List<NotificationDto> notificationDtos = notificationService.create(userId, resourceId, resourceType);
-
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(notificationDtos);
-    }
 
     /**
      * 커서 기반으로 사용자 알림 목록을 조회하는 엔드포인트입니다.

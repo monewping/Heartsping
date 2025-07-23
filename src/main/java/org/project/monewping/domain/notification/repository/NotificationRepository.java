@@ -55,5 +55,29 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      */
     Page<Notification> findAllByConfirmedIsTrueAndUpdatedAtBefore(Instant updatedAt, Pageable pageable);
 
+    /**
+     * 주어진 resourceId에 해당하는 알림 중, active=true인 것만
+     * isActive=false로 변경하고 그 건수를 리턴합니다.
+     *
+     * @param resourceId 비활성화할 리소스 ID
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("""
+      UPDATE Notification n
+         SET n.active = false,
+             n.updatedAt = CURRENT_TIMESTAMP
+       WHERE n.resourceId = :resourceId
+         AND n.active = true
+    """)
+    void deactivateByResourceId(UUID resourceId);
+
+    /**
+     * 주어진 리소스 ID에 해당하며, isActive = false인(비활성화된) 알림을 모두 조회합니다.
+     *
+     * @param resourceId 조회할 리소스 ID
+     * @return 비활성화된 Notification 리스트 (없으면 빈 리스트)
+     */
+    List<Notification> findByResourceIdAndActiveFalse(UUID resourceId);
+
     long countByUserIdAndConfirmedFalse(UUID userId);
 }

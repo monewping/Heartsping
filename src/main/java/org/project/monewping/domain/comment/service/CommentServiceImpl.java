@@ -11,6 +11,8 @@ import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
@@ -34,6 +36,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -117,7 +120,7 @@ public class CommentServiceImpl implements CommentService {
         );
     }
 
-        // 댓글 등록
+    // 댓글 등록
     @Override
     public CommentResponseDto registerComment(CommentRegisterRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
@@ -147,6 +150,8 @@ public class CommentServiceImpl implements CommentService {
         comment.delete();
         commentRepository.save(comment);
         log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        createLikeNotification(commentId);
     }
 
     // 물리 삭제
@@ -161,6 +166,8 @@ public class CommentServiceImpl implements CommentService {
 
         commentRepository.delete(comment);
         log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        createLikeNotification(commentId);
     }
 
     // 댓글 수정
@@ -187,4 +194,24 @@ public class CommentServiceImpl implements CommentService {
         return orderValue + "_" + id.toString();
     }
 
+    /**
+     * 댓글 삭제 시, 주어진 댓글 ID에 연관된 모든 알림을 비활성화(isActive = false) 처리합니다.
+     *
+     * @param commentId 비활성화할 알림이 연결된 댓글의 UUID
+     */
+    private void createLikeNotification(UUID commentId) {
+        notificationRepository.deactivateByResourceId(commentId);
+
+        List<Notification> deactivated = notificationRepository.findByResourceIdAndActiveFalse(commentId);
+
+        if (deactivated == null || deactivated.isEmpty()) {
+            log.debug("비활성화된 알림이 없습니다. commentId={}", commentId);
+            return;
+        }
+
+        deactivated.forEach(notification ->
+            log.debug("비활성화된 알림 → id: {}, content: {}, updatedAt: {}",
+                notification.getId(), notification.getContent(), notification.getUpdatedAt())
+        );
+    }
 }

@@ -174,6 +174,7 @@ CREATE TABLE notifications
     resource_id UUID,
     resource_type VARCHAR(10) NOT NULL,
     confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
 
