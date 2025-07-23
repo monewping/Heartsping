@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 
+    Logback 설정 파일
+    - 로그 출력 방식을 정의하는 Spring Boot의 로깅 프레임워크 설정
+    - 콘솔과 파일 두 곳에 로그를 출력하도록 구성
+    -->
+
+    <!-- 로그 파일이 저장될 경로와 파일명 설정 -->
+    <property name="LOG_PATH" value="./logs"/>
+    <property name="LOG_FILE_NAME" value="monewping"/>
+    <!-- 현재 날짜를 파일명에 포함 -->
+    <timestamp key="byDate" datePattern="yyyy-MM-dd"/>
+
+    <!-- 
+    콘솔 출력 패턴 설정
+    - %d{yyyy-MM-dd HH:mm:ss.SSS}: 날짜와 시간 (밀리초까지)
+    - [%thread]: 현재 실행 중인 스레드명
+    - %highlight(%-5level): 로그 레벨 (INFO, ERROR 등) - 색상 강조
+    - %yellow(%logger{36}): 로거명 (클래스명) - 노란색으로 표시
+    - %X{traceId:-N/A}: MDC에서 가져온 traceId (없으면 N/A)
+    - %X{remoteAddr:-N/A}: MDC에서 가져온 클라이언트 IP 주소 (없으면 N/A)
+    - %X{url:-N/A}: MDC에서 가져온 URL (없으면 N/A)
+    - %X{method:-N/A}: MDC에서 가져온 HTTP 메서드 (없으면 N/A)
+    - %msg: 실제 로그 메시지
+    - %n: 줄바꿈
+    -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%logger{36}) - [traceId=%X{traceId:-N/A}, ip=%X{remoteAddr:-N/A}, url=%X{url:-N/A}, method=%X{method:-N/A}] %msg%n"/>
+
+    <!-- 
+    파일 출력 패턴 설정
+    - 콘솔과 동일하지만 색상 강조 없이 일반 텍스트로 저장
+    - 파일에는 색상 코드가 필요 없으므로 highlight, yellow 제거
+    - IP 주소 정보도 포함
+    -->
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [traceId=%X{traceId:-N/A}, ip=%X{remoteAddr:-N/A}, url=%X{url:-N/A}, method=%X{method:-N/A}] %msg%n"/>
+
+    <!-- 
+    콘솔 Appender 설정
+    - 로그를 콘솔(터미널)에 출력하는 설정
+    - 개발 시 실시간으로 로그를 확인할 수 있음
+    -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 
+    일반 로그 파일 Appender 설정 (RollingFileAppender)
+    - INFO, WARN, ERROR 레벨의 일반 애플리케이션 로그를 저장
+    - RollingFileAppender: 파일 크기나 날짜에 따라 자동으로 새 파일 생성
+    -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 로그 파일의 위치와 이름 (날짜 포함) -->
+        <file>${LOG_PATH}/${LOG_FILE_NAME}-${byDate}.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 
+        RollingPolicy: 파일 롤링(교체) 정책 설정
+        - TimeBasedRollingPolicy: 시간 기반으로 파일 교체
+        -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 
+            fileNamePattern: 새 파일명 패턴
+            - %d{yyyy-MM-dd}: 날짜별로 새 파일 생성
+            - %i: 같은 날짜에 여러 파일이 있을 때 번호 추가
+            -->
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 
+            매일 자정에 롤링되도록 설정
+            -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- 
+            maxHistory: 보관할 로그 파일 개수
+            - 30일치 로그 파일만 보관하고 나머지는 자동 삭제
+            -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 
+    에러 로그 파일 Appender 설정 (RollingFileAppender)
+    - ERROR 레벨만 별도 파일에 저장 (모니터링용)
+    - 에러 로그는 중요도가 높으므로 50MB 단위로 롤링
+    -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 에러 로그 파일의 위치와 이름 (날짜 포함) -->
+        <file>${LOG_PATH}/${LOG_FILE_NAME}-error-${byDate}.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 
+        RollingPolicy: 파일 롤링(교체) 정책 설정
+        - 에러 로그는 중요도가 높으므로 더 작은 크기로 롤링
+        -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 
+            fileNamePattern: 새 파일명 패턴
+            - -error 접미사로 에러 로그임을 명시
+            -->
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 
+            SizeAndTimeBasedFNATP: 파일 크기와 시간 모두 고려한 롤링
+            - maxFileSize: 파일당 최대 크기 제한 (50MB - 에러 로그는 중요하므로 작게)
+            -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- 
+            maxHistory: 보관할 로그 파일 개수
+            - 에러 로그는 90일간 보관 (문제 추적용)
+            -->
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 
+    SQL 로그 파일 Appender 설정 (RollingFileAppender)
+    - SQL 쿼리만 별도 파일에 저장 (성능 분석용)
+    - SQL 로그는 용량이 크므로 200MB 단위로 롤링
+    -->
+    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- SQL 로그 파일의 위치와 이름 (날짜 포함) -->
+        <file>${LOG_PATH}/${LOG_FILE_NAME}-sql-${byDate}.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 
+        RollingPolicy: 파일 롤링(교체) 정책 설정
+        - SQL 로그는 용량이 크므로 더 큰 크기로 롤링
+        -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 
+            fileNamePattern: 새 파일명 패턴
+            - -sql 접미사로 SQL 로그임을 명시
+            -->
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-sql-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 
+            SizeAndTimeBasedFNATP: 파일 크기와 시간 모두 고려한 롤링
+            - maxFileSize: 파일당 최대 크기 제한 (200MB - SQL 로그는 용량이 큼)
+            -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>200MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- 
+            maxHistory: 보관할 로그 파일 개수
+            - SQL 로그는 7일간 보관 (성능 분석용)
+            -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 
+    특정 패키지별 로그 레벨 설정
+    - 개발 중에는 DEBUG 레벨로 상세 로그 확인
+    - 운영 시에는 INFO 레벨로 변경
+    -->
+    <logger name="org.project.monewping" level="DEBUG"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    
+    <!-- 
+    SQL 로그 설정
+    - SQL 쿼리와 파라미터 바인딩을 SQL 전용 파일에만 출력
+    - additivity="false": 상위 로거(루트)로 전파하지 않음 (중복 방지)
+    -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+
+    <!-- 
+    에러 로그 설정
+    - ERROR 레벨만 에러 전용 파일에 출력
+    - additivity="false": 상위 로거(루트)로 전파하지 않음 (중복 방지)
+    -->
+    <logger name="ERROR" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+
+    <!-- 
+    루트 로거 설정
+    - 모든 로거의 기본 설정 (설정하지 않은 모든 로그의 규칙)
+    - level="INFO": INFO 레벨 이상의 로그만 출력 (DEBUG는 제외)
+    - CONSOLE과 FILE 두 곳에 모두 로그 출력
+    - ERROR는 이미 ERROR_FILE에 출력되므로 중복 방지
+    -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
