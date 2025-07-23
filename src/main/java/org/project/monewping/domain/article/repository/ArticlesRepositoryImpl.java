@@ -34,6 +34,7 @@ public class ArticlesRepositoryImpl implements ArticlesRepositoryCustom {
         }
 
         BooleanBuilder builder = buildSearchPredicate(article, request);
+        builder.and(article.deleted.isFalse());
         OrderSpecifier<?> order = buildOrderSpecifier(article, request);
 
         // 2. limit+1 적용
@@ -57,6 +58,7 @@ public class ArticlesRepositoryImpl implements ArticlesRepositoryCustom {
         QArticles article = QArticles.articles;
 
         BooleanBuilder builder = buildSearchPredicateWithoutCursor(article, request);
+        builder.and(article.deleted.isFalse());
 
         return queryFactory
             .select(article.count())
