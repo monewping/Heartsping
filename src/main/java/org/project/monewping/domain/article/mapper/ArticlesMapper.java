@@ -1,5 +1,6 @@
 package org.project.monewping.domain.article.mapper;
 
+import java.time.LocalDateTime;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -29,4 +30,23 @@ public interface ArticlesMapper {
     @Mapping(target = "originalLink", source = "sourceUrl")
     @Mapping(target = "interest", ignore = true)
     Articles toEntity(ArticleDto dto);
+
+    // ⬇️ null-safe 변환용 default 메서드 추가
+    default Articles safeToEntity(ArticleSaveRequest request, Interest interest) {
+        if (request == null) {
+            throw new IllegalArgumentException("ArticleSaveRequest must not be null");
+        }
+
+        return Articles.builder()
+            .interest(interest)
+            .source(request.source())
+            .originalLink(request.originalLink())
+            .title(request.title() != null ? request.title() : "[제목 없음]")
+            .summary(request.summary() != null ? request.summary() : "[요약 없음]")
+            .publishedAt(request.publishedAt() != null ? request.publishedAt() : LocalDateTime.now())
+            .viewCount(0L)
+            .commentCount(0L)
+            .deleted(false)
+            .build();
+    }
 }

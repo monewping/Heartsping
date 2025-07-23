@@ -49,8 +49,8 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .header("Monew-Request-User-Id", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -64,8 +64,8 @@ class CommentLikeControllerTest {
                 .when(commentLikeService).likeComment(userId, commentId);
 
         mockMvc.perform(post("/api/comments/{commentId}/comment-likes", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .header("Monew-Request-User-Id", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
@@ -78,8 +78,8 @@ class CommentLikeControllerTest {
         doNothing().when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .header("Monew-Request-User-Id", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -93,8 +93,8 @@ class CommentLikeControllerTest {
                 .when(commentLikeService).unlikeComment(userId, commentId);
 
         mockMvc.perform(delete("/api/comments/{commentId}/comment-likes", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                .header("Monew-Request-User-Id", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 }

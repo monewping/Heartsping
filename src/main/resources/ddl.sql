@@ -89,7 +89,7 @@ CREATE TABLE articles
 
     -- Columns
     source        VARCHAR(30)  NOT NULL,
-    original_link VARCHAR(300) NOT NULL,
+    original_link VARCHAR(500) NOT NULL,
     title         VARCHAR(100) NOT NULL,
     summary       TEXT         NOT NULL,
     published_at  DATE         NOT NULL,
@@ -97,7 +97,6 @@ CREATE TABLE articles
     view_count    BIGINT       NOT NULL,
     is_deleted    BOOLEAN DEFAULT FALSE,
     created_at    TIMESTAMPTZ  NOT NULL,
-    version       BIGINT       NOT NULL DEFAULT 0,
 
     -- Unique Key
     CONSTRAINT uk_article_link UNIQUE (original_link),
