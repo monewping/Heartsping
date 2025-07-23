@@ -37,20 +37,23 @@ public class ArticlesServiceImpl implements ArticlesService {
     private final ArticlesMapper articlesMapper;
 
     /**
-     * 여러 뉴스 기사 요청을 받아 중복된 originalLink를 제외하고 저장합니다.
+     * 중복되지 않은 뉴스 기사 요청을 저장합니다.
      *
-     * <p>동일 originalLink가 이미 DB에 존재하면 해당 기사는 저장하지 않습니다.
-     * 또한 originalLink가 null이거나 공백이면 무시됩니다.</p>
+     * <p>모든 요청은 동일한 관심사( interestId )를 기준으로 처리되며,
+     * originalLink 값이 null이거나 공백인 요청은 무시됩니다. 또한 이미 DB에 존재하는 originalLink도 제외됩니다.</p>
      *
-     * @param requests 뉴스 기사 저장 요청 리스트
-     * @throws org.project.monewping.domain.article.exception.InterestNotFoundException 관심사를 찾을 수 없는 경우
+     * <p>최종적으로 유효하고 중복되지 않은 기사만 저장되며, 저장된 기사 수를 반환합니다.</p>
+     *
+     * @param requests 저장할 뉴스 기사 요청 리스트. 비어 있거나 null인 경우 저장하지 않으며 0을 반환합니다.
+     * @return 저장된 기사 개수
+     * @throws org.project.monewping.domain.article.exception.InterestNotFoundException
+     *         요청의 관심사 ID에 해당하는 관심사를 찾을 수 없는 경우
      */
     @Override
-    @Transactional
-    public void saveAll(List<ArticleSaveRequest> requests) {
+    public int saveAll(List<ArticleSaveRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             log.info("[saveAll] 저장 요청이 비어있음");
-            return;
+            return 0;
         }
 
         // 관심사 ID는 모든 요청이 동일하다고 가정
@@ -64,7 +67,7 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         if (validRequests.isEmpty()) {
             log.info("[saveAll] 유효한 저장 대상 없음");
-            return;
+            return 0;
         }
 
         // 요청 원본링크 리스트
@@ -85,13 +88,14 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         if (articlesToSave.isEmpty()) {
             log.info("[saveAll] 저장할 신규 뉴스 기사 없음");
-            return;
+            return 0;
         }
 
         // 저장
         articlesRepository.saveAll(articlesToSave);
 
         log.info("[saveAll] 뉴스 기사 저장 완료 - count: {}", articlesToSave.size());
+        return articlesToSave.size();
     }
 
 
@@ -156,7 +160,8 @@ public class ArticlesServiceImpl implements ArticlesService {
 
     /**
      * 뉴스 기사를 논리적으로 삭제합니다.
-     * 해당 기사는 실제로 삭제되지 않고, 마스킹된 채 DB에 유지됩니다.
+     * 해당 기사는 실제로 삭제되지 않고, DB에 유지됩니다.
+     * 해당 기사는 조회 목록 및 총 기사 카운트에서는 제외됩니다.
      *
      * @param articleId 삭제할 기사 UUID
      * @throws ArticleNotFoundException 해당 ID의 기사가 존재하지 않는 경우
@@ -168,7 +173,7 @@ public class ArticlesServiceImpl implements ArticlesService {
                 return new ArticleNotFoundException(articleId);
             });
 
-        article.softDeleteWithMasking();
+        article.softDelete();
         log.info("뉴스 기사 논리 삭제 완료. articleId = {}", articleId);
     }
 
