@@ -9,9 +9,6 @@ import org.project.monewping.global.dto.CursorPageResponse;
 
 public interface ArticlesService {
 
-    // 단일 뉴스 기사 저장
-    void save(ArticleSaveRequest request);
-
     // 여러 뉴스 기사 저장( 중복 Link 제외 )
     void saveAll(List<ArticleSaveRequest> requests);
 

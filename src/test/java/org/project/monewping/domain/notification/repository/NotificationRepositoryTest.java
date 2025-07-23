@@ -6,17 +6,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.notification.entity.Notification;
-import org.project.monewping.global.config.JpaAuditingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +26,7 @@ public class NotificationRepositoryTest {
     private NotificationRepository notificationRepository;
 
     private UUID userId;
+    private Notification n1, n2, n3;
 
     @BeforeEach
     void setUp() {
@@ -38,9 +35,45 @@ public class NotificationRepositoryTest {
         UUID resourceB = UUID.randomUUID();
         UUID resourceC = UUID.randomUUID();
 
-        notificationRepository.save(new Notification(userId, "영화와 관련된 기사가 3건 등록되었습니다.", resourceA, "Article"));
-        notificationRepository.save(new Notification(userId, "축구와 관련된 기사가 1건 등록되었습니다.", resourceA, "Article"));
-        notificationRepository.save(new Notification(userId, "Binu님이 나의 댓글을 좋아합니다.", resourceB, "Comment"));
+        Instant t1 = Instant.parse("2025-07-15T09:00:00Z");
+        Instant t2 = Instant.parse("2025-07-15T09:00:01Z");
+        Instant t3 = Instant.parse("2025-07-15T09:00:02Z");
+
+        n1 = notificationRepository.save(
+            Notification.builder()
+                .userId(userId)
+                .content("영화와 관련된 기사가 3건 등록되었습니다.")
+                .resourceId(resourceA)
+                .resourceType("Article")
+                .confirmed(false)
+                .createdAt(t1)    // 직접 지정
+                .updatedAt(t1)
+                .build()
+        );
+
+        n2 = notificationRepository.save(
+            Notification.builder()
+                .userId(userId)
+                .content("축구와 관련된 기사가 1건 등록되었습니다.")
+                .resourceId(resourceB)
+                .resourceType("Article")
+                .confirmed(false)
+                .createdAt(t2)
+                .updatedAt(t2)
+                .build()
+        );
+
+        n3 = notificationRepository.save(
+            Notification.builder()
+                .userId(userId)
+                .content("Binu님이 나의 댓글을 좋아합니다.")
+                .resourceId(resourceC)
+                .resourceType("Comment")
+                .confirmed(false)
+                .createdAt(t3)
+                .updatedAt(t3)
+                .build()
+        );
 
         notificationRepository.flush();
     }
@@ -52,46 +85,6 @@ public class NotificationRepositoryTest {
         assertThat(count)
             .as("초기 설정된 3개의 알림 수가 반환되어야 한다")
             .isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("첫 페이지 조회 성공")
-    void findPageFirst() {
-        Pageable page2 = PageRequest.of(
-            0, 2,
-            Sort.by("createdAt").ascending().and(Sort.by("id").ascending())
-        );
-
-        List<Notification> page = notificationRepository.findPageFirst(userId, page2);
-        assertThat(page)
-            .as("페이지 크기(limit=2)에 맞게 알림 2개가 조회되어야 한다")
-            .hasSize(2);
-    }
-
-    @Disabled("DB 환경에서 UUID 정렬이 일관되지 않아 실패. 리팩토링 기간에 커버 예정")
-    @Test
-    @DisplayName("알림 목록 조회 기능의 cursor를 이용한 페이징 처리 성공")
-    void findPageAfter() {
-        Pageable pageable = PageRequest.of(0, 2, Sort.by("createdAt").ascending());
-
-        List<Notification> firstPage = notificationRepository.findPageFirst(userId, pageable);
-        assertThat(firstPage).hasSize(2);
-
-        Notification cursorNotification = firstPage.get(1);
-        Instant cursorCreatedAt = cursorNotification.getCreatedAt();
-
-        System.out.println("Cursor → createdAt: " + cursorCreatedAt);
-
-        List<Notification> nextPage = notificationRepository.findPageAfter(
-            userId,
-            cursorCreatedAt,
-            pageable
-        );
-
-        assertThat(nextPage)
-            .as("두 번째 페이지에는 커서 이후의 알림이 포함되어야 한다")
-            .extracting("content")
-            .contains("Binu님이 나의 댓글을 좋아합니다.");
     }
 
     @Test
@@ -116,6 +109,49 @@ public class NotificationRepositoryTest {
         assertThat(result.get().getId())
             .as("조회된 알림 ID는 저장한 알림 ID와 일치해야 한다")
             .isEqualTo(notification.getId());
+    }
+
+    @Test
+    @DisplayName("첫 페이지 조회: 커서 없이 limit=2이면 가장 오래된 2개만 반환된다")
+    void testFindPageFirstPage() {
+        // given
+        Pageable pageable = PageRequest.of(0, 2);
+
+        // when
+        List<Notification> page = notificationRepository.findPage(
+            userId, null, null, pageable
+        );
+
+        // then
+        assertThat(page)
+            .as("첫 페이지는 가장 오래된 알림 2개")
+            .hasSize(2);
+    }
+
+    @Test
+    @DisplayName("다음 페이지 조회: after=n2.createdAt, lastId=n2.id 부터 이어서 반환된다")
+    void testFindPageNextPage() {
+        // given
+        Pageable firstPageable = PageRequest.of(0, 2);
+        List<Notification> firstPage = notificationRepository.findPage(
+            userId, null, null, firstPageable
+        );
+        Notification lastOfFirst = firstPage.get(1);
+        Instant after = lastOfFirst.getCreatedAt();
+        UUID lastId = lastOfFirst.getId();
+
+        // when
+        Pageable secondPageable = PageRequest.of(0, 2);
+        List<Notification> secondPage = notificationRepository.findPage(
+            userId, after, lastId, secondPageable
+        );
+
+        // then
+        assertThat(secondPage)
+            .as("반환된 모든 알림의 createdAt 은 after 시각 이상이어야 한다")
+            .allMatch(n ->
+                !n.getCreatedAt().isBefore(after)
+            );
     }
 
     @Test
