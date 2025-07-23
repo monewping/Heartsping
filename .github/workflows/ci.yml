@@ -41,18 +41,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Wait for MongoDB to be ready
-        run: |
-          echo "Waiting for MongoDB to be ready..."
-          for i in {1..30}; do
-            if mongosh --eval "db.adminCommand('ping')" mongodb://admin:monewping@localhost:27017/monewping?authSource=admin > /dev/null 2>&1; then
-              echo "MongoDB is ready!"
-              break
-            fi
-            echo "Waiting for MongoDB... ($i/30)"
-            sleep 2
-          done
-
       - name: Build with Gradle and check coverage
         run: ./gradlew clean build check --parallel --build-cache
         env:
