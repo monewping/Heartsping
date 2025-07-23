@@ -15,7 +15,6 @@ import org.project.monewping.domain.interest.exception.InterestNotFoundException
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
-import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.global.dto.ErrorResponse;
@@ -114,28 +113,6 @@ public class GlobalExceptionHandler {
             HttpStatus.BAD_REQUEST,
             "유효성 검사 실패",
             errors
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * 지원하지 않는 리소스 타입 예외를 처리합니다.
-     *
-     * <p>UnsupportedResourceTypeException이 발생하면 이 메서드가 호출되어
-     * HTTP 400 Bad Request 상태 코드와 함께 에러 정보를 담은 ErrorResponse를 반환합니다.</p>
-     *
-     * @param ex 발생한 UnsupportedResourceTypeException
-     * @return HTTP 400 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
-     */
-    @ExceptionHandler(UnsupportedResourceTypeException.class)
-    public ResponseEntity<ErrorResponse> handleUnsupportedResourceTypeException(
-        UnsupportedResourceTypeException ex
-    ) {
-        ErrorResponse errorResponse = ErrorResponse.of(
-            HttpStatus.BAD_REQUEST,
-            ex.getMessage(),
-            null
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
@@ -316,7 +293,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-
     /**
      * 로그인 실패 예외를 처리합니다.
      *
@@ -433,7 +409,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-
     /**
      * 댓글 좋아요가 이미 존재할 때 발생하는 예외 처리
      *
@@ -455,5 +430,4 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleCommentLikeNotFound(CommentLikeNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
-
 }
