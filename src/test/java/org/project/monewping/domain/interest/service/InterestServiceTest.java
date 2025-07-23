@@ -157,7 +157,7 @@ class InterestServiceTest {
             .build();
 
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("야구", "농구"));
         given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
         given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
 
@@ -168,7 +168,7 @@ class InterestServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.name()).isEqualTo("축구");
         verify(interestRepository).existsByName("축구");
-        verify(interestRepository).findAllNames();
+        verify(interestRepository).findNamesByRoughMatch(anyString());
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
     }
@@ -192,7 +192,7 @@ class InterestServiceTest {
             .build();
 
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("야구", "농구"));
         given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
         given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
 
@@ -203,7 +203,7 @@ class InterestServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.name()).isEqualTo("축구");
         verify(interestRepository).existsByName("축구");
-        verify(interestRepository).findAllNames();
+        verify(interestRepository).findNamesByRoughMatch(anyString());
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
     }
@@ -227,7 +227,7 @@ class InterestServiceTest {
             .build();
 
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("야구", "농구"));
         given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
         given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
 
@@ -238,7 +238,7 @@ class InterestServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.name()).isEqualTo("축구");
         verify(interestRepository).existsByName("축구");
-        verify(interestRepository).findAllNames();
+        verify(interestRepository).findNamesByRoughMatch(anyString());
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
     }
@@ -305,7 +305,7 @@ class InterestServiceTest {
         // Given
         InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("키워드"));
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("축구경기", "축구선수"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("축구경기", "축구선수"));
 
         // When & Then
         assertThatThrownBy(() -> interestService.create(request))
@@ -318,7 +318,7 @@ class InterestServiceTest {
         // Given
         InterestRegisterRequest request = new InterestRegisterRequest("축구", Arrays.asList("키워드"));
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("야구", "농구"));
         given(interestRepository.save(any(Interest.class))).willThrow(new RuntimeException("DB Error"));
 
         // When & Then
@@ -346,7 +346,7 @@ class InterestServiceTest {
             .build();
 
         given(interestRepository.existsByName("축구")).willReturn(false);
-        given(interestRepository.findAllNames()).willReturn(Arrays.asList("야구", "농구"));
+        given(interestRepository.findNamesByRoughMatch(anyString())).willReturn(Arrays.asList("야구", "농구"));
         given(interestRepository.save(any(Interest.class))).willReturn(savedInterest);
         given(interestMapper.toDto(savedInterest)).willReturn(expectedDto);
 
@@ -357,7 +357,7 @@ class InterestServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.name()).isEqualTo("축구");
         verify(interestRepository).existsByName("축구");
-        verify(interestRepository).findAllNames();
+        verify(interestRepository).findNamesByRoughMatch(anyString());
         verify(interestRepository).save(any(Interest.class));
         verify(interestMapper).toDto(savedInterest);
     }
