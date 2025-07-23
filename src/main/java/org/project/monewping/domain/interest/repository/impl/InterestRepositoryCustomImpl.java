@@ -145,16 +145,30 @@ public class InterestRepositoryCustomImpl implements InterestRepositoryCustom {
      * @return 정렬 조건(OrderSpecifier)
      */
     private OrderSpecifier<?> buildPrimaryOrder(CursorPageRequestSearchInterestDto request, QInterest interest) {
-        boolean asc = request.direction() == null || request.direction().equalsIgnoreCase("ASC");
-        if (request.orderBy() == null || request.orderBy().equalsIgnoreCase("createdAt")) {
-            return asc ? interest.createdAt.asc() : interest.createdAt.desc();
-        } else if (request.orderBy().equalsIgnoreCase("name")) {
-            return asc ? interest.name.asc() : interest.name.desc();
-        } else if (request.orderBy().equalsIgnoreCase("subscriberCount")) {
-            return asc ? interest.subscriberCount.asc() : interest.subscriberCount.desc();
-        } else {
-            return asc ? interest.createdAt.asc() : interest.createdAt.desc();
+        // 정렬 조건이 없으면 최신순이 기본값
+        if (request.orderBy() == null) {
+            return interest.createdAt.desc();
         }
+        
+        boolean asc = isAscending(request.direction());
+        String orderBy = request.orderBy().toLowerCase();
+        
+        return switch (orderBy) {
+            case "name" -> asc ? interest.name.asc() : interest.name.desc();
+            case "subscribercount" -> asc ? interest.subscriberCount.asc() : interest.subscriberCount.desc();
+            case "createdat" -> asc ? interest.createdAt.asc() : interest.createdAt.desc();
+            default -> interest.createdAt.desc(); // 알 수 없는 정렬 조건은 최신순
+        };
+    }
+
+    /**
+     * 정렬 방향이 오름차순인지 확인합니다.
+     *
+     * @param direction 정렬 방향
+     * @return 오름차순이면 true, 내림차순이면 false
+     */
+    private boolean isAscending(String direction) {
+        return direction == null || direction.equalsIgnoreCase("ASC");
     }
 
     /**
