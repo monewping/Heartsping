@@ -168,7 +168,7 @@ public class ArticlesServiceImpl implements ArticlesService {
                 return new ArticleNotFoundException(articleId);
             });
 
-        article.softDeleteWithMasking();
+        article.softDelete();
         log.info("뉴스 기사 논리 삭제 완료. articleId = {}", articleId);
     }
 
