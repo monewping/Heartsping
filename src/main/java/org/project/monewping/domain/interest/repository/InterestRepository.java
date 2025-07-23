@@ -38,6 +38,6 @@ public interface InterestRepository extends JpaRepository<Interest, UUID>, Inter
     List<String> findAllNames();
 
     @Query("SELECT i.name FROM Interest i " +
-            "WHERE i.name LIKE %:searchName%")
+            "WHERE i.name LIKE %:searchName% OR :searchName LIKE CONCAT('%', i.name, '%')")
     List<String> findNamesByRoughMatch(@Param("searchName") String searchName);
 } 
