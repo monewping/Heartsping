@@ -48,41 +48,82 @@ public class CommentServiceImpl implements CommentService {
         String direction,
         String cursor,
         String after,
-        String afterId,
         int limit
     ) {
-        // 기본값 50 적용
-        if (limit <= 0) {
-            limit = 50;
+        // limit 기본값 및 최대 제한
+        if (limit <= 0) limit = 50;
+        if (limit > 100) limit = 100;
+
+        List<Comment> comments;
+
+        switch (orderBy) {
+            case "likeCount" -> {
+                Integer afterLikeCount = null;
+                if (after != null && !after.isBlank()) {
+                    try {
+                        afterLikeCount = Integer.valueOf(after);
+                    } catch (NumberFormatException e) {
+                        afterLikeCount = null;
+                    }
+                }
+                comments = commentRepository.findCommentsByLikeCountCursor(articleId, afterLikeCount, limit + 1);
+            }
+            case "createdAt" -> {
+                Instant afterCreatedAt = null;
+                if (after != null && !after.isBlank()) {
+                    try {
+                        afterCreatedAt = Instant.parse(after);
+                    } catch (Exception e) {
+                        afterCreatedAt = null;
+                    }
+                }
+                comments = commentRepository.findCommentsByCreatedAtCursor(articleId, afterCreatedAt, limit + 1);
+            }
+            default -> {
+                // 기본: createdAt 내림차순
+                Instant afterCreatedAt = null;
+                if (after != null && !after.isBlank()) {
+                    try {
+                        afterCreatedAt = Instant.parse(after);
+                    } catch (Exception e) {
+                        afterCreatedAt = null;
+                    }
+                }
+                comments = commentRepository.findCommentsByCreatedAtCursor(articleId, afterCreatedAt, limit + 1);
+            }
         }
 
-        List<Comment> comments = commentRepository.findComments(articleId, orderBy, direction, cursor, after, afterId, limit);
-        List<CommentResponseDto> response = comments.stream()
+        boolean hasNext = comments.size() > limit;
+        List<Comment> page = hasNext ? comments.subList(0, limit) : comments;
+
+        List<CommentResponseDto> response = page.stream()
             .map(commentMapper::toResponseDto)
             .toList();
 
-        UUID lastId = comments.isEmpty() ? null : comments.get(comments.size() - 1).getId();
-
-        Long nextIdAfter = lastId == null ? null : Math.abs(lastId.getMostSignificantBits());
-        String nextCursor = lastId == null ? null : lastId.toString();
-
-        int size = comments.size();
+        int size = page.size();
         long totalElements = commentRepository.countByArticleId(articleId);
-        boolean hasNext = size == limit;
 
-        log.info("[CommentService] 댓글 목록 조회 - articleId: {}, 조회 수: {}, total: {}", articleId, size, totalElements);
+        String nextAfter = null;
+        if (!page.isEmpty()) {
+            Comment last = page.get(size - 1);
+            nextAfter = switch (orderBy) {
+                case "likeCount" -> String.valueOf(last.getLikeCount());
+                case "createdAt" -> last.getCreatedAt().toString();
+                default -> last.getCreatedAt().toString();
+            };
+        }
 
         return new CursorPageResponse<>(
             response,
-            nextIdAfter,
-            nextCursor,
+            nextAfter,
+            nextAfter,  // nextAfter에 커서 값 전달
             size,
             totalElements,
             hasNext
         );
     }
 
-    // 댓글 등록
+        // 댓글 등록
     @Override
     public CommentResponseDto registerComment(CommentRegisterRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
@@ -206,4 +247,9 @@ public class CommentServiceImpl implements CommentService {
 
         return commentMapper.toResponseDto(comment);
     }
+
+    private String encodeCursor(Object orderValue, UUID id) {
+        return orderValue + "_" + id.toString();
+    }
+
 }

@@ -10,8 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ArticlesRepository extends JpaRepository<Articles, UUID>, ArticlesRepositoryCustom {
 
-    boolean existsByOriginalLink(String originalLink);
-
     List<Articles> findAllByOriginalLinkIn(List<String> originalLinks);
 
     @Query("SELECT DISTINCT a.source FROM Articles a WHERE a.deleted = false")

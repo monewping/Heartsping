@@ -50,8 +50,7 @@ class ArticlesTest {
             publishedAt,
             5L,
             50L,
-            false,
-            1L
+            false
         );
 
         // then

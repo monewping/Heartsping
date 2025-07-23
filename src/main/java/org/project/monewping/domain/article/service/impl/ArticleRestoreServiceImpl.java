@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.service;
+package org.project.monewping.domain.article.service.impl;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -11,6 +11,7 @@ import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.ArticleRestoreService;
 import org.project.monewping.domain.article.storage.ArticleBackupStorage;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.springframework.stereotype.Service;
@@ -78,10 +79,7 @@ public class ArticleRestoreServiceImpl implements ArticleRestoreService {
                 .map(dto -> {
                     Articles entity = articlesMapper.toEntity(dto);
 
-                    // TODO: 관심사(Interest) 세팅 로직 구현 필요
-                    // 예: DTO에 interestId가 없을 경우, 기사 출처 등으로 기본 관심사를 찾아 세팅하거나,
-                    //      null 혹은 기본 관심사를 세팅할 수 있음.
-                    Interest defaultInterest = null; // 임시 null 세팅
+                    Interest defaultInterest = null;
                     entity.updateInterest(defaultInterest);
 
                     return entity;

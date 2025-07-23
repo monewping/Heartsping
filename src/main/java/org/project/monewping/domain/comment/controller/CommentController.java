@@ -32,7 +32,6 @@ public class CommentController {
      * @param direction 정렬 방향 (ASC, DESC)
      * @param cursor 커서 값 (선택)
      * @param after after 값 (선택)
-     * @param afterId afterId 값 (선택, UUID)
      * @param limit 조회 개수 (기본값 50)
      * @return 커서 기반 댓글 목록 응답
      */
@@ -43,11 +42,10 @@ public class CommentController {
         @RequestParam(required = false, defaultValue = "DESC") String direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
-        @RequestParam(required = false) String afterId,
         @RequestParam(required = false, defaultValue = "50") Integer limit
     ) {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
-            articleId, orderBy, direction, cursor, after, afterId, limit
+            articleId, orderBy, direction, cursor, after, limit
         );
         log.info("[CommentController] 댓글 목록 조회 완료 - articleId: {}, count: {}", articleId, response.size());
         return ResponseEntity.ok(response);

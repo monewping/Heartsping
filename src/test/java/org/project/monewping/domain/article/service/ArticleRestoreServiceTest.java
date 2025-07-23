@@ -24,6 +24,7 @@ import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.impl.ArticleRestoreServiceImpl;
 import org.project.monewping.domain.article.storage.ArticleBackupStorage;
 
 @ExtendWith(MockitoExtension.class)

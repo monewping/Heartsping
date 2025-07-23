@@ -2,10 +2,8 @@ package org.project.monewping.domain.article.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -16,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -31,11 +30,10 @@ import org.project.monewping.domain.article.dto.request.ArticleSaveRequest;
 import org.project.monewping.domain.article.dto.request.ArticleSearchRequest;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.exception.ArticleNotFoundException;
-import org.project.monewping.domain.article.exception.DuplicateArticleException;
-import org.project.monewping.domain.article.exception.InterestNotFoundException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.impl.ArticlesServiceImpl;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
@@ -60,39 +58,7 @@ public class ArticlesServiceTest {
     private ArticlesMapper articlesMapper;
 
     @Captor
-    ArgumentCaptor<Articles> articleCaptor;
-
-    @Test
-    @DisplayName("originalLink가 이미 존재하면 DuplicateArticleException 예외 발생")
-    void save_ShouldThrowDuplicateException_WhenOriginalLinkExists() {
-        // Given
-        UUID interestId = UUID.randomUUID();
-        ArticleSaveRequest request = new ArticleSaveRequest(
-            interestId, "Naver", "https://naver.com/sample", "제목", "요약", LocalDateTime.now()
-        );
-        when(articlesRepository.existsByOriginalLink(request.originalLink())).thenReturn(true);
-
-        // When & Then
-        assertThrows(DuplicateArticleException.class,
-            () -> articleService.save(request));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 관심사일 경우 InterestNotFoundException 예외 발생")
-    void save_ShouldThrowException_WhenInterestNotFound() {
-        // Given
-        UUID interestId = UUID.randomUUID();
-        ArticleSaveRequest request = new ArticleSaveRequest(
-            interestId, "Naver", "https://naver.com/sample", "제목", "요약", LocalDateTime.now()
-        );
-
-        when(articlesRepository.existsByOriginalLink(request.originalLink())).thenReturn(false);
-        when(interestRepository.findById(interestId)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(InterestNotFoundException.class,
-            () -> articleService.save(request));
-    }
+    private ArgumentCaptor<List<Articles>> articleListCaptor;
 
     @Test
     @DisplayName("중복된 뉴스 기사 제외하고 나머지를 저장한다")
@@ -100,6 +66,7 @@ public class ArticlesServiceTest {
         // Given
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
+            .id(interestId)  // id 필수 세팅
             .name("AI")
             .subscriberCount(1000L)
             .updatedAt(Instant.now())
@@ -111,73 +78,42 @@ public class ArticlesServiceTest {
 
         List<ArticleSaveRequest> requests = List.of(request1, request2, duplicate);
 
-        when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
-        when(articlesRepository.findAllByOriginalLinkIn(any())).thenReturn(
-            List.of(Articles.builder().originalLink("https://naver.com/sample-1").build())
-        );
+        when(interestRepository.findById(eq(interestId))).thenReturn(Optional.of(interest));
+        when(articlesRepository.findAllByOriginalLinkIn(any())).thenAnswer(invocation -> {
+            List<String> links = invocation.getArgument(0);
+            // 중복 링크 'https://naver.com/sample-1'이 이미 있다고 가정
+            return links.contains("https://naver.com/sample-1")
+                ? List.of(Articles.builder().originalLink("https://naver.com/sample-1").build())
+                : List.of();
+        });
 
-        when(articlesMapper.toEntity(any(ArticleSaveRequest.class), any(Interest.class)))
-            .thenAnswer(invocation -> {
-                ArticleSaveRequest dto = invocation.getArgument(0);
-                Interest intr = invocation.getArgument(1);
-                return Articles.builder()
-                    .interest(intr)
-                    .source(dto.source())
-                    .originalLink(dto.originalLink())
-                    .title(dto.title())
-                    .summary(dto.summary())
-                    .publishedAt(dto.publishedAt())
-                    .viewCount(0)
-                    .deleted(false)
-                    .build();
-            });
+        when(articlesMapper.safeToEntity(any(ArticleSaveRequest.class), eq(interest))).thenAnswer(invocation -> {
+            ArticleSaveRequest dto = invocation.getArgument(0);
+            return Articles.builder()
+                .interest(interest)
+                .source(dto.source())
+                .originalLink(dto.originalLink())
+                .title(dto.title())
+                .summary(dto.summary())
+                .publishedAt(dto.publishedAt())
+                .viewCount(0)
+                .deleted(false)
+                .build();
+        });
 
         // When
         articleService.saveAll(requests);
 
         // Then
         ArgumentCaptor<List<Articles>> captor = ArgumentCaptor.forClass(List.class);
-        verify(articlesRepository).saveAll(captor.capture());
+        verify(articlesRepository).saveAll(articleListCaptor.capture());
 
-        List<Articles> saved = captor.getValue();
-        assertEquals(1, saved.size());
-        assertEquals("https://naver.com/sample-2", saved.get(0).getOriginalLink());
-        assertFalse(saved.stream().anyMatch(a -> a.getOriginalLink().equals("https://naver.com/sample-1")));
-    }
+        List<Articles> saved = articleListCaptor.getValue();
+        assertThat(saved).isNotNull();
+        assertThat(saved).allMatch(Objects::nonNull);  // null이 없음을 검증
+        assertThat(saved).hasSize(1);
+        assertThat(saved.get(0).getOriginalLink()).isEqualTo("https://naver.com/sample-2");
 
-    @Test
-    @DisplayName("유효한 요청 시 뉴스 기사가 저장된다")
-    void save_ShouldPersistArticle_WhenValid() {
-        // Given
-        UUID interestId = UUID.randomUUID();
-        ArticleSaveRequest request = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample", "제목", "요약", LocalDateTime.now());
-
-        Interest interest = Interest.builder()
-            .name("AI")
-            .subscriberCount(1000L)
-            .updatedAt(Instant.now())
-            .build();
-
-        Articles expectedArticle = Articles.builder()
-            .interest(interest)
-            .source(request.source())
-            .originalLink(request.originalLink())
-            .title(request.title())
-            .summary(request.summary())
-            .publishedAt(request.publishedAt())
-            .viewCount(0)
-            .deleted(false)
-            .build();
-
-        when(articlesRepository.existsByOriginalLink(request.originalLink())).thenReturn(false);
-        when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
-        when(articlesMapper.toEntity(request, interest)).thenReturn(expectedArticle);
-
-        // When
-        articleService.save(request);
-
-        // Then
-        verify(articlesRepository).save(expectedArticle);
     }
 
     @Test
@@ -192,14 +128,16 @@ public class ArticlesServiceTest {
         // Then
         verifyNoInteractions(articlesRepository);
         verifyNoInteractions(interestRepository);
+        verifyNoInteractions(articlesMapper);
     }
 
     @Test
-    @DisplayName("중복 없이 모든 뉴스 기사가 저장된다")
+    @DisplayName("모든 뉴스 기사가 중복 없이 저장된다")
     void saveAll_ShouldSaveAllWhenNoDuplicates() {
         // Given
         UUID interestId = UUID.randomUUID();
         Interest interest = Interest.builder()
+            .id(interestId)  // id 추가
             .name("IT")
             .subscriberCount(500L)
             .updatedAt(Instant.now())
@@ -208,24 +146,22 @@ public class ArticlesServiceTest {
         ArticleSaveRequest request1 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-1", "제목1", "요약1", LocalDateTime.now());
         ArticleSaveRequest request2 = new ArticleSaveRequest(interestId, "Naver", "https://naver.com/sample-2", "제목2", "요약2", LocalDateTime.now());
 
-        when(interestRepository.findById(interestId)).thenReturn(Optional.of(interest));
-        when(articlesRepository.findAllByOriginalLinkIn(any())).thenReturn(List.of());
+        when(interestRepository.findById(eq(interestId))).thenReturn(Optional.of(interest));
+        when(articlesRepository.findAllByOriginalLinkIn(any())).thenReturn(List.of());  // 중복 없음
 
-        when(articlesMapper.toEntity(any(ArticleSaveRequest.class), any(Interest.class)))
-            .thenAnswer(invocation -> {
-                ArticleSaveRequest dto = invocation.getArgument(0);
-                Interest intr = invocation.getArgument(1);
-                return Articles.builder()
-                    .interest(intr)
-                    .source(dto.source())
-                    .originalLink(dto.originalLink())
-                    .title(dto.title())
-                    .summary(dto.summary())
-                    .publishedAt(dto.publishedAt())
-                    .viewCount(0)
-                    .deleted(false)
-                    .build();
-            });
+        when(articlesMapper.safeToEntity(any(ArticleSaveRequest.class), eq(interest))).thenAnswer(invocation -> {
+            ArticleSaveRequest dto = invocation.getArgument(0);
+            return Articles.builder()
+                .interest(interest)
+                .source(dto.source())
+                .originalLink(dto.originalLink())
+                .title(dto.title())
+                .summary(dto.summary())
+                .publishedAt(dto.publishedAt())
+                .viewCount(0)
+                .deleted(false)
+                .build();
+        });
 
         // When
         articleService.saveAll(List.of(request1, request2));
@@ -235,62 +171,11 @@ public class ArticlesServiceTest {
         verify(articlesRepository).saveAll(captor.capture());
 
         List<Articles> saved = captor.getValue();
-        assertEquals(2, saved.size());
+        assertThat(saved).hasSize(2);
+        assertThat(saved).extracting(Articles::getOriginalLink)
+            .containsExactlyInAnyOrder("https://naver.com/sample-1", "https://naver.com/sample-2");
     }
 
-    @Test
-    @DisplayName("originalLink가 null이면 IllegalArgumentException 예외 발생")
-    void save_ShouldThrowException_WhenOriginalLinkIsNull() {
-        // Given
-        ArticleSaveRequest request = new ArticleSaveRequest(
-            UUID.randomUUID(), "Naver", null, "제목", "요약", LocalDateTime.now()
-        );
-
-        // When & Then
-        assertThatThrownBy(() -> articleService.save(request))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("originalLink는 필수입니다");
-    }
-
-    @Test
-    @DisplayName("유효한 요청이면 뉴스 기사를 저장한다 (통합)")
-    void save_ShouldSaveArticle_WhenValidRequest() {
-        // Given
-        UUID interestId = UUID.randomUUID();
-        Interest interest = Interest.builder()
-            .id(interestId)
-            .name("IT")
-            .subscriberCount(100L)
-            .updatedAt(Instant.now())
-            .build();
-
-        ArticleSaveRequest request = new ArticleSaveRequest(
-            interestId, "조선일보", "https://news.com", "제목", "요약", LocalDateTime.now()
-        );
-
-        Articles article = Articles.builder()
-            .id(UUID.randomUUID())
-            .title(request.title())
-            .source(request.source())
-            .originalLink(request.originalLink())
-            .publishedAt(request.publishedAt())
-            .summary(request.summary())
-            .interest(interest)
-            .viewCount(0L)
-            .commentCount(0L)
-            .deleted(false)
-            .build();
-
-        given(interestRepository.findById(interestId)).willReturn(Optional.of(interest));
-        given(articlesRepository.existsByOriginalLink(request.originalLink())).willReturn(false);
-        given(articlesMapper.toEntity(request, interest)).willReturn(article);
-
-        // When
-        articleService.save(request);
-
-        // Then
-        verify(articlesRepository).save(article);
-    }
 
     @Test
     @DisplayName("검색어로 제목 또는 요약에 일치하는 기사들을 조회할 수 있다")

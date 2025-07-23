@@ -1,78 +1,86 @@
 package org.project.monewping.domain.comment.repository;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.domain.QComment;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class CommentCustomRepositoryImpl implements CommentCustomRepository {
 
-    private final EntityManager em;
+    private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Comment> findComments(UUID articleId, String orderBy, String direction, String cursor, String after, String afterId, int limit) {
-        String orderColumn = getOrderColumn(orderBy);
-        String sortDirection = getSortDirection(direction);
+    public List<Comment> findComments(UUID articleId, String direction, String afterId, int limit) {
+        QComment comment = QComment.comment;
 
-        StringBuilder sql = new StringBuilder(
-            "SELECT DISTINCT c FROM Comment c " +
-                "WHERE c.articleId = :articleId " +
-                "AND c.isDeleted = false"
-        );
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(comment.articleId.eq(articleId));
 
-        if (after != null && afterId != null) {
-            sql.append(" AND (c.").append(orderColumn).append(", c.id) ");
-            sql.append("ASC".equalsIgnoreCase(sortDirection) ? "> (:after, :afterId)" : "< (:after, :afterId)");
-        }
-
-        sql.append(" ORDER BY c.").append(orderColumn).append(" ").append(sortDirection);
-        sql.append(", c.id ").append(sortDirection);
-
-        TypedQuery<Comment> query = em.createQuery(sql.toString(), Comment.class);
-        query.setParameter("articleId", articleId);
-
-        if (after != null && afterId != null) {
-            try {
-                if ("createdAt".equalsIgnoreCase(orderBy)) {
-                    query.setParameter("after", Instant.parse(after));
-                } else if ("likeCount".equalsIgnoreCase(orderBy)) {
-                    query.setParameter("after", Integer.parseInt(after));
-                }
-                query.setParameter("afterId", UUID.fromString(afterId));
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("after 파라미터는 ISO8601 형식이어야 합니다.", e);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("orderBy가 likeCount일 경우 after는 숫자여야 합니다.", e);
+        if (afterId != null && !afterId.isBlank()) {
+            UUID cursorUuid = UUID.fromString(afterId);
+            if ("desc".equalsIgnoreCase(direction)) {
+                predicate.and(comment.id.lt(cursorUuid));
+            } else {
+                predicate.and(comment.id.gt(cursorUuid));
             }
         }
 
-        return query.setMaxResults(limit).getResultList();
+        OrderSpecifier<UUID> order = "desc".equalsIgnoreCase(direction) ? comment.id.desc() : comment.id.asc();
+
+        return queryFactory
+            .selectFrom(comment)
+            .where(predicate)
+            .orderBy(order)
+            .limit(limit)
+            .fetch();
     }
 
-    private String getOrderColumn(String orderBy) {
-        if ("createdAt".equalsIgnoreCase(orderBy)) {
-            return "createdAt";
-        } else if ("likeCount".equalsIgnoreCase(orderBy)) {
-            return "likeCount";
-        } else {
-            throw new IllegalArgumentException("허용되지 않는 orderBy 값: " + orderBy);
+    @Override
+    public List<Comment> findCommentsByCreatedAtCursor(UUID articleId, Instant afterCreatedAt,
+        int limit) {
+        QComment comment = QComment.comment;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(comment.articleId.eq(articleId));
+
+        if (afterCreatedAt != null) {
+            // 내림차순 정렬이므로 afterCreatedAt보다 작거나 같은 조건 (더 최신 댓글들 조회)
+            builder.and(comment.createdAt.lt(afterCreatedAt));
         }
+
+        return queryFactory
+            .selectFrom(comment)
+            .where(builder)
+            .orderBy(comment.createdAt.desc(), comment.id.desc()) // 보조 정렬 필드로 id 사용
+            .limit(limit)
+            .fetch();
     }
 
-    private String getSortDirection(String direction) {
-        if ("ASC".equalsIgnoreCase(direction)) {
-            return "ASC";
-        } else if ("DESC".equalsIgnoreCase(direction)) {
-            return "DESC";
-        } else {
-            throw new IllegalArgumentException("허용되지 않는 direction 값: " + direction);
+    @Override
+    public List<Comment> findCommentsByLikeCountCursor(UUID articleId, Integer afterLikeCount,
+        int limit) {
+        QComment comment = QComment.comment;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(comment.articleId.eq(articleId));
+
+        if (afterLikeCount != null) {
+            builder.and(comment.likeCount.lt(afterLikeCount));
         }
+
+        return queryFactory
+            .selectFrom(comment)
+            .where(builder)
+            .orderBy(comment.likeCount.desc(), comment.id.desc()) // 보조 정렬로 id 내림차순
+            .limit(limit)
+            .fetch();
     }
 }

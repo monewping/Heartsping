@@ -1,4 +1,4 @@
-package org.project.monewping.domain.article.service;
+package org.project.monewping.domain.article.service.impl;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -13,6 +13,7 @@ import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.project.monewping.domain.useractivity.document.UserActivityDocument;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
@@ -95,10 +96,10 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
                 .build();
 
             userActivityService.addArticleView(viewedBy, articleViewInfo);
-            log.info("[ArticleViewsService] 사용자 활동 내역 기사 조회 추가 완료 - userId: {}, articleId: {}", 
+            log.info("[ArticleViewsService] 사용자 활동 내역 기사 조회 추가 완료 - userId: {}, articleId: {}",
                 viewedBy, articleId);
         } catch (Exception e) {
-            log.error("[ArticleViewsService] 사용자 활동 내역 기사 조회 추가 실패 - userId: {}, articleId: {}, error: {}", 
+            log.error("[ArticleViewsService] 사용자 활동 내역 기사 조회 추가 실패 - userId: {}, articleId: {}, error: {}",
                 viewedBy, articleId, e.getMessage());
         }
 
