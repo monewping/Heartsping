@@ -15,6 +15,17 @@ import org.project.monewping.domain.interest.repository.KeywordRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * {@code ArticleCollectorScheduler}는 등록된 관심사와 키워드를 기반으로
+ * 뉴스 기사를 주기적으로 수집하고 저장하는 스케줄러입니다.
+ *
+ * <p>각 {@link ArticleFetcher}를 통해 키워드별 기사 데이터를 수집하고,
+ * {@link ArticlesService}를 통해 중복을 제거한 후 DB에 저장합니다.
+ * 저장된 결과는 관심사별로 로그로 출력됩니다.</p>
+ *
+ * <p>이 클래스는 Spring의 {@code @Scheduled} 기능을 이용하여
+ * 매 시간마다 실행되도록 설정되어 있습니다.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,10 +37,14 @@ public class ArticleCollectorScheduler {
     private final KeywordRepository keywordRepository;
 
     /**
-     * 매 시간마다 실행되는 뉴스 기사 수집 스케줄러입니다.
+     * 등록된 모든 관심사에 대해 뉴스 기사 수집을 수행하는 스케줄러 메서드입니다.
      *
-     * 전체 관심사를 조회하여 각 관심사 이름을 키워드로 사용해
-     * 모든 수집기를 통해 기사 데이터를 수집하고, ArticlesService를 통해 저장합니다.
+     * <p>관심사별로 키워드를 조회한 뒤, 모든 {@link ArticleFetcher}를 사용해
+     * 기사 데이터를 수집하고 {@link ArticlesService#saveAll(List)}를 통해 저장합니다.</p>
+     *
+     * <p>수집 및 저장 결과는 전체 수와 관심사별 저장 수로 로그에 출력됩니다.</p>
+     *
+     * <p><strong>스케줄 주기</strong>: 매 정시마다 ( 매 시간 0분 )</p>
      */
     @Scheduled(cron = "0 0 * * * *")
     public void collectArticlesByInterest() {
@@ -58,10 +73,13 @@ public class ArticleCollectorScheduler {
     }
 
     /**
-     * 주어진 관심사에 대해 각 fetcher를 호출하여 기사를 수집하고 저장합니다.
+     * 주어진 관심사에 대해 키워드별 기사 수집 및 저장을 수행합니다.
+     *
+     * <p>각 키워드에 대해 모든 {@link ArticleFetcher}를 순회하며 기사 수집을 시도하고,
+     * {@link ArticlesService#saveAll(List)}를 통해 저장된 기사 수를 집계합니다.</p>
      *
      * @param interest 수집 대상 관심사
-     * @return 저장된 기사 수
+     * @return 해당 관심사에 대해 최종적으로 저장된 기사 수
      */
     private int collectForInterest(Interest interest) {
         UUID interestId = interest.getId();
