@@ -1,0 +1,57 @@
+spring:
+  sql.init.mode: never
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        ddl-auto: validate
+        format_sql: false
+        highlight_sql: false
+        use_sql_comments: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: monewping
+  batch:
+    jdbc:
+      initialize-schema: embedded
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+logging:
+  level:
+    org.project.monewping: info
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn
+
+# AWS
+aws:
+  storage:
+    type: ${STORAGE_TYPE:local}
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY:}
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET} # 기사 백업 데이터 등을 넣는 버킷
+    logs:
+      bucket-name: ${AWS_S3_LOGS_BUCKET:monewping-logs-storage} # 로그 파일을 넣는 버킷
+      prefix: ${AWS_S3_LOGS_PREFIX:application-logs}
+    enabled: ${AWS_S3_ENABLED:false}
+
+#제대로안된거같음
+#file:
+#  upload-dir: s3
+#  base-url: https://${aws.s3.logs.bucket-name}.s3.${aws.region}.amazonaws.com/
