@@ -21,6 +21,7 @@ import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.KeywordRepository;
+import org.project.monewping.domain.notification.service.NotificationService;
 
 @DisplayName("ArticleScheduler 테스트")
 public class ArticleSchedulerTest {
@@ -37,6 +38,9 @@ public class ArticleSchedulerTest {
     @Mock
     private ArticleFetcher fetcher1;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private ArticleCollectorScheduler articleCollectorScheduler;
 
@@ -51,7 +55,8 @@ public class ArticleSchedulerTest {
             interestRepository,
             List.of(fetcher1),   // fetcher2 제거, 단일 fetcher만 주입
             articlesService,
-            keywordRepository
+            keywordRepository,
+            notificationService
         );
     }
 
