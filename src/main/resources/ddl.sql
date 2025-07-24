@@ -44,7 +44,6 @@ CREATE TABLE interests
     subscriber_count BIGINT       NOT NULL,
     created_at       TIMESTAMPTZ  NOT NULL,
     updated_at       TIMESTAMPTZ  NOT NULL
-
 );
 
 -- keywords Table
@@ -92,7 +91,7 @@ CREATE TABLE articles
     original_link VARCHAR(500) NOT NULL,
     title         VARCHAR(100) NOT NULL,
     summary       TEXT         NOT NULL,
-    published_at  DATE         NOT NULL,
+    published_at  TIMESTAMPTZ  NOT NULL,
     comment_count BIGINT       NOT NULL,
     view_count    BIGINT       NOT NULL,
     is_deleted    BOOLEAN DEFAULT FALSE,

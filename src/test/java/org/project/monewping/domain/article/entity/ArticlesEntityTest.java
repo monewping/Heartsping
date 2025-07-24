@@ -47,10 +47,10 @@ class ArticlesEntityTest {
         long viewCount = 100L;
         boolean deleted = false;
         long version = 1L;
-        
+
         // when
         Articles articles = new Articles(interest, source, originalLink, title, summary, publishedAt, commentCount, viewCount, deleted);
-        
+
         // then
         assertThat(articles.getTitle()).isEqualTo(title);
         assertThat(articles.getSummary()).isEqualTo(summary);

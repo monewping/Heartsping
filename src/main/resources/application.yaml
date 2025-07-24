@@ -37,6 +37,9 @@ spring:
       initialize-schema: always
 
 logging:
+  file:
+    path: ./logs
+    name: monewping
   level:
     org.project.monewping: debug
     org.hibernate.SQL: debug
@@ -80,3 +83,15 @@ naver:
   api:
     client-id: ${NAVER_CLIENT_ID:test-client-id}
     client-secret: ${NAVER_CLIENT_SECRET:test-client-secret}
+
+# aws (추후 운영환경 분리)
+aws:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY:}
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET} # 기사 백업 데이터 등을 넣는 버킷
+    logs:
+      bucket-name: ${AWS_S3_LOGS_BUCKET:monewping-logs-storage} # 로그 파일을 넣는 버킷
+      prefix: ${AWS_S3_LOGS_PREFIX:application-logs}
+    enabled: false # 현재 aws 연동하지 않았기 때문에 false, 이후 연동 시 true 변경
