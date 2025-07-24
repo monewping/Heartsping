@@ -40,7 +40,7 @@ import java.time.format.DateTimeFormatter;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "aws.s3.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "aws.s3.logs.enabled", havingValue = "true")
 public class LogUploadService {
 
     private static final String SERVICE_NAME = "[LogUploadService] ";
