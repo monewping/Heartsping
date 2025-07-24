@@ -31,6 +31,8 @@ public class CommentLikeService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
 
+    public static final String RESOURCE_TYPE_COMMENT = "Comment";
+
     /**
      * 댓글 좋아요 등록
      * @param userId 사용자 ID
@@ -92,7 +94,7 @@ public class CommentLikeService {
             .userId(comment.getUserId())
             .content(username + "님이 나의 댓글을 좋아합니다.")
             .resourceId(comment.getId())
-            .resourceType("Comment")
+            .resourceType(RESOURCE_TYPE_COMMENT)
             .confirmed(false)
             .active(true)
             .build();
