@@ -78,7 +78,7 @@ public class NotificationIntegrationTest {
                 .header("Monew-Request-User-ID", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         long totalUnreadNotification = notificationRepository.countByUserIdAndConfirmedFalse(userId);
         assertThat(totalUnreadNotification).isZero();
@@ -105,7 +105,7 @@ public class NotificationIntegrationTest {
                 .header("Monew-Request-User-ID", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         // then
         Notification updated = notificationRepository.findById(notification.getId()).orElseThrow();

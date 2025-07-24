@@ -83,7 +83,7 @@ public class NotificationControllerTest {
         mockMvc.perform(patch("/api/notifications")
                 .header("Monew-Request-User-ID", userId.toString())
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         verify(notificationService).confirmAll(userId);
     }
@@ -99,7 +99,7 @@ public class NotificationControllerTest {
                 .header("Monew-Request-User-ID", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         // verify
         verify(notificationService).confirmNotification(userId, notificationId);
