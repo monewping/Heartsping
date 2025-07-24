@@ -17,6 +17,7 @@ import org.project.monewping.domain.useractivity.document.UserActivityDocument;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 댓글 좋아요 서비스
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CommentLikeService {
 
     private final CommentLikeRepository commentLikeRepository;
@@ -56,29 +58,8 @@ public class CommentLikeService {
         
         commentLikeRepository.save(commentLike);
 
-        // 사용자 활동 내역에 댓글 좋아요 추가
-        try {
-            Articles article = articlesRepository.findById(comment.getArticleId()).orElse(null);
-            
-            if (article != null) {
-                UserActivityDocument.CommentLikeInfo commentLikeInfo = UserActivityDocument.CommentLikeInfo.builder()
-                    .id(commentLike.getId())
-                    .createdAt(Instant.ofEpochMilli(commentLike.getCreatedAt().toEpochMilli()))
-                    .commentId(commentId)
-                    .articleId(article.getId())
-                    .articleTitle(article.getTitle())
-                    .commentUserId(comment.getUserId())
-                    .commentUserNickname(comment.getUserNickname())
-                    .commentContent(comment.getContent())
-                    .commentLikeCount(comment.getLikeCount())
-                    .commentCreatedAt(Instant.ofEpochMilli(comment.getCreatedAt().toEpochMilli()))
-                    .build();
-
-                userActivityService.addCommentLike(userId, commentLikeInfo);
-            }
-        } catch (Exception e) {
-            // 활동 내역 업데이트 실패가 좋아요 기능 자체를 실패시키지 않도록 예외를 잡아서 로그만 남김
-        }
+        // 사용자 활동 내역에 댓글 좋아요 추가. 하단 헬퍼 메서드 참고
+        addCommentLikeToUserActivity(userId, comment, commentLike);
     }
 
   /**
@@ -103,6 +84,34 @@ public class CommentLikeService {
             userActivityService.removeCommentLike(userId, commentId);
         } catch (Exception e) {
             // 활동 내역 업데이트 실패가 좋아요 취소 기능 자체를 실패시키지 않도록 예외를 잡아서 로그만 남김
+            log.error("[CommentLikeService] 사용자 활동 내역 댓글 좋아요 제거 실패 - userId: {}, commentId: {}, error: {}",
+                    userId, commentId, e.getMessage(), e);
+        }
+    }
+
+    private void addCommentLikeToUserActivity(UUID userId, Comment comment, CommentLike commentLike) {
+        try {
+            Articles article = articlesRepository.findById(comment.getArticleId()).orElse(null);
+
+            if (article != null) {
+                UserActivityDocument.CommentLikeInfo commentLikeInfo = UserActivityDocument.CommentLikeInfo.builder()
+                    .id(commentLike.getId())
+                    .createdAt(Instant.ofEpochMilli(commentLike.getCreatedAt().toEpochMilli()))
+                    .commentId(comment.getId())
+                    .articleId(article.getId())
+                    .articleTitle(article.getTitle())
+                    .commentUserId(comment.getUserId())
+                    .commentUserNickname(comment.getUserNickname())
+                    .commentContent(comment.getContent())
+                    .commentLikeCount(comment.getLikeCount())
+                    .commentCreatedAt(Instant.ofEpochMilli(comment.getCreatedAt().toEpochMilli()))
+                    .build();
+
+                userActivityService.addCommentLike(userId, commentLikeInfo);
+            }
+        } catch (Exception e) {
+            log.error("[CommentLikeService] 사용자 활동 내역 댓글 좋아요 추가 실패 - userId: {}, commentId: {}, error: {}",
+                userId, comment.getId(), e.getMessage(), e);
         }
     }
 }
