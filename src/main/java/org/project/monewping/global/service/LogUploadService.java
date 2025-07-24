@@ -55,7 +55,7 @@ public class LogUploadService {
     @Value("${aws.s3.logs.bucket-name}")
     private String bucketName;
 
-    @Value("${aws.s3.logs.prefix}")
+    @Value("${aws.s3.logs.prefix:application-logs}")
     private String prefix;
 
     /**

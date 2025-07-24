@@ -14,12 +14,6 @@ public class S3Config {
     @Value("${aws.region:ap-northeast-2}")
     private String region;
 
-    @Value("${aws.s3.logs.bucket-name:monewping-logs-storage}")
-    private String bucketName;
-
-    @Value("${aws.s3.logs.prefix:application-logs}")
-    private String prefix;
-
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
