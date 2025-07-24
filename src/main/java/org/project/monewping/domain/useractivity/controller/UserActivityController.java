@@ -36,11 +36,11 @@ public class UserActivityController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<UserActivityDto> getUserActivity(@PathVariable UUID userId) {
-        log.info("사용자 활동 내역 조회 요청. userId: {}", userId);
+        log.debug("사용자 활동 내역 조회 요청. userId: {}", userId);
 
         UserActivityDto userActivity = userActivityService.getUserActivity(userId);
 
-        log.info("사용자 활동 내역 조회 완료. userId: {}", userId);
+        log.debug("사용자 활동 내역 조회 완료. userId: {}", userId);
         return ResponseEntity.ok(userActivity);
     }
 
@@ -52,11 +52,11 @@ public class UserActivityController {
      */
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUserActivity(@PathVariable UUID userId) {
-        log.info("사용자 활동 내역 삭제 요청. userId: {}", userId);
+        log.debug("사용자 활동 내역 삭제 요청. userId: {}", userId);
 
         userActivityService.deleteUserActivity(userId);
 
-        log.info("사용자 활동 내역 삭제 완료. userId: {}", userId);
+        log.debug("사용자 활동 내역 삭제 완료. userId: {}", userId);
         return ResponseEntity.noContent().build();
     }
 }
