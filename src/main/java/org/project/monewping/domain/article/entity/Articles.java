@@ -63,4 +63,12 @@ public class Articles extends BaseEntity {
         this.viewCount++;
     }
 
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        this.commentCount--;
+    }
+
 }
