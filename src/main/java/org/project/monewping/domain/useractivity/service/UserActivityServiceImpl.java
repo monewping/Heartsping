@@ -10,6 +10,7 @@ import org.project.monewping.domain.useractivity.repository.UserActivityReposito
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -219,7 +220,7 @@ public class UserActivityServiceImpl implements UserActivityService {
     // ========== 댓글 관련 메서드 ==========
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void addComment(UUID userId, UserActivityDocument.CommentInfo commentInfo) {
         log.debug("댓글 정보 추가 시작. userId: {}, commentId: {}", userId, commentInfo.getId());
 
