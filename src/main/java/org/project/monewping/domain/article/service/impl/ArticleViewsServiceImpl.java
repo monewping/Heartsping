@@ -1,8 +1,6 @@
 package org.project.monewping.domain.article.service.impl;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +13,7 @@ import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.service.ArticleViewsService;
 import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.mapper.ArticleViewInfoMapper;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +39,7 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
     private final ArticleViewsRepository articleViewsRepository;
     private final ArticlesRepository articlesRepository;
     private final UserActivityService userActivityService;
+    private final ArticleViewInfoMapper articleViewInfoMapper;
 
     /**
      * 뉴스 기사 조회 기록을 등록한다.
@@ -81,19 +81,7 @@ public class ArticleViewsServiceImpl implements ArticleViewsService {
 
         // 3. 사용자 활동 내역에 기사 조회 추가
         try {
-            UserActivityDocument.ArticleViewInfo articleViewInfo = UserActivityDocument.ArticleViewInfo.builder()
-                .id(saved.getId())
-                .viewedBy(viewedBy)
-                .createdAt(saved.getCreatedAt().toInstant(ZoneOffset.UTC))
-                .articleId(article.getId())
-                .source(article.getSource())
-                .sourceUrl(article.getOriginalLink())
-                .articleTitle(article.getTitle())
-                .articlePublishedDate(article.getPublishedAt().toInstant(ZoneOffset.UTC))
-                .articleSummary(article.getSummary())
-                .articleCommentCount(article.getCommentCount())
-                .articleViewCount(article.getViewCount())
-                .build();
+            UserActivityDocument.ArticleViewInfo articleViewInfo = articleViewInfoMapper.toArticleViewInfo(saved, article);
 
             userActivityService.addArticleView(viewedBy, articleViewInfo);
             log.info("[ArticleViewsService] 사용자 활동 내역 기사 조회 추가 완료 - userId: {}, articleId: {}",
