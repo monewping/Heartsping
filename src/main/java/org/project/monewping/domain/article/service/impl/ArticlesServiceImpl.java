@@ -1,5 +1,7 @@
 package org.project.monewping.domain.article.service.impl;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +20,8 @@ import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
+import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,7 @@ public class ArticlesServiceImpl implements ArticlesService {
     private final ArticlesRepository articlesRepository;
     private final InterestRepository interestRepository;
     private final ArticlesMapper articlesMapper;
+    private final NotificationRepository notificationRepository;
 
     /**
      * 중복되지 않은 뉴스 기사 요청을 저장합니다.
@@ -97,8 +102,6 @@ public class ArticlesServiceImpl implements ArticlesService {
         log.info("[saveAll] 뉴스 기사 저장 완료 - count: {}", articlesToSave.size());
         return articlesToSave.size();
     }
-
-
 
     /**
      * 뉴스 기사 목록을 검색 조건에 맞게 커서 기반 페이지네이션으로 조회합니다.
@@ -175,6 +178,8 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         article.softDelete();
         log.info("뉴스 기사 논리 삭제 완료. articleId = {}", articleId);
+
+        deactivateArticleNotification(article.getInterest().getId(), article.getCreatedAt());
     }
 
     /**
@@ -193,6 +198,8 @@ public class ArticlesServiceImpl implements ArticlesService {
 
         articlesRepository.delete(article);
         log.info("뉴스 기사 물리 삭제 완료. articleId = {}", articleId);
+
+        deactivateArticleNotification(article.getInterest().getId(), article.getCreatedAt());
     }
 
     /* 내부 헬퍼 메서드로 중복 코드 제거 */
@@ -221,4 +228,27 @@ public class ArticlesServiceImpl implements ArticlesService {
         return sources.stream().distinct().collect(Collectors.toList());
     }
 
+    /**
+     * 기사 삭제 시, 기사와 연관된 모든 알림을 비활성화(isActive = false) 처리합니다.
+     *
+     * @param interestId 비활성화할 알림이 연결된 관심사 ID
+     * @param articleCreatedAt 기사 생성 시간
+     */
+    private void deactivateArticleNotification(UUID interestId, Instant articleCreatedAt) {
+        Instant start = articleCreatedAt.minusSeconds(5);
+        Instant end   = articleCreatedAt.plus(Duration.ofMinutes(5));
+
+        notificationRepository.deactivateByResourceIdAndCreatedAtBetween(interestId, start, end);
+
+        List<Notification> deactivated = notificationRepository.findByResourceIdAndActiveFalseAndCreatedAtBetween(interestId, start, end);
+
+        if (deactivated.isEmpty()) {
+            log.debug("비활성화된 알림이 없습니다. interestId={}", interestId);
+            return;
+        }
+
+        deactivated.forEach(notification ->
+            log.debug("비활성화된 알림 → id: {}, content: {}, updatedAt: {}", notification.getId(), notification.getContent(), notification.getUpdatedAt())
+        );
+    }
 }
