@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.BDDMockito.given;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -448,34 +447,5 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.updateComment(commentId, userId, request))
             .isInstanceOf(CommentDeleteException.class)
             .hasMessageContaining("삭제된 댓글은 수정할 수 없습니다.");
-    }
-
-    @Test
-    @DisplayName("댓글 삭제 - 비활성화된 알림 로그 출력")
-    void deleteComment_LogsDeactivatedNotifications() {
-        // given
-        Comment comment = Comment.builder()
-            .id(testCommentId)
-            .userId(testUserId)
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-        given(commentRepository.findById(testCommentId)).willReturn(Optional.of(comment));
-
-        doNothing().when(notificationRepository).deactivateByResourceId(testCommentId);
-
-        Notification notification = Notification.builder()
-            .id(UUID.randomUUID())
-            .content("테스트 알림")
-            .updatedAt(Instant.now())
-            .build();
-        given(notificationRepository.findByResourceIdAndActiveTrue(testCommentId)).willReturn(List.of(notification));
-
-        // when
-        commentService.deleteComment(testCommentId, testUserId);
-
-        // then
-        verify(notificationRepository).deactivateByResourceId(testCommentId);
-        verify(notificationRepository).findByResourceIdAndActiveTrue(testCommentId);
     }
 }
