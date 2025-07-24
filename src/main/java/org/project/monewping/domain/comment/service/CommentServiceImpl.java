@@ -200,16 +200,16 @@ public class CommentServiceImpl implements CommentService {
      * @param commentId 비활성화할 알림이 연결된 댓글의 UUID
      */
     private void deactivateLikeNotification(UUID commentId) {
-        notificationRepository.deactivateByResourceId(commentId);
+        List<Notification> toDeactivate = notificationRepository.findByResourceIdAndActiveTrue(commentId);
 
-        List<Notification> deactivated = notificationRepository.findByResourceIdAndActiveFalse(commentId);
-
-        if (deactivated == null || deactivated.isEmpty()) {
+        if (toDeactivate.isEmpty()) {
             log.debug("비활성화된 알림이 없습니다. commentId={}", commentId);
             return;
         }
 
-        deactivated.forEach(notification ->
+        notificationRepository.deactivateByResourceId(commentId);
+
+        toDeactivate.forEach(notification ->
             log.debug("비활성화된 알림 → id: {}, content: {}, updatedAt: {}", notification.getId(), notification.getContent(), notification.getUpdatedAt())
         );
     }
