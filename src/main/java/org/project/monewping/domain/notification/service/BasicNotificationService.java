@@ -7,12 +7,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
-import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
@@ -34,11 +35,53 @@ public class BasicNotificationService implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
     private final UserRepository userRepository;
-    //private final ArticleRepository articleRepository;
-    //private final InterestRepository interestRepository;
-    //private final InterestSubscriptionRepository interestSubscriptionRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     private static final int PAGE_OFFSET = 1;
+    public static final String RESOURCE_TYPE_ARTICLE = "Article";
+
+    /**
+     * 관심사에 새로 등록된 기사 수에 대한 정보를 구독자들에게 알림을 생성합니다.
+     *
+     * <p>주어진 관심사(interest)에 대해, newCount가 1건 이상인 경우에만
+     * 해당 관심사 구독자들에게 Notification 엔티티를 생성하여 생성합니다.
+     * newCount가 0 이하이거나, 구독자가 없으면 아무 동작도 수행하지 않습니다.</p>
+     *
+     * @param interest 알림을 보낼 대상 관심사 엔티티
+     * @param newCount 해당 관심사에 새로 등록된 기사 개수
+     */
+    @Transactional
+    public void createNewArticleNotification(Interest interest, int newCount) {
+        if (newCount <= 0) {
+            return;
+        }
+
+        List<UUID> subscriberIds = subscriptionRepository.findUserIdsByInterestId(interest.getId());
+        if (subscriberIds.isEmpty()) {
+            return;
+        }
+
+        String content = String.format(
+            "%s와 관련된 기사가 %d건 등록되었습니다.",
+            interest.getName(), newCount
+        );
+
+        List<Notification> notifications = subscriberIds.stream()
+            .map(userId -> Notification.builder()
+                .userId(userId)
+                .content(content)
+                .resourceId(interest.getId())
+                .resourceType(RESOURCE_TYPE_ARTICLE)
+                .confirmed(false)
+                .active(true)
+                .build()
+            )
+            .collect(Collectors.toList());
+
+        notificationRepository.saveAll(notifications);
+
+        log.debug("[ 관심사별 저장 현황 ] {}와 관련된 알림 생성 완료", interest.getName());
+    }
 
     /**
      * 특정 사용자의 읽지 않은 알림 목록을 페이지네이션을 이용하여 조회합니다.
@@ -136,7 +179,7 @@ public class BasicNotificationService implements NotificationService {
         }
 
         int updatedCount = notificationRepository.confirmAllByUserId(userId);
-        log.info("총 {}개의 알림이 확인 처리되었습니다. (userId: {})", updatedCount, userId);
+        log.info("총 {}개의 알림이 확인 처리되었습니다.", updatedCount);
     }
 
     /**
@@ -164,6 +207,6 @@ public class BasicNotificationService implements NotificationService {
             .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         notification.confirm();
-        log.debug("notification confirmed: {}", notification);
+        log.info("알림이 확인 처리되었습니다. (notificationId: {})", notificationId);
     }
 }

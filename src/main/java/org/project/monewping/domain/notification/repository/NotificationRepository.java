@@ -56,12 +56,11 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     Page<Notification> findAllByConfirmedIsTrueAndUpdatedAtBefore(Instant updatedAt, Pageable pageable);
 
     /**
-     * 주어진 resourceId에 해당하는 알림 중, active=true인 것만
-     * isActive=false로 변경하고 그 건수를 리턴합니다.
+     * 주어진 resourceId에 해당하는 알림 중, active=true인 것만 active=false로 변경합니다.
      *
      * @param resourceId 비활성화할 리소스 ID
      */
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("""
       UPDATE Notification n
          SET n.active = false,
@@ -72,12 +71,54 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     void deactivateByResourceId(UUID resourceId);
 
     /**
-     * 주어진 리소스 ID에 해당하며, isActive = false인(비활성화된) 알림을 모두 조회합니다.
+     * 주어진 리소스 ID에 해당하며, isActive = true인(활성화된) 알림을 모두 조회합니다.
      *
      * @param resourceId 조회할 리소스 ID
-     * @return 비활성화된 Notification 리스트 (없으면 빈 리스트)
+     * @return 활성화된 Notification 리스트 (없으면 빈 리스트)
      */
-    List<Notification> findByResourceIdAndActiveFalse(UUID resourceId);
+    List<Notification> findByResourceIdAndActiveTrue(UUID resourceId);
+
+    /**
+     * 주어진 interestId, createdAt 범위 안에 있는 활성 알림들만 isActive=false 처리합니다.
+     *
+     * @param interestId 관심사 ID (resourceId)
+     * @param start 시작 시각
+     * @param end 종료 시각
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+      UPDATE Notification n
+         SET n.active    = false,
+             n.updatedAt = CURRENT_TIMESTAMP
+       WHERE n.resourceId = :interestId
+         AND n.active     = true
+         AND n.createdAt BETWEEN :start AND :end
+    """)
+    void deactivateByResourceIdAndCreatedAtBetween(
+        @Param("interestId") UUID interestId,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
+
+    /**
+     * 비활성화된 기사 알림들을 같은 조건(createdAt BETWEEN start~end)으로 조회합니다.
+     *
+     * @param interestId 관심사 ID (resourceId)
+     * @param start 시작 시각
+     * @param end 종료 시각
+     */
+    @Query("""
+      SELECT n
+        FROM Notification n
+       WHERE n.resourceId = :interestId
+         AND n.active = false
+         AND n.createdAt BETWEEN :start AND :end
+    """)
+    List<Notification> findByResourceIdAndActiveFalseAndCreatedAtBetween(
+        @Param("interestId") UUID interestId,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
 
     long countByUserIdAndConfirmedFalse(UUID userId);
 }
