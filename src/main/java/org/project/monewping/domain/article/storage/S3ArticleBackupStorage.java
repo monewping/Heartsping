@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  * 필요에 따라 {@code baseDirectory}를 접두사로 사용합니다.</p>
  */
 @Slf4j
+@Primary
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "aws.s3.backup.enabled", havingValue = "true")

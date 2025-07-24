@@ -93,7 +93,7 @@ aws:
     backup:
       bucketName: ${AWS_BACKUP_BUCKET:monewping-backup-bucket} # 백업 전용 버킷명 (운영환경 분리 시 다르게 설정 가능)
       base-directory: ${AWS_BACKUP_BASE_DIR:backup/articles} # 백업 데이터 저장 기본 경로
-      enabled: false
+      enabled: true
     logs:
       bucket-name: ${AWS_S3_LOGS_BUCKET:monewping-logs-storage} # 로그 파일을 넣는 버킷
       prefix: ${AWS_S3_LOGS_PREFIX:application-logs}
