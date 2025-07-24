@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,7 +14,6 @@ import static org.mockito.BDDMockito.given;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -252,18 +252,28 @@ class CommentServiceTest {
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
+        Notification notification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
+            .build();
+
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(notification));
+
         doNothing().when(notificationRepository)
             .deactivateByResourceId(commentId);
-        given(notificationRepository.findByResourceIdAndActiveFalse(commentId))
-            .willReturn(Collections.emptyList());
 
         commentService.deleteComment(commentId, userId);
 
+        then(notificationRepository).should()
+            .findByResourceIdAndActiveTrue(commentId);
+
+        then(notificationRepository).should()
+            .deactivateByResourceId(commentId);
+
         assertThat(comment.getIsDeleted()).isTrue();
         verify(commentRepository).save(comment);
-
-        verify(notificationRepository).deactivateByResourceId(commentId);
-        verify(notificationRepository).findByResourceIdAndActiveFalse(commentId);
     }
 
     @Test
@@ -302,16 +312,21 @@ class CommentServiceTest {
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        doNothing().when(notificationRepository)
-            .deactivateByResourceId(commentId);
-        given(notificationRepository.findByResourceIdAndActiveFalse(commentId))
-            .willReturn(Collections.emptyList());
+        Notification likeNotification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
+            .build();
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(likeNotification));
+
+        doNothing().when(notificationRepository).deactivateByResourceId(commentId);
 
         commentService.deleteCommentPhysically(commentId, userId);
 
         verify(commentRepository).delete(comment);
+        verify(notificationRepository).findByResourceIdAndActiveTrue(commentId);
         verify(notificationRepository).deactivateByResourceId(commentId);
-        verify(notificationRepository).findByResourceIdAndActiveFalse(commentId);
     }
 
     @Test
@@ -425,13 +440,13 @@ class CommentServiceTest {
             .content("테스트 알림")
             .updatedAt(Instant.now())
             .build();
-        given(notificationRepository.findByResourceIdAndActiveFalse(testCommentId)).willReturn(List.of(notification));
+        given(notificationRepository.findByResourceIdAndActiveTrue(testCommentId)).willReturn(List.of(notification));
 
         // when
         commentService.deleteComment(testCommentId, testUserId);
 
         // then
         verify(notificationRepository).deactivateByResourceId(testCommentId);
-        verify(notificationRepository).findByResourceIdAndActiveFalse(testCommentId);
+        verify(notificationRepository).findByResourceIdAndActiveTrue(testCommentId);
     }
 }
