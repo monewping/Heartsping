@@ -46,6 +46,7 @@ public class Comment extends BaseUpdatableEntity {
 
     public void delete() {
         this.isDeleted = true;
+        this.content = "삭제된 댓글입니다";
         this.updatedAt = Instant.now();
     }
 

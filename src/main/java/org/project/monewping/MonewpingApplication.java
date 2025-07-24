@@ -25,9 +25,6 @@ public class MonewpingApplication {
             dotenv.entries().forEach(entry -> {
                 if (System.getProperty(entry.getKey()) == null) {
                     System.setProperty(entry.getKey(), entry.getValue());
-                    log.info("환경변수 등록: {} = {}", entry.getKey(), entry.getValue());
-                } else {
-                    log.info("이미 시스템 프로퍼티에 존재하는 키: {}, 값 무시됨", entry.getKey());
                 }
             });
         } catch (DotenvException e) {

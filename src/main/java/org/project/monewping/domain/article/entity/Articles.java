@@ -51,11 +51,7 @@ public class Articles extends BaseEntity {
     @Column(nullable = false, name = "is_deleted")
     private boolean deleted;
 
-    // 논리 삭제 시 적용될 마스킹
-    public void softDeleteWithMasking() {
-        this.title = "[ 삭제된 기사 ]";
-        this.summary = "해당 기사는 삭제되었습니다.";
-        this.originalLink = "404 Not Found - " + this.getId();
+    public void softDelete() {
         this.deleted = true;
     }
 
@@ -65,6 +61,14 @@ public class Articles extends BaseEntity {
 
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        this.commentCount--;
     }
 
 }
