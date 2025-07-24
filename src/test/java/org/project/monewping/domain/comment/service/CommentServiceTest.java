@@ -202,19 +202,6 @@ class CommentServiceTest {
             .deleted(false)
             .build();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-        when(articlesRepository.findById(articleId)).thenReturn(Optional.of(article));
-        when(commentMapper.toEntity(eq(requestDto), eq(userNickname)))
-            .thenReturn(Comment.builder()
-                .articleId(articleId)
-                .userId(userId)
-                .userNickname(userNickname)
-                .content("테스트 댓글입니다.")
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .likeCount(0)
-                .isDeleted(false)
-                .build());
         Comment commentToSave = Comment.builder()
             .articleId(articleId)
             .userId(userId)
@@ -250,16 +237,17 @@ class CommentServiceTest {
         );
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(articlesRepository.findById(articleId)).thenReturn(Optional.of(article));
         when(commentMapper.toEntity(eq(requestDto), eq(userNickname))).thenReturn(commentToSave);
         when(commentRepository.save(commentToSave)).thenReturn(savedComment);
         when(commentMapper.toResponseDto(savedComment)).thenReturn(expectedResponse);
 
-        assertThat(article.getCommentCount()).isEqualTo(1); // 증가 확인
         CommentResponseDto result = commentService.registerComment(requestDto);
 
         assertThat(result).isNotNull();
         assertThat(result.id()).isEqualTo(savedComment.getId());
         assertThat(result.content()).isEqualTo("테스트 댓글입니다.");
+        assertThat(article.getCommentCount()).isEqualTo(1); // 증가 확인
         verify(commentRepository).save(any(Comment.class));
         verify(userRepository).findById(userId);
         verify(commentMapper).toEntity(eq(requestDto), eq(userNickname));

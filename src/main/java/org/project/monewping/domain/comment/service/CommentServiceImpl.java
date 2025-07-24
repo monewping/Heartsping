@@ -144,25 +144,21 @@ public class CommentServiceImpl implements CommentService {
 
         // 사용자 활동 내역에 댓글 추가
         try {
-            Articles article = articlesRepository.findById(requestDto.getArticleId())
-                .orElse(null);
-            
-            if (article != null) {
-                UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
-                    .id(saved.getId())
-                    .articleId(requestDto.getArticleId())
-                    .articleTitle(article.getTitle())
-                    .userId(requestDto.getUserId())
-                    .userNickname(user.getNickname())
-                    .content(saved.getContent())
-                    .likeCount(0L)
-                    .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
-                    .build();
+            UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
+                .id(saved.getId())
+                .articleId(requestDto.getArticleId())
+                .articleTitle(article.getTitle())
+                .userId(requestDto.getUserId())
+                .userNickname(user.getNickname())
+                .content(saved.getContent())
+                .likeCount(0L)
+                .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
+                .build();
 
-                userActivityService.addComment(requestDto.getUserId(), commentInfo);
-                log.info("[CommentService] 사용자 활동 내역 댓글 추가 완료 - userId: {}, commentId: {}", 
-                    requestDto.getUserId(), saved.getId());
-            }
+            userActivityService.addComment(requestDto.getUserId(), commentInfo);
+            log.info("[CommentService] 사용자 활동 내역 댓글 추가 완료 - userId: {}, commentId: {}",
+                requestDto.getUserId(), saved.getId());
+
         } catch (Exception e) {
             log.error("[CommentService] 사용자 활동 내역 댓글 추가 실패 - userId: {}, commentId: {}, error: {}", 
                 requestDto.getUserId(), saved.getId(), e.getMessage());
