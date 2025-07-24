@@ -11,6 +11,8 @@ import org.project.monewping.domain.article.exception.S3BackupLoadException;
 import org.project.monewping.domain.article.exception.S3BackupSaveException;
 import org.project.monewping.global.config.S3Properties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -27,6 +29,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  * 필요에 따라 {@code baseDirectory}를 접두사로 사용합니다.</p>
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "aws.s3.backup.enabled", havingValue = "true")
 public class S3ArticleBackupStorage implements ArticleBackupStorage {

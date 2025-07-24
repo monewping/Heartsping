@@ -7,14 +7,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>
  * 이 클래스는 다음과 같은 하위 설정을 포함합니다:
  * <ul>
- *     <li>{@code enabled} - S3 연동 기능 전반의 활성화 여부</li>
  *     <li>{@code backup} - 백업 관련 S3 설정</li>
  *     <li>{@code logs} - 로그 업로드 관련 S3 설정</li>
  * </ul>
  */
 @ConfigurationProperties(prefix = "aws.s3")
 public record S3Properties(
-    boolean enabled,
     Backup backup,
     Logs logs
 ) {

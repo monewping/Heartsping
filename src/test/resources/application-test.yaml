@@ -31,3 +31,7 @@ logging:
     org.springframework.test: debug
     org.springframework.boot.devtools.restart: trace
     org.springframework.boot.devtools.classpath: trace
+aws:
+  s3:
+    backup:
+      enabled: true
