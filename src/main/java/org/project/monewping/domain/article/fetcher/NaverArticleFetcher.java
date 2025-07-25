@@ -39,8 +39,8 @@ public class NaverArticleFetcher implements ArticleFetcher {
     private String clientSecret;
 
     private static final String NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json";
-    private static final int MAX_TOTAL_COUNT = 300;
-    private static final int DISPLAY_COUNT = 50;
+    private static final int MAX_TOTAL_COUNT = 1000;
+    private static final int DISPLAY_COUNT = 100;
 
     /**
      * 네이버 뉴스 API를 통해 주어진 키워드의 뉴스 기사를 수집합니다.

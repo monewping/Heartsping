@@ -6,7 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -14,10 +16,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 import org.project.monewping.MonewpingApplication;
+import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.storage.S3ArticleBackupStorage;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +31,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@Import(TestS3MockConfig.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Articles 통합 테스트")
 public class ArticlesIntegrationTest {
@@ -58,6 +65,9 @@ public class ArticlesIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private S3ArticleBackupStorage s3ArticleBackupStorage;
 
     private UUID testUserId;
     private Articles testArticle;
@@ -179,11 +189,29 @@ public class ArticlesIntegrationTest {
     @Test
     @DisplayName("뉴스 기사 복구 API 테스트 (날짜 범위)")
     void testRestoreArticles() throws Exception {
+        List<ArticleDto> mockArticles = List.of(
+            new ArticleDto(
+                UUID.randomUUID(),
+                "TestSource",
+                "https://test.com/article/1",
+                "테스트 기사 제목",
+                LocalDateTime.of(2025, 7, 5, 10, 30),
+                "테스트 기사 요약",
+                10L,
+                100L,
+                false
+            )
+        );
+
+        Mockito.when(s3ArticleBackupStorage.load(Mockito.any(LocalDate.class)))
+            .thenReturn(mockArticles);
+
         mockMvc.perform(get("/api/articles/restore")
                 .param("from", "2025-07-01")
                 .param("to", "2025-07-10"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray());
     }
+
 
 }
