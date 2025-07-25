@@ -7,6 +7,10 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+
   jpa:
     show-sql: false
     open-in-view: false
