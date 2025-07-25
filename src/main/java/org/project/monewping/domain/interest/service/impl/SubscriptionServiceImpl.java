@@ -1,6 +1,8 @@
 package org.project.monewping.domain.interest.service.impl;
 
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Subscription;
@@ -10,6 +12,8 @@ import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ import java.util.UUID;
  *
  * <p>구독 등록, 중복 구독 방지, 구독자 수 증가 등 구독 도메인 핵심 비즈니스 로직을 처리합니다.</p>
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
@@ -28,6 +33,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final InterestRepository interestRepository;
     private final UserRepository userRepository;
+    private final UserActivityService userActivityService;
 
     /**
      * 관심사 구독을 등록합니다.
@@ -59,6 +65,28 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         // 구독자 수 증가
         interest.increaseSubscriber();
+
+        log.info("[SubscriptionService] 구독 등록 완료 - userId: {}, interestId: {}, interestName: {}", 
+            subscriberId, interestId, interest.getName());
+
+        // 사용자 활동 내역에 구독 정보 추가
+        try {
+            UserActivityDocument.SubscriptionInfo subscriptionInfo = UserActivityDocument.SubscriptionInfo.builder()
+                .id(saved.getId())
+                .interestId(interest.getId())
+                .interestName(interest.getName())
+                .interestKeywords(interest.getKeywords().stream().map(k -> k.getName()).toList())
+                .interestSubscriberCount(interest.getSubscriberCount())
+                .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
+                .build();
+
+            userActivityService.addSubscription(subscriberId, subscriptionInfo);
+            log.info("[SubscriptionService] 사용자 활동 내역 구독 추가 완료 - userId: {}, interestId: {}", 
+                subscriberId, interestId);
+        } catch (Exception e) {
+            log.error("[SubscriptionService] 사용자 활동 내역 구독 추가 실패 - userId: {}, interestId: {}, error: {}", 
+                subscriberId, interestId, e.getMessage());
+        }
 
         return SubscriptionDto.builder()
             .id(saved.getId())
@@ -99,6 +127,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         // 구독자 수 감소
         interest.decreaseSubscriber();
+
+        log.info("[SubscriptionService] 구독 취소 완료 - userId: {}, interestId: {}, interestName: {}", 
+            subscriberId, interestId, interest.getName());
+
+        // 사용자 활동 내역에서 구독 정보 제거
+        try {
+            userActivityService.removeSubscription(subscriberId, interestId);
+            log.info("[SubscriptionService] 사용자 활동 내역 구독 제거 완료 - userId: {}, interestId: {}", 
+                subscriberId, interestId);
+        } catch (Exception e) {
+            log.error("[SubscriptionService] 사용자 활동 내역 구독 제거 실패 - userId: {}, interestId: {}, error: {}", 
+                subscriberId, interestId, e.getMessage());
+        }
 
         return SubscriptionDto.builder()
             .id(subscription.getId())
