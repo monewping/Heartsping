@@ -3,6 +3,7 @@ package org.project.monewping.domain.user.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,12 +20,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
 import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.service.UserService;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
 import org.project.monewping.global.exception.GlobalExceptionHandler;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -330,6 +333,65 @@ class UserControllerSliceTest {
         mockMvc.perform(post("/api/users/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(malformedJson))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    // ========== 닉네임 수정 관련 테스트 ==========
+
+    @Test
+    @DisplayName("정상적으로 닉네임을 수정하면 200 OK와 변경된 정보를 반환한다")
+    void testUpdateNickname_Success() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserNicknameUpdateRequest request = new UserNicknameUpdateRequest("newNickname");
+        UserRegisterResponse response = new UserRegisterResponse(
+                userId,
+                "test@example.com",
+                "newNickname",
+                Instant.now()
+        );
+        given(userService.updateNickname(any(UUID.class), any(UserNicknameUpdateRequest.class)))
+                .willReturn(response);
+
+        // when & then
+        mockMvc.perform(patch("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("newNickname"));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 닉네임 수정 시 404 Not Found를 반환한다")
+    void testUpdateNickname_UserNotFound() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserNicknameUpdateRequest request = new UserNicknameUpdateRequest("newNickname");
+        given(userService.updateNickname(any(UUID.class), any(UserNicknameUpdateRequest.class)))
+                .willThrow(new UserNotFoundException("존재하지 않는 사용자입니다."));
+
+        // when & then
+        mockMvc.perform(patch("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("사용자를 조회할 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 닉네임(빈 값)으로 400 Bad Request를 반환한다")
+    void testUpdateNickname_InvalidNickname() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        String invalidJson = "{\"nickname\":\"\"}";
+
+        // when & then
+        mockMvc.perform(patch("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }

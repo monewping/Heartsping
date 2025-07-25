@@ -2,6 +2,7 @@ package org.project.monewping.domain.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
+import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -256,6 +258,66 @@ class UserIntegrationTest {
         assertSuccessfulLogin(performLogin(login1), "multi1@example.com", "multi1");
         assertSuccessfulLogin(performLogin(login2), "multi2@example.com", "multi2");
         assertSuccessfulLogin(performLogin(login3), "multi3@example.com", "multi3");
+    }
+
+    @Test
+    @DisplayName("정상적으로 닉네임을 수정하면 200 OK와 변경된 정보를 반환하고 DB에도 반영된다")
+    void testUpdateNicknameIntegration_Success() throws Exception {
+        // given - 사용자 등록
+        UserRegisterRequest registerRequest = createUserRequest("patchtest@example.com", "patchuser", "password123");
+        performUserRegistration(registerRequest).andExpect(status().isCreated());
+        User user = userRepository.findByEmail("patchtest@example.com").orElseThrow();
+        UserNicknameUpdateRequest updateRequest = new UserNicknameUpdateRequest("updatedNickname");
+
+        // when & then - PATCH 요청
+        mockMvc.perform(patch("/api/users/" + user.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("updatedNickname"));
+
+        // DB 반영 확인
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updatedUser.getNickname()).isEqualTo("updatedNickname");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 닉네임 수정 시 404 Not Found를 반환한다")
+    void testUpdateNicknameIntegration_UserNotFound() throws Exception {
+        // given
+        UserNicknameUpdateRequest updateRequest = new UserNicknameUpdateRequest("updatedNickname");
+        String notExistId = "00000000-0000-0000-0000-000000000000";
+
+        // when & then
+        mockMvc.perform(patch("/api/users/" + notExistId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("사용자를 조회할 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 닉네임(빈 값)으로 400 Bad Request를 반환하고 DB에 반영되지 않는다")
+    void testUpdateNicknameIntegration_InvalidNickname() throws Exception {
+        // given - 사용자 등록
+        UserRegisterRequest registerRequest = createUserRequest("patchfail@example.com", "patchfailuser", "password123");
+        performUserRegistration(registerRequest).andExpect(status().isCreated());
+        User user = userRepository.findByEmail("patchfail@example.com").orElseThrow();
+        String invalidJson = "{\"nickname\":\"\"}";
+        String beforeNickname = user.getNickname();
+
+        // when & then
+        mockMvc.perform(patch("/api/users/" + user.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+
+        // DB에 반영되지 않았는지 확인
+        User afterUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(afterUser.getNickname()).isEqualTo(beforeNickname);
     }
 
     // ===== Private Helper Methods =====

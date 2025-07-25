@@ -13,8 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
 import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
@@ -387,5 +389,62 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.login(nullPasswordRequest))
                 .isInstanceOf(LoginFailedException.class)
                 .hasMessage("이메일 또는 비밀번호가 일치하지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하는 사용자의 닉네임을 성공적으로 변경한다")
+    void updateNickname_Success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserNicknameUpdateRequest request = new UserNicknameUpdateRequest("newNickname");
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("oldNickname")
+                .password("password123")
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        User updatedUser = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("newNickname")
+                .password("password123")
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+        UserRegisterResponse response = new UserRegisterResponse(
+                userId,
+                user.getEmail(),
+                "newNickname",
+                user.getCreatedAt()
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.save(user)).willReturn(updatedUser);
+        given(userMapper.toResponse(updatedUser)).willReturn(response);
+
+        // when
+        UserRegisterResponse result = userService.updateNickname(userId, request);
+
+        // then
+        assertThat(result.nickname()).isEqualTo("newNickname");
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(user);
+        verify(userMapper).toResponse(updatedUser);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 닉네임 변경 시 UserNotFoundException이 발생한다")
+    void updateNickname_UserNotFound() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserNicknameUpdateRequest request = new UserNicknameUpdateRequest("newNickname");
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, request))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("존재하지 않는 사용자입니다.");
+        verify(userRepository).findById(userId);
     }
 }
