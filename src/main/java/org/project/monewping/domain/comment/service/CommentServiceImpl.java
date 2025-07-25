@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -14,6 +16,8 @@ import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
@@ -34,6 +38,8 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
+    private final ArticlesRepository articlesRepository;
+    private final UserActivityService userActivityService;
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -117,7 +123,7 @@ public class CommentServiceImpl implements CommentService {
         );
     }
 
-        // 댓글 등록
+    // 댓글 등록
     @Override
     public CommentResponseDto registerComment(CommentRegisterRequestDto requestDto) {
         User user = userRepository.findById(requestDto.getUserId())
@@ -125,11 +131,38 @@ public class CommentServiceImpl implements CommentService {
                 "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId()
             ));
 
+        // 🔥 기사 댓글 수 증가
+        Articles article = articlesRepository.findById(requestDto.getArticleId())
+            .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + requestDto.getArticleId()));
+        article.increaseCommentCount();
+
         Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
         Comment saved = commentRepository.save(comment);
 
-        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
+        log.debug("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
             requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
+
+        // 사용자 활동 내역에 댓글 추가
+        try {
+            UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
+                .id(saved.getId())
+                .articleId(requestDto.getArticleId())
+                .articleTitle(article.getTitle())
+                .userId(requestDto.getUserId())
+                .userNickname(user.getNickname())
+                .content(saved.getContent())
+                .likeCount(0L)
+                .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
+                .build();
+
+            userActivityService.addComment(requestDto.getUserId(), commentInfo);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 추가 완료 - userId: {}, commentId: {}",
+                requestDto.getUserId(), saved.getId());
+
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 추가 실패 - userId: {}, commentId: {}, error: {}", 
+                requestDto.getUserId(), saved.getId(), e.getMessage());
+        }
 
         return commentMapper.toResponseDto(saved);
     }
@@ -144,10 +177,32 @@ public class CommentServiceImpl implements CommentService {
             throw new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다.");
         }
 
+        if (comment.isDeleted()) {
+            log.warn("[CommentService] 이미 삭제된 댓글입니다 - commentId: {}", commentId);
+            return;
+        }
+
         comment.delete();
         commentRepository.save(comment);
-        log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 기사 댓글 수 감소
+        Articles article = articlesRepository.findById(comment.getArticleId())
+            .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + comment.getArticleId()));
+        article.decreaseCommentCount();
+        articlesRepository.save(article);
+
+        log.debug("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 사용자 활동 내역에서 댓글 제거
+        try {
+            userActivityService.removeComment(userId, commentId);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
     }
+
 
     // 물리 삭제
     @Override
@@ -159,9 +214,31 @@ public class CommentServiceImpl implements CommentService {
             throw new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다.");
         }
 
+        boolean shouldDecreaseCount = !comment.isDeleted(); // 삭제 안 돼 있었으면 줄인다
+
         commentRepository.delete(comment);
-        log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 기사 댓글 수 감소
+        if (shouldDecreaseCount) {
+            Articles article = articlesRepository.findById(comment.getArticleId())
+                .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + comment.getArticleId()));
+            article.decreaseCommentCount();
+
+            log.debug("[CommentService] 댓글 수 감소 (물리 삭제로 인한) - commentId: {}", commentId);
+        }
+
+        log.debug("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 사용자 활동 내역에서 댓글 제거
+        try {
+            userActivityService.removeComment(userId, commentId);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
     }
+
 
     // 댓글 수정
     @Override
@@ -179,7 +256,22 @@ public class CommentServiceImpl implements CommentService {
 
         comment.updateContent(request.content());
 
-        log.info("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
+        log.debug("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 사용자 활동 내역에서 댓글 내용 업데이트
+        try {
+            // 1. 사용자 활동 내역에서 업데이트한 댓글 내용 반영
+            userActivityService.updateComment(userId, commentId, request.content());
+            log.debug("[CommentService] 사용자 활동 내역 댓글 업데이트 완료 - userId: {}, commentId: {}", userId, commentId);
+
+            // 2. 좋아요를 누른 댓글 목록의 해당 댓글 내용도 업데이트 (모든 사용자)
+            userActivityService.updateCommentInLikes(commentId, request.content());
+            log.debug("[CommentService] 사용자 활동 내역 댓글 좋아요 항목 업데이트 완료 - commentId: {}", commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 업데이트 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
+
         return commentMapper.toResponseDto(comment);
     }
 

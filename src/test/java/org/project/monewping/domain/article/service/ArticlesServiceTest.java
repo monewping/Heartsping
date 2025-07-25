@@ -346,7 +346,7 @@ public class ArticlesServiceTest {
     }
 
     @Test
-    @DisplayName("논리 삭제 - 존재하는 기사일 경우 삭제 플래그 및 마스킹 처리 후 저장")
+    @DisplayName("논리 삭제 - 존재하는 기사일 경우 삭제 플래그만 true로 변경 후 저장")
     void softDelete_Success() {
         // given
         UUID articleId = UUID.randomUUID();
@@ -365,11 +365,13 @@ public class ArticlesServiceTest {
 
         // then
         assertThat(article.isDeleted()).isTrue();
-        assertThat(article.getTitle()).isEqualTo("[ 삭제된 기사 ]");
-        assertThat(article.getSummary()).isEqualTo("해당 기사는 삭제되었습니다.");
-        assertThat(article.getOriginalLink()).startsWith("404 Not Found");
-        // articlesRepository.save 호출은 entity 상태 변경 감지로 생략 가능하나, 필요하면 verify 추가
+
+        // 제목, 요약, 링크 등은 변경하지 않음
+        assertThat(article.getTitle()).isEqualTo("Original Title");
+        assertThat(article.getSummary()).isEqualTo("Original Summary");
+        assertThat(article.getOriginalLink()).isEqualTo("http://original.link");
     }
+
 
     @Test
     @DisplayName("논리 삭제 - 존재하지 않는 기사일 경우 ArticleNotFoundException 예외 발생")
