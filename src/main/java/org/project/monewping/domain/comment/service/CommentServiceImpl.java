@@ -1,6 +1,7 @@
 package org.project.monewping.domain.comment.service;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
+import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
@@ -37,6 +39,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
     private final ArticlesRepository articlesRepository;
+    private final CommentLikeRepository commentLikeRepository;
 
 
     @Override
@@ -46,7 +49,8 @@ public class CommentServiceImpl implements CommentService {
         String direction,
         String cursor,
         String after,
-        int limit
+        int limit,
+        UUID userId
     ) {
         // limit 기본값 및 최대 제한
         if (limit <= 0) limit = 50;
@@ -90,20 +94,21 @@ public class CommentServiceImpl implements CommentService {
                 comments = commentRepository.findCommentsByCreatedAtCursor(articleId, afterCreatedAt, limit + 1);
             }
         }
-
         boolean hasNext = comments.size() > limit;
         List<Comment> page = hasNext ? comments.subList(0, limit) : comments;
 
+        Set<UUID> likedCommentIds = commentLikeRepository.findCommentIdsByUserIdAndArticleId(userId, articleId);
+
         List<CommentResponseDto> response = page.stream()
-            .map(commentMapper::toResponseDto)
+            .map(comment -> commentMapper.toResponseDto(comment, likedCommentIds.contains(comment.getId())))
             .toList();
 
-        int size = page.size();
+        int size = limit;
         long totalElements = commentRepository.countByArticleId(articleId);
 
         String nextAfter = null;
         if (!page.isEmpty()) {
-            Comment last = page.get(size - 1);
+            Comment last = page.get(page.size() - 1);
             nextAfter = switch (orderBy) {
                 case "likeCount" -> String.valueOf(last.getLikeCount());
                 case "createdAt" -> last.getCreatedAt().toString();
