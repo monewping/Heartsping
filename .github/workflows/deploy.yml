@@ -5,9 +5,7 @@ name: Deploy to AWS ECS - Monew
 on:
   push:
     branches:
-      - release/config
-  pull_request:
-    branches: [dev] # 로컬 개발 마무리 후 main으로 교체
+      [release/config, dev, main]
 
 # 작업 목록 정의
 jobs:
@@ -44,7 +42,7 @@ jobs:
       # 5. Docker 이미지 빌드 및 푸시
       - name: Build and Push Docker Image to Public ECR
         env:
-          ECR_REGISTRY: ${{ vars.ECR_REPOSITORY_URI }} # ex) public.ecr.aws/abc123/discodeit
+          ECR_REGISTRY: ${{ vars.ECR_REPOSITORY_URI }}
           IMAGE_TAG: ${{ github.sha }} # 커밋 해시 기반 태그
         run: |
           # 1. 명령어 실패 시 워크플로우 종료
@@ -104,7 +102,7 @@ jobs:
         run: |
           jq --arg IMAGE "$IMAGE_URI" '
           .containerDefinitions |= map(
-            if .name == "discodeit-app" then
+            if .name == "monewping-container" then
             .image = $IMAGE
             else .
             end
@@ -118,7 +116,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ vars.ECS_CLUSTER }} \
             --service ${{ vars.ECS_SERVICE }} \
-            --desired-count 0  # [요구사항] 프리티어 고려해 실행 중지
+            --desired-count 0  # 프리티어 고려해 실행 중지
 
       # 4.5 등록 가능한 필드만 남기기 (불필요한 필드 제거)
       - name: Clean task definition JSON for registration
@@ -147,4 +145,4 @@ jobs:
             --cluster ${{ vars.ECS_CLUSTER }} \
             --service ${{ vars.ECS_SERVICE }} \
             --task-definition ${{ env.TASK_DEF_ARN }} \
-            --desired-count 1  # 🔹 [요구사항] 서비스 재실행
+            --desired-count 1  # 서비스 재실행
