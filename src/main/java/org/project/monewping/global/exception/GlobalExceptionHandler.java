@@ -8,12 +8,7 @@ import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
 import org.project.monewping.domain.comment.exception.CommentLikeNotFoundException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
-import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
-import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
-import org.project.monewping.domain.interest.exception.InterestCreationException;
-import org.project.monewping.domain.interest.exception.InterestNotFoundException;
-import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
-import org.project.monewping.domain.interest.exception.InvalidRequestException;
+import org.project.monewping.domain.interest.exception.*;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
@@ -461,6 +456,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CommentLikeNotFoundException.class)
     public ResponseEntity<String> handleCommentLikeNotFound(CommentLikeNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateSubscriptionException.class)
+    public ResponseEntity<String> handleDuplicateSubscriptionException(DuplicateSubscriptionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
 }

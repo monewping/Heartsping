@@ -4,16 +4,18 @@ import lombok.RequiredArgsConstructor;
 import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Subscription;
+import org.project.monewping.domain.interest.exception.DuplicateSubscriptionException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SubscriptionNotFoundException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.interest.service.SubscriptionService;
 import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -38,20 +40,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      * @param interestId 구독할 관심사 ID
      * @param subscriberId 구독자(사용자) ID
      * @return 구독 정보 DTO
-     * @throws IllegalArgumentException 사용자 또는 관심사가 존재하지 않을 때
-     * @throws IllegalStateException 이미 구독 중일 때
+     * @throws UserNotFoundException 사용자가 존재하지 않을 때
+     * @throws InterestNotFoundException 관심사가 존재하지 않을 때
+     * @throws DuplicateSubscriptionException 이미 구독 중일 때
      */
     @Override
     @Transactional
     public SubscriptionDto subscribe(UUID interestId, UUID subscriberId) {
         User user = userRepository.findById(subscriberId)
-            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+            .orElseThrow(() -> new UserNotFoundException("사용자 없음"));
         Interest interest = interestRepository.findById(interestId)
-            .orElseThrow(() -> new IllegalArgumentException("관심사 없음"));
+            .orElseThrow(() -> new InterestNotFoundException(interestId));
 
         // 중복 구독 방지
         if (subscriptionRepository.findInterestIdsByUserId(user.getId()).contains(interestId)) {
-            throw new IllegalStateException("이미 구독 중입니다.");
+            throw new DuplicateSubscriptionException("이미 구독 중입니다.");
         }
 
         Subscription subscription = new Subscription(user, interest);
@@ -79,16 +82,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      * @param interestId 구독 취소할 관심사 ID
      * @param subscriberId 구독자(사용자) ID
      * @return 구독 취소 정보 DTO
-     * @throws IllegalArgumentException 사용자 또는 관심사가 존재하지 않을 때
+     * @throws UserNotFoundException 사용자가 존재하지 않을 때
+     * @throws InterestNotFoundException 관심사가 존재하지 않을 때
      * @throws SubscriptionNotFoundException 구독이 존재하지 않을 때
      */
     @Override
     @Transactional
     public SubscriptionDto unsubscribe(UUID interestId, UUID subscriberId) {
         User user = userRepository.findById(subscriberId)
-            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+            .orElseThrow(() -> new UserNotFoundException("사용자 없음"));
         Interest interest = interestRepository.findById(interestId)
-            .orElseThrow(() -> new IllegalArgumentException("관심사 없음"));
+            .orElseThrow(() -> new InterestNotFoundException(interestId));
 
         // 구독 존재 여부 확인
         Subscription subscription = subscriptionRepository.findByUserIdAndInterestId(user.getId(), interestId)
