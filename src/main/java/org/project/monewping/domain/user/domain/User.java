@@ -38,4 +38,8 @@ public class User extends BaseUpdatableEntity {
 
     @Column(name = "password", nullable = false, length = 100)
     private String password;
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
