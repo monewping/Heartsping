@@ -8,10 +8,7 @@ import org.project.monewping.domain.interest.dto.request.InterestUpdateRequest;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.entity.Subscription;
-import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
-import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
-import org.project.monewping.domain.interest.exception.InterestNotFoundException;
-import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.interest.exception.*;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.interest.service.InterestService;
@@ -408,7 +405,7 @@ class InterestApiIntegrationTest {
 
         // When & Then
         assertThatThrownBy(() -> interestService.update(interestId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("키워드는 1개 이상 10개 이하로 입력해야 합니다");
     }
 
@@ -424,7 +421,7 @@ class InterestApiIntegrationTest {
 
         // When & Then
         assertThatThrownBy(() -> interestService.update(interestId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("키워드는 필수입니다");
     }
 

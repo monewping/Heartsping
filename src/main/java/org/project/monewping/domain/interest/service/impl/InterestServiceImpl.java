@@ -15,6 +15,7 @@ import org.project.monewping.domain.interest.exception.DuplicateKeywordException
 import org.project.monewping.domain.interest.exception.InterestCreationException;
 import org.project.monewping.domain.interest.exception.InterestDeletionException;
 import org.project.monewping.domain.interest.exception.InterestNotFoundException;
+import org.project.monewping.domain.interest.exception.InvalidRequestException;
 import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
@@ -70,7 +71,7 @@ public class InterestServiceImpl implements InterestService {
 
         try {
             validateRequest(request);
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidRequestException e) {
             log.warn("[InterestService] 유효성 검증 실패: name={}, error={}", request.name(), e.getMessage());
             throw e;
         }
@@ -99,7 +100,7 @@ public class InterestServiceImpl implements InterestService {
                 keywords.forEach(savedInterest::addKeyword);
                 log.info("[InterestService] 관심사 등록 성공: name={}, keywords={}", savedInterest.getName(), request.keywords());
             } else {
-                log.info("[InterestService] 관심사 등록 성공(키워드 없음): name={}", savedInterest.getName());
+                log.info("[InterestService] 관심사 등록 실패(키워드 없음): name={}", savedInterest.getName());
             }
 
             return interestMapper.toDto(savedInterest);
@@ -114,19 +115,19 @@ public class InterestServiceImpl implements InterestService {
      *
      * <p>null, 빈 문자열, 길이 초과 여부를 확인합니다.</p>
      * @param requestDto 관심사 생성 요청 DTO
-     * @throws IllegalArgumentException 요청 데이터가 유효하지 않은 경우
+     * @throws InvalidRequestException 요청 데이터가 유효하지 않은 경우
      */
     private void validateRequest(InterestRegisterRequest requestDto) {
         if (requestDto == null) {
-            throw new IllegalArgumentException("관심사 요청은 null일 수 없습니다.");
+            throw new InvalidRequestException("관심사 요청은 null일 수 없습니다.");
         }
 
         if (!StringUtils.hasText(requestDto.name())) {
-            throw new IllegalArgumentException("관심사 이름은 필수입니다.");
+            throw new InvalidRequestException("관심사 이름은 필수입니다.");
         }
 
         if (requestDto.name().length() > 100) {
-            throw new IllegalArgumentException("관심사 이름은 100자를 초과할 수 없습니다.");
+            throw new InvalidRequestException("관심사 이름은 100자를 초과할 수 없습니다.");
         }
     }
 
@@ -255,11 +256,11 @@ public class InterestServiceImpl implements InterestService {
      */
     private void validateKeywords(List<String> keywords) {
         if (keywords == null) {
-            throw new IllegalArgumentException("키워드는 필수입니다.");
+            throw new InvalidRequestException("키워드는 필수입니다.");
         }
 
         if (keywords.isEmpty()) {
-            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
+            throw new InvalidRequestException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
 
         // null이나 빈 문자열 제거 후 중복 검사 (성능 개선)
@@ -278,7 +279,7 @@ public class InterestServiceImpl implements InterestService {
         
         // 유효한 키워드가 하나도 없는 경우
         if (seen.isEmpty()) {
-            throw new IllegalArgumentException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
+            throw new InvalidRequestException("키워드는 1개 이상 10개 이하로 입력해야 합니다.");
         }
     }
 
