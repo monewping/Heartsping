@@ -23,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
@@ -32,6 +34,9 @@ import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.article.repository.ArticlesRepository;
+import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 
 
@@ -47,6 +52,12 @@ class CommentServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ArticlesRepository articlesRepository;
+
+    @Mock
+    private UserActivityService userActivityService;
 
     @InjectMocks
     private CommentServiceImpl commentService;
@@ -170,8 +181,8 @@ class CommentServiceTest {
 
 
     @Test
-    @DisplayName("댓글 등록 성공")
-    void registerComment_Success() {
+    @DisplayName("댓글 등록 성공 - 기사 댓글 수 증가 확인")
+    void registerComment_Success_IncreaseArticleCommentCount() {
         UUID articleId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         String userNickname = "테스트 유저";
@@ -186,23 +197,61 @@ class CommentServiceTest {
             .nickname(userNickname)
             .build();
 
+        Articles article = Articles.builder()
+            .commentCount(0L)
+            .deleted(false)
+            .build();
+
+        Comment commentToSave = Comment.builder()
+            .articleId(articleId)
+            .userId(userId)
+            .userNickname(userNickname)
+            .content("테스트 댓글입니다.")
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .likeCount(0)
+            .isDeleted(false)
+            .build();
+
+        Comment savedComment = Comment.builder()
+            .id(UUID.randomUUID()) // ID가 있는 저장된 댓글
+            .articleId(articleId)
+            .userId(userId)
+            .userNickname(userNickname)
+            .content("테스트 댓글입니다.")
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .likeCount(0)
+            .isDeleted(false)
+            .build();
+
+        CommentResponseDto expectedResponse = new CommentResponseDto(
+            savedComment.getId(),
+            savedComment.getArticleId(),
+            savedComment.getUserId(),
+            savedComment.getUserNickname(),
+            savedComment.getContent(),
+            savedComment.getLikeCount(),
+            savedComment.getIsDeleted(),
+            savedComment.getCreatedAt().toString()
+        );
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(articlesRepository.findById(articleId)).thenReturn(Optional.of(article));
+        when(commentMapper.toEntity(eq(requestDto), eq(userNickname))).thenReturn(commentToSave);
+        when(commentRepository.save(commentToSave)).thenReturn(savedComment);
+        when(commentMapper.toResponseDto(savedComment)).thenReturn(expectedResponse);
 
-        when(commentMapper.toEntity(eq(requestDto), eq(userNickname)))
-            .thenReturn(Comment.builder()
-                .articleId(articleId)
-                .userId(userId)
-                .userNickname(userNickname)
-                .content("테스트 댓글입니다.")
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .likeCount(0)
-                .isDeleted(false)
-                .build());
+        CommentResponseDto result = commentService.registerComment(requestDto);
 
-        commentService.registerComment(requestDto);
-
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(savedComment.getId());
+        assertThat(result.content()).isEqualTo("테스트 댓글입니다.");
+        assertThat(article.getCommentCount()).isEqualTo(1); // 증가 확인
         verify(commentRepository).save(any(Comment.class));
+        verify(userRepository).findById(userId);
+        verify(commentMapper).toEntity(eq(requestDto), eq(userNickname));
+        verify(commentMapper).toResponseDto(savedComment);
     }
 
     @Test
@@ -229,23 +278,32 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 논리 삭제 성공")
-    void deleteComment_Success() {
+    @DisplayName("댓글 논리 삭제 성공 - 기사 댓글 수 감소 확인")
+    void deleteComment_Success_DecreaseArticleCommentCount() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        UUID articleId = UUID.randomUUID();
 
         Comment comment = Comment.builder()
             .id(commentId)
             .userId(userId)
+            .articleId(articleId)
             .isDeleted(false)
             .updatedAt(Instant.now())
             .build();
 
+        Articles article = Articles.builder()
+            .commentCount(1L)
+            .deleted(false)
+            .build();
+
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
         commentService.deleteComment(commentId, userId);
 
         assertThat(comment.getIsDeleted()).isTrue();
+        assertThat(article.getCommentCount()).isEqualTo(0);
         verify(commentRepository).save(comment);
     }
 
@@ -271,22 +329,31 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 물리 삭제 성공")
-    void deleteCommentPhysically_Success() {
+    @DisplayName("댓글 물리 삭제 성공 - 기사 댓글 수 감소 확인")
+    void deleteCommentPhysically_Success_DecreaseArticleCommentCount() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        UUID articleId = UUID.randomUUID();
 
         Comment comment = Comment.builder()
             .id(commentId)
             .userId(userId)
+            .articleId(articleId)
             .isDeleted(false)
             .updatedAt(Instant.now())
             .build();
 
+        Articles article = Articles.builder()
+            .commentCount(1L)
+            .deleted(false)
+            .build();
+
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
         commentService.deleteCommentPhysically(commentId, userId);
 
+        assertThat(article.getCommentCount()).isEqualTo(0);
         verify(commentRepository).delete(comment);
     }
 

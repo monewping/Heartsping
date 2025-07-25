@@ -1,11 +1,13 @@
 package org.project.monewping.domain.article.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,15 +128,25 @@ public class ArticlesIntegrationTest {
     }
 
     @Test
-    @DisplayName("뉴스 기사 논리 삭제 테스트")
+    @DisplayName("뉴스 기사 논리 삭제 후, 조회 시 삭제된 기사는 조회되지 않아야 한다")
     void testSoftDeleteArticle() throws Exception {
+        // 논리 삭제 요청
         mockMvc.perform(delete("/api/articles/{articleId}", testArticle.getId()))
             .andExpect(status().isNoContent());
 
-        Articles deletedArticle = articlesRepository.findById(testArticle.getId()).orElseThrow();
-        org.junit.jupiter.api.Assertions.assertTrue(deletedArticle.isDeleted());
-        org.junit.jupiter.api.Assertions.assertEquals("[ 삭제된 기사 ]", deletedArticle.getTitle());
+        // 논리 삭제된 기사는 deleted = true 이므로, findByIdAndDeletedFalse로 조회하면 Optional.empty
+        Optional<Articles> deletedArticleOpt = articlesRepository.findByIdAndDeletedFalse(testArticle.getId());
+
+        // 삭제된 기사는 조회되지 않아야 함
+        assertThat(deletedArticleOpt).isEmpty();
+
+        // 원래 findById로 조회하면 존재는 해야 함 (데이터가 물리 삭제된 건 아니므로)
+        Articles deletedArticle = articlesRepository.findById(testArticle.getId())
+            .orElseThrow(() -> new AssertionError("삭제된 기사를 DB에서 찾을 수 없습니다."));
+
+        assertThat(deletedArticle.isDeleted()).isTrue();
     }
+
 
     @Test
     @DisplayName("뉴스 기사 물리 삭제 테스트")

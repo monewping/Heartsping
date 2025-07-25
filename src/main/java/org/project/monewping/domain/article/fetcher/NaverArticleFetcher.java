@@ -78,7 +78,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
                 // 응답 성공 여부 확인
                 if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                    log.warn("❗️ 네이버 뉴스 응답 실패 - status={}, keyword={}, start={}", response.getStatusCode(), keywords, start);
+                    log.warn("[ 네이버 뉴스 응답 실패 ] - status = {}, keyword = {}, start = {}", response.getStatusCode(), keywords, start);
                     break;
                 }
 
@@ -87,7 +87,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
 
                 // 더 이상 기사가 없다면 종료
                 if (items == null || items.isEmpty()) {
-                    log.info("✔️ 더 이상 수집할 기사가 없습니다 - keyword={}, start={}", keywords, start);
+                    log.info("더 이상 수집할 기사가 없습니다 - keyword = {}, start = {}", keywords, start);
                     break;
                 }
 
@@ -112,7 +112,7 @@ public class NaverArticleFetcher implements ArticleFetcher {
                 }
 
             } catch (Exception e) {
-                log.error("❌ 네이버 뉴스 수집 실패 - keyword={}, start={}", keywords, start, e);
+                log.error("[ 네이버 뉴스 수집 실패 ] - keyword = {}, start = {}", keywords, start, e);
                 break; // 예외 발생 시 반복 중단
             }
         }

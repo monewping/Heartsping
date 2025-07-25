@@ -20,6 +20,7 @@ import org.project.monewping.domain.interest.exception.SimilarInterestNameExcept
 import org.project.monewping.domain.interest.mapper.InterestMapper;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.service.InterestService;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +48,7 @@ public class InterestServiceImpl implements InterestService {
 
     private final InterestRepository interestRepository;
     private final InterestMapper interestMapper;
+    private final UserActivityService userActivityService;
     private static final String SERVICE_NAME = "[InterestService] ";
 
     private static final double SIMILARITY_THRESHOLD = 0.8; // 80% 유사도 임계값
@@ -237,6 +239,23 @@ public class InterestServiceImpl implements InterestService {
             
             log.info("[InterestService] 관심사 키워드 수정 성공: interestId={}, keywords={}", 
                     interestId, request.keywords());
+
+            // 사용자 활동 내역의 구독 정보 업데이트
+            try {
+                List<String> newKeywords = savedInterest.getKeywords().stream()
+                    .map(Keyword::getName)
+                    .collect(Collectors.toList());
+                
+                userActivityService.updateInterestKeywords(
+                    interestId, 
+                    newKeywords, 
+                    savedInterest.getSubscriberCount()
+                );
+                log.info("[InterestService] 사용자 활동 내역 관심사 키워드 업데이트 완료 - interestId: {}", interestId);
+            } catch (Exception e) {
+                log.error("[InterestService] 사용자 활동 내역 관심사 키워드 업데이트 실패 - interestId: {}, error: {}", 
+                    interestId, e.getMessage());
+            }
             
             return interestMapper.toDto(savedInterest);
         } catch (Exception e) {
@@ -303,6 +322,15 @@ public class InterestServiceImpl implements InterestService {
                 });
 
         try {
+            // 사용자 활동 내역에서 관심사 구독 정보 제거 (모든 사용자)
+            try {
+                userActivityService.removeInterestFromAllSubscriptions(interestId);
+                log.info("[InterestService] 모든 사용자 활동 내역에서 관심사 구독 정보 제거 완료 - interestId: {}", interestId);
+            } catch (Exception e) {
+                log.error("[InterestService] 사용자 활동 내역 관심사 구독 정보 제거 실패 - interestId: {}, error: {}", 
+                    interestId, e.getMessage());
+            }
+
             interestRepository.delete(interest);
             log.info("[InterestService] 관심사 삭제 성공: interestId={}, name={}", interestId, interest.getName());
         } catch (Exception e) {
