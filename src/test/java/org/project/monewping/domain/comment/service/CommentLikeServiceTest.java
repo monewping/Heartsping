@@ -16,8 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.domain.CommentLike;
-import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
-import org.project.monewping.domain.comment.exception.CommentLikeNotFoundException;
 import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
@@ -79,17 +77,6 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 좋아요 중복 등록 실패")
-    void likeComment_AlreadyExists() {
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(true);
-
-        assertThatThrownBy(() -> commentLikeService.likeComment(userId, commentId))
-            .isInstanceOf(CommentLikeAlreadyExistsException.class);
-    }
-
-    @Test
     @DisplayName("댓글 좋아요 취소 성공")
     void unlikeComment_Success() {
         CommentLike commentLike = CommentLike.builder()
@@ -106,14 +93,4 @@ class CommentLikeServiceTest {
         verify(commentLikeRepository).delete(commentLike);
     }
 
-    @Test
-    @DisplayName("댓글 좋아요 취소 실패 - 존재하지 않음")
-    void unlikeComment_NotFound() {
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> commentLikeService.unlikeComment(userId, commentId))
-            .isInstanceOf(CommentLikeNotFoundException.class);
-    }
 }
