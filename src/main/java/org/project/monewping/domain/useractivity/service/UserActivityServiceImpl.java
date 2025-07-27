@@ -96,6 +96,25 @@ public class UserActivityServiceImpl implements UserActivityService {
         log.debug("사용자 활동 내역 삭제 완료. userId: {}", userId);
     }
 
+    @Override
+    @Transactional
+    public void updateUserNickname(UUID userId, String newNickname) {
+        log.debug("사용자 닉네임 업데이트 시작. userId: {}, newNickname: {}", userId, newNickname);
+
+        UserActivityDocument document = userActivityRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserActivityNotFoundException(userId));
+
+        // 사용자 정보의 닉네임 업데이트
+        UserActivityDocument.UserInfo userInfo = document.getUser();
+        userInfo.setNickname(newNickname);
+        document.setUser(userInfo);
+        document.setUpdatedAt(Instant.now());
+
+        userActivityRepository.save(document);
+
+        log.debug("사용자 닉네임 업데이트 완료. userId: {}, newNickname: {}", userId, newNickname);
+    }
+
     // ========== 구독 관련 메서드 ==========
 
     @Override

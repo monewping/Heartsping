@@ -176,6 +176,16 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
         user.setNickname(request.nickname());
         User savedUser = userRepository.save(user);
+        
+        // MongoDB 사용자 활동 내역도 함께 업데이트
+        try {
+            userActivityService.updateUserNickname(userId, request.nickname());
+            log.info("사용자 활동 내역 닉네임 업데이트 완료: userId={}, newNickname={}", userId, request.nickname());
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 닉네임 업데이트 실패: userId={}, error={}", userId, e.getMessage());
+            // MongoDB 업데이트 실패가 PostgreSQL 업데이트를 실패시키지 않도록 예외를 잡아서 로그만 남김
+        }
+        
         return userMapper.toResponse(savedUser);
     }
 }

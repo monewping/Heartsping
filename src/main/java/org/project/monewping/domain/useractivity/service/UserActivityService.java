@@ -49,6 +49,14 @@ public interface UserActivityService {
      */
     void deleteUserActivity(UUID userId);
 
+    /**
+     * 사용자 닉네임을 활동내역에 업데이트합니다.
+     * 
+     * @param userId 사용자 ID
+     * @param newNickname 새로운 닉네임
+     */
+    void updateUserNickname(UUID userId, String newNickname);
+
     // ========== 구독 관련 메서드 ==========
 
     /**
