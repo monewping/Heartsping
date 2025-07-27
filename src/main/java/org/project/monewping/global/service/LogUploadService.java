@@ -2,6 +2,7 @@ package org.project.monewping.global.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.project.monewping.global.config.S3Properties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -39,24 +40,19 @@ import java.time.format.DateTimeFormatter;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "aws.s3.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "aws.s3.logs.enabled", havingValue = "true")
 public class LogUploadService {
 
     private static final String SERVICE_NAME = "[LogUploadService] ";
 
     private final S3Client s3Client;
+    private final S3Properties s3Properties;
 
     @Value("${logging.file.path: ./logs}")
     private String logPath;
 
     @Value("${logging.file.name:monewping}")
     private String logFileName;
-
-    @Value("${aws.s3.logs.bucket-name}")
-    private String bucketName;
-
-    @Value("${aws.s3.logs.prefix}")
-    private String prefix;
 
     /**
      * 지정된 날짜의 모든 로그 파일을 S3에 업로드합니다.
@@ -89,6 +85,9 @@ public class LogUploadService {
     public void uploadLogFile(LocalDate date) {
         log.info(SERVICE_NAME + "로그 파일 S3 업로드 시작: 날짜={}", date);
 
+        String bucketName = s3Properties.logs().bucketName();
+        String prefix = s3Properties.logs().prefix();
+
         // 업로드할 로그 파일 목록
         String[] logTypes = {"", "-error", "-sql"};
         int uploadedCount = 0;
@@ -102,7 +101,7 @@ public class LogUploadService {
                     continue;
                 }
 
-                String s3Key = generateS3Key(date, logType);
+                String s3Key = generateS3Key(date, logType, prefix);
                 byte[] fileContent = Files.readAllBytes(logFile);
 
                 s3Client.putObject(PutObjectRequest.builder()
@@ -144,9 +143,10 @@ public class LogUploadService {
      * 
      * @param date 로그 파일 날짜
      * @param logType 로그 타입 ("", "-error", "-sql")
+     * @param prefix S3 버킷 내 저장 경로 접두사
      * @return S3 객체 키 (예: application-logs/2025-07-22/monewping-2025-07-22.log)
      */
-    private String generateS3Key(LocalDate date, String logType) {
+    private String generateS3Key(LocalDate date, String logType, String prefix) {
         String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         return String.format("%s/%s/%s-%s.log", prefix, dateStr, logFileName + logType, dateStr);
     }

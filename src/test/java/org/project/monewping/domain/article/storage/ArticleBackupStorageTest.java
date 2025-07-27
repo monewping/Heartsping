@@ -5,118 +5,147 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.nio.file.Path;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
+import org.project.monewping.global.config.S3Properties;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("BackupStorage 테스트")
 public class ArticleBackupStorageTest {
 
-    private LocalArticleBackupStorage storage;
-    private ObjectMapper objectMapper;
+    @Mock
+    private S3Client s3Client;
 
-    @TempDir
-    Path tempDir;
+    @Mock
+    private S3Properties s3Properties;
+
+    @Mock
+    private S3Properties.Backup backupProps;
+
+    private ObjectMapper objectMapper;
+    private S3ArticleBackupStorage backupStorage;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        storage = new LocalArticleBackupStorage(objectMapper, tempDir.toString());
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        when(s3Properties.backup()).thenReturn(backupProps);
+        when(backupProps.bucketName()).thenReturn("test-bucket");
+        when(backupProps.baseDirectory()).thenReturn("backup/articles");
+
+        backupStorage = new S3ArticleBackupStorage(s3Client, s3Properties, objectMapper);
     }
 
     @Test
-    @DisplayName("뉴스 기사 저장 후 정상적으로 로드되는지 확인")
-    void saveAndLoad_success() {
+    @DisplayName("save 메서드 호출 시 정상적으로 S3에 저장이 수행되어야 한다")
+    void save_shouldUploadJsonToS3() throws Exception {
         // given
-        LocalDate date = LocalDate.of(2025, 7, 22);
-        ArticleDto article = new ArticleDto(
-            null, "source", "sourceUrl", "title",
-            null, "summary", 0L, 0L, false
+        LocalDate date = LocalDate.of(2025, 7, 24);
+        List<ArticleDto> articlesToSave = List.of(
+            new ArticleDto(
+                UUID.randomUUID(), "중앙일보", "http://source1", "title1",
+                LocalDateTime.of(2025,7,24,12,0), "summary1", 10L, 100L, false),
+            new ArticleDto(
+                UUID.randomUUID(), "조선일보", "http://source2", "title2",
+                LocalDateTime.of(2025,7,24,15,30), "summary2", 5L, 200L, true)
         );
-        List<ArticleDto> articles = List.of(article);
+
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+            .thenReturn(PutObjectResponse.builder().build());
+
+        // when & then
+        assertDoesNotThrow(() -> backupStorage.save(date, articlesToSave));
+        verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+
+    @Test
+    @DisplayName("load 메서드는 S3에서 JSON 데이터를 읽어 ArticleDto 리스트로 반환해야 한다")
+    void load_shouldReturnArticleDtoList_whenS3ObjectExists() throws Exception {
+        // given
+        LocalDate date = LocalDate.of(2025, 7, 24);
+        List<ArticleDto> articlesToLoad = List.of(
+            new ArticleDto(UUID.randomUUID(), "중앙일보", "http://source1", "title1", LocalDateTime.of(2025,7,24,12,0), "summary1", 10L, 100L, false),
+            new ArticleDto(UUID.randomUUID(), "조선일보", "http://source2", "title2", LocalDateTime.of(2025,7,24,15,30), "summary2", 5L, 200L, true)
+        );
+
+        byte[] jsonBytes = objectMapper.writeValueAsBytes(articlesToLoad);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(jsonBytes);
+        GetObjectResponse getObjectResponse = GetObjectResponse.builder().build();
+        ResponseInputStream<GetObjectResponse> responseInputStream =
+            new ResponseInputStream<>(getObjectResponse, inputStream);
+
+        when(s3Client.getObject(any(GetObjectRequest.class))).thenReturn(responseInputStream);
 
         // when
-        assertDoesNotThrow(() -> storage.save(date, articles));
-        File savedFile = tempDir.resolve("articles-" + date + ".json").toFile();
-        List<ArticleDto> loadedArticles = storage.load(date);
+        List<ArticleDto> loadedArticles = backupStorage.load(date);
 
         // then
-        assertTrue(savedFile.exists(), "백업 파일이 생성되어야 합니다.");
+        assertEquals(2, loadedArticles.size());
+        assertEquals("http://source1", loadedArticles.get(0).sourceUrl());
+        assertEquals("title2", loadedArticles.get(1).title());
+        verify(s3Client, times(1)).getObject(any(GetObjectRequest.class));
+    }
+
+    @Test
+    @DisplayName("load 메서드는 S3에 해당 키가 없으면 빈 리스트를 반환해야 한다")
+    void load_shouldReturnEmptyList_whenNoSuchKeyExceptionThrown() {
+        // given
+        LocalDate date = LocalDate.of(2025, 7, 24);
+        when(s3Client.getObject(any(GetObjectRequest.class))).thenThrow(
+            NoSuchKeyException.builder().build());
+
+        // when
+        List<ArticleDto> loadedArticles = backupStorage.load(date);
+
+        // then
         assertNotNull(loadedArticles);
-        assertEquals(1, loadedArticles.size());
-        assertEquals("source", loadedArticles.get(0).source());
-        assertEquals("title", loadedArticles.get(0).title());
+        assertTrue(loadedArticles.isEmpty());
+        verify(s3Client, times(1)).getObject(any(GetObjectRequest.class));
     }
 
     @Test
-    @DisplayName("존재하지 않는 날짜의 백업 파일 로드 시 빈 리스트 반환")
-    void load_NotExistDate_returnsEmptyList() {
+    @DisplayName("save 메서드는 S3 putObject 호출 실패 시 예외를 던져야 한다")
+    void save_shouldThrowException_whenPutObjectFails() {
         // given
-        LocalDate date = LocalDate.of(1999, 1, 1);
+        LocalDate date = LocalDate.of(2025, 7, 24);
+        List<ArticleDto> emptyList = List.of();
 
-        // when
-        List<ArticleDto> result = storage.load(date);
+        doThrow(RuntimeException.class).when(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
 
-        // then
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("null 날짜로 저장 시 IllegalArgumentException 발생")
-    void save_null_Date_IllegalArgumentException() {
-        // when
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> storage.save(null, List.of()));
-
-        // then
-        assertEquals("날짜는 null일 수 없습니다.", ex.getMessage());
-    }
-
-    @Test
-    @DisplayName("미래 날짜로 저장 시 IllegalArgumentException 발생")
-    void save_FutureDate_IllegalArgumentException() {
-        // given
-        LocalDate futureDate = LocalDate.now().plusDays(1);
-
-        // when
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> storage.save(futureDate, List.of()));
-
-        // then
-        assertEquals("미래 날짜의 백업은 조회할 수 없습니다.", ex.getMessage());
-    }
-
-    @Test
-    @DisplayName("null 날짜로 로드 시 IllegalArgumentException 발생")
-    void load_null_Date_IllegalArgumentException() {
-        // when
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> storage.load(null));
-
-        // then
-        assertEquals("날짜는 null일 수 없습니다.", ex.getMessage());
-    }
-
-    @Test
-    @DisplayName("미래 날짜로 로드 시 IllegalArgumentException 발생")
-    void load_FutureDate_IllegalArgumentException_throwsException_withMessage() {
-        // given
-        LocalDate futureDate = LocalDate.now().plusDays(10);
-
-        // when
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> storage.load(futureDate));
-
-        // then
-        assertEquals("미래 날짜의 백업은 조회할 수 없습니다.", ex.getMessage());
+        // when & then
+        assertThrows(Exception.class, () -> backupStorage.save(date, emptyList));
+        verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }
