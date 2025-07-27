@@ -38,14 +38,15 @@ public class CommentController {
     @GetMapping
     public ResponseEntity<CursorPageResponse<CommentResponseDto>> getComments(
         @RequestParam UUID articleId,
-        @RequestParam(required = false, defaultValue = "createdAt") String orderBy,
-        @RequestParam(required = false, defaultValue = "DESC") String direction,
+        @RequestParam(defaultValue = "createdAt") String orderBy,
+        @RequestParam(defaultValue = "DESC") String direction,
         @RequestParam(required = false) String cursor,
         @RequestParam(required = false) String after,
-        @RequestParam(required = false, defaultValue = "50") Integer limit
+        @RequestParam(defaultValue = "50") Integer limit,
+        @RequestHeader("Monew-Request-User-ID") UUID userId
     ) {
         CursorPageResponse<CommentResponseDto> response = commentService.getComments(
-            articleId, orderBy, direction, cursor, after, limit
+            articleId, orderBy, direction, cursor, after, limit, userId
         );
         log.info("[CommentController] 댓글 목록 조회 완료 - articleId: {}, count: {}", articleId, response.size());
         return ResponseEntity.ok(response);
@@ -57,8 +58,7 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentResponseDto> registerComment(@RequestBody @Valid CommentRegisterRequestDto requestDto) {
         CommentResponseDto response = commentService.registerComment(requestDto);
-        return ResponseEntity.status(201).body(response);
-    }
+        return ResponseEntity.status(201).body(response);}
 
     /**
      * 댓글을 삭제합니다.
@@ -92,12 +92,12 @@ public class CommentController {
      * @return HTTP 200 OK 응답
      */
     @PatchMapping("/{commentId}")
-    public ResponseEntity<Void> updateComment(
+    public ResponseEntity<CommentResponseDto> updateComment(
         @PathVariable UUID commentId,
         @RequestHeader("Monew-Request-User-Id") UUID userId,
         @RequestBody @Valid CommentUpdateRequestDto request
     ) {
-        commentService.updateComment(commentId, userId, request);
-        return ResponseEntity.ok().build();
+        CommentResponseDto response = commentService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok(response);
     }
 }

@@ -7,6 +7,7 @@ import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.Instant;
 
 /**
  * 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스
@@ -26,6 +29,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserActivityService userActivityService;
 
     /**
      * 사용자 회원가입을 처리합니다.
@@ -43,6 +47,7 @@ public class UserService {
      * <li>사용자 엔티티 생성</li>
      * <li>비밀번호 암호화</li>
      * <li>데이터베이스 저장</li>
+     * <li>사용자 활동 내역 초기화</li>
      * <li>응답 객체 변환 및 반환</li>
      * </ol>
      * 
@@ -66,6 +71,21 @@ public class UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        // 사용자 활동 내역 초기화
+        try {
+            userActivityService.initializeUserActivity(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getNickname(),
+                Instant.ofEpochMilli(savedUser.getCreatedAt().toEpochMilli())
+            );
+            log.info("사용자 활동 내역 초기화 완료: userId={}", savedUser.getId());
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 초기화 실패: userId={}, error={}", savedUser.getId(), e.getMessage());
+            // 활동 내역 초기화 실패가 회원가입 자체를 실패시키지 않도록 예외를 잡아서 로그만 남김
+        }
+
         return userMapper.toResponse(savedUser);
     }
 
