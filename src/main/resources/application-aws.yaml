@@ -41,20 +41,6 @@ logging:
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
 
-# AWS
-aws:
-  storage:
-    type: ${STORAGE_TYPE:local}
-  access-key: ${AWS_ACCESS_KEY}
-  secret-key: ${AWS_SECRET_KEY:}
-  region: ${AWS_REGION:ap-northeast-2}
-  s3:
-    bucket: ${AWS_S3_BUCKET} # 기사 백업 데이터 등을 넣는 버킷
-    logs:
-      bucket-name: ${AWS_S3_LOGS_BUCKET:monewping-logs-storage} # 로그 파일을 넣는 버킷
-      prefix: ${AWS_S3_LOGS_PREFIX:application-logs}
-    enabled: ${AWS_S3_ENABLED:false}
-
 #제대로안된거같음
 #file:
 #  upload-dir: s3

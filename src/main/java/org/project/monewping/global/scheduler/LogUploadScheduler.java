@@ -35,7 +35,7 @@ public class LogUploadScheduler {
      * 매일 새벽 2시에 전날 로그 파일을 S3에 업로드합니다.
      * <p>실패해도 애플리케이션은 중단되지 않습니다.</p>
      */
-    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 * * * *", zone = "Asia/Seoul")
     public void uploadYesterdayLogs() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         log.info(SCHEDULER_NAME + "로그 파일 S3 업로드 스케줄러 실행: 날짜={}", yesterday);
