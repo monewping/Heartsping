@@ -30,7 +30,7 @@ import org.springframework.validation.annotation.Validated;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
-public class BasicNotificationService implements NotificationService {
+public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
