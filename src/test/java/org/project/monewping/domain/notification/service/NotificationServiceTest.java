@@ -54,11 +54,11 @@ public class NotificationServiceTest {
     @Mock
     private SubscriptionRepository subscriptionRepository;
 
-    @InjectMocks
-    private BasicNotificationService notificationService;
-
     @Mock
     private NotificationMapper notificationMapper;
+
+    @InjectMocks
+    private NotificationServiceImpl notificationService;
 
     private UUID userId;
     private Instant after;
@@ -148,7 +148,7 @@ public class NotificationServiceTest {
             Notification n = saved.get(i);
             assertThat(n.getUserId()).isEqualTo(subs.get(i));
             assertThat(n.getResourceId()).isEqualTo(interestId);
-            assertThat(n.getResourceType()).isEqualTo(BasicNotificationService.RESOURCE_TYPE_ARTICLE);
+            assertThat(n.getResourceType()).isEqualTo(NotificationServiceImpl.RESOURCE_TYPE_ARTICLE);
             assertThat(n.isConfirmed()).isFalse();
             assertThat(n.isActive()).isTrue();
             assertThat(n.getContent())
