@@ -1,5 +1,6 @@
 package org.project.monewping.domain.notification.controller;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class NotificationController {
      */
     @GetMapping
     public ResponseEntity<CursorPageResponseNotificationDto> getNotifications(
-        @ModelAttribute GetNotificationsRequestDto getNotificationsRequestDto,
+        @ModelAttribute @Valid GetNotificationsRequestDto getNotificationsRequestDto,
         @RequestHeader("Monew-Request-User-ID") UUID userId
     ) {
         CursorPageResponseNotificationDto cursorPageResponseNotificationDto =
@@ -76,7 +77,8 @@ public class NotificationController {
      */
     @PatchMapping("/{notificationId}")
     public ResponseEntity<Void> confirmNotification (
-        @PathVariable UUID notificationId, @RequestHeader("Monew-Request-User-ID") UUID userId
+        @PathVariable UUID notificationId,
+        @RequestHeader("Monew-Request-User-ID") UUID userId
     ) {
         notificationService.confirmNotification(userId, notificationId);
         return ResponseEntity.noContent().build();

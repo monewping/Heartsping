@@ -29,7 +29,7 @@ public class NotificationDeletionScheduler {
     @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul")
     public void runJob() {
         try {
-            log.info("🔔 알림 삭제 배치 작업 실행 시작 - 시간: {}", Instant.now());
+            log.info("알림 삭제 배치 작업 실행 시작 - 시간: {}", Instant.now());
 
             JobParameters params = new JobParametersBuilder()
                 .addLong("run.id", System.currentTimeMillis())
