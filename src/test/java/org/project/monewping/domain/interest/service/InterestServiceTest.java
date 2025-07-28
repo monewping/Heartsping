@@ -251,39 +251,39 @@ class InterestServiceTest {
     }
 
     @Test
-    @DisplayName("빈 이름으로 요청 시 IllegalArgumentException이 발생한다")
-    void should_throwIllegalArgumentException_when_emptyName() {
+    @DisplayName("빈 이름으로 요청 시 InvalidRequestException이 발생한다")
+    void should_throwInvalidRequestException_when_emptyName() {
         // Given
         InterestRegisterRequest request = new InterestRegisterRequest("", Arrays.asList("키워드"));
 
         // When & Then
         assertThatThrownBy(() -> interestService.create(request))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessage("관심사 이름은 필수입니다.");
     }
 
     @Test
-    @DisplayName("null 이름으로 요청 시 IllegalArgumentException이 발생한다")
+    @DisplayName("null 이름으로 요청 시 InvalidRequestException 발생한다")
     void should_throwIllegalArgumentException_when_nullName() {
         // Given
         InterestRegisterRequest request = new InterestRegisterRequest(null, Arrays.asList("키워드"));
 
         // When & Then
         assertThatThrownBy(() -> interestService.create(request))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessage("관심사 이름은 필수입니다.");
     }
 
     @Test
-    @DisplayName("100자 초과 이름으로 요청 시 IllegalArgumentException이 발생한다")
-    void should_throwIllegalArgumentException_when_nameTooLong() {
+    @DisplayName("100자 초과 이름으로 요청 시 InvalidRequestException이 발생한다")
+    void should_throwInvalidRequestException_when_nameTooLong() {
         // Given
         String longName = "a".repeat(101);
         InterestRegisterRequest request = new InterestRegisterRequest(longName, Arrays.asList("키워드"));
 
         // When & Then
         assertThatThrownBy(() -> interestService.create(request))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(InvalidRequestException.class)
             .hasMessage("관심사 이름은 100자를 초과할 수 없습니다.");
     }
 
@@ -439,7 +439,7 @@ class InterestServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> interestService.update(interestId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("키워드는 1개 이상 10개 이하로 입력해야 합니다");
     }
 
@@ -452,7 +452,7 @@ class InterestServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> interestService.update(interestId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("키워드는 필수입니다");
     }
 

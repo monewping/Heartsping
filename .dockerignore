@@ -69,6 +69,7 @@ src/test/
 *.key
 *.pem
 *.cert
+monewping-s3.env
 
 # 10. 기타 개발 도구
 node_modules/

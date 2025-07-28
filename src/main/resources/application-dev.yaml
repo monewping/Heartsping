@@ -1,0 +1,30 @@
+spring:
+  sql.init.mode: always
+  devtools:
+    restart:
+      additional-exclude: "**/mapper/**/*MapperImpl.class"
+      log-condition-evaluation-delta: true
+
+  # Batch 설정
+  batch:
+    jdbc:
+      initialize-schema: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - loggers
+
+logging:
+  file:
+    path: ./logs
+    name: monewping
+  level:
+    org.project.monewping: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace

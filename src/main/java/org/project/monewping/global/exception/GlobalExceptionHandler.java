@@ -6,11 +6,7 @@ import org.project.monewping.domain.article.exception.ArticleNotFoundException;
 import org.project.monewping.domain.article.exception.DuplicateArticleViewsException;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
-import org.project.monewping.domain.interest.exception.DuplicateInterestNameException;
-import org.project.monewping.domain.interest.exception.DuplicateKeywordException;
-import org.project.monewping.domain.interest.exception.InterestCreationException;
-import org.project.monewping.domain.interest.exception.InterestNotFoundException;
-import org.project.monewping.domain.interest.exception.SimilarInterestNameException;
+import org.project.monewping.domain.interest.exception.*;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
@@ -47,36 +43,90 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * 중복된 관심사 이름 예외를 처리합니다.
+     *
+     * <p>이미 존재하는 관심사 이름으로 생성 시도할 때 발생하는 예외를 처리하여
+     * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 중복된 관심사 이름 예외
+     * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(DuplicateInterestNameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateInterestNameException(DuplicateInterestNameException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_INTEREST_NAME", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
+    /**
+     * 유사한 관심사 이름 예외를 처리합니다.
+     *
+     * <p>80% 이상 유사한 이름의 관심사가 존재할 때 발생하는 예외를 처리하여
+     * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 유사한 관심사 이름 예외
+     * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(SimilarInterestNameException.class)
     public ResponseEntity<ErrorResponse> handleSimilarInterestNameException(SimilarInterestNameException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "SIMILAR_INTEREST_NAME", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
+    /**
+     * 관심사 생성 예외를 처리합니다.
+     *
+     * <p>관심사 생성 과정에서 DB 오류 등 예기치 못한 상황이 발생할 때
+     * 500 Internal Server Error 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 관심사 생성 예외
+     * @return 500 Internal Server Error 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(InterestCreationException.class)
     public ResponseEntity<ErrorResponse> handleInterestCreationException(InterestCreationException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTEREST_CREATION_ERROR", e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
+    /**
+     * 관심사를 찾을 수 없을 때 발생하는 예외를 처리합니다.
+     *
+     * <p>존재하지 않는 관심사 ID로 조회하거나 수정하려고 할 때 발생하는 예외를 처리하여
+     * 404 Not Found 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 관심사를 찾을 수 없는 예외
+     * @return 404 Not Found 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(InterestNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleInterestNotFoundException(InterestNotFoundException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.NOT_FOUND, "INTEREST_NOT_FOUND", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
+    /**
+     * 중복된 키워드 예외를 처리합니다.
+     *
+     * <p>이미 존재하는 키워드와 동일한 키워드를 추가하려고 할 때 발생하는 예외를 처리하여
+     * 409 Conflict 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 중복된 키워드 예외
+     * @return 409 Conflict 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(DuplicateKeywordException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateKeywordException(DuplicateKeywordException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.CONFLICT, "DUPLICATE_KEYWORD", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
+    /**
+     * 잘못된 인자 예외를 처리합니다.
+     *
+     * <p>메소드에 전달된 인자가 유효하지 않을 때 발생하는 예외를 처리하여
+     * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 잘못된 인자 예외
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", e.getMessage());
@@ -405,5 +455,34 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * 잘못된 요청 예외를 처리합니다.
+     *
+     * <p>키워드가 null이거나 빈 리스트인 경우 등 유효하지 않은 요청 데이터로 인해 발생하는 예외를 처리하여
+     * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param e 잘못된 요청 예외
+     * @return 400 Bad Request 상태와 오류 정보를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequestException(InvalidRequestException e) {
+        ErrorResponse errorResponse = ErrorResponse.of(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * 중복된 구독 예외를 처리합니다.
+     *
+     * <p>이미 구독 중인 관심사를 다시 구독하려고 할 때 발생하는 예외를 처리하여
+     * 400 Bad Request 상태 코드와 함께 오류 메시지를 반환합니다.</p>
+     *
+     * @param ex 중복된 구독 예외
+     * @return 400 Bad Request 상태와 오류 메시지를 포함한 ResponseEntity
+     */
+    @ExceptionHandler(DuplicateSubscriptionException.class)
+    public ResponseEntity<String> handleDuplicateSubscriptionException(DuplicateSubscriptionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }

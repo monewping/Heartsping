@@ -22,7 +22,7 @@ spring:
 
 logging:
   level:
-    com.project.monewping: debug
+    org.project.monewping: debug
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     org.springframework.test: debug
