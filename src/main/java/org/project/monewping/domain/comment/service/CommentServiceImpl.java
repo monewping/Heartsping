@@ -56,7 +56,6 @@ public class CommentServiceImpl implements CommentService {
         int limit,
         UUID userId
     ) {
-        // limit 기본값 및 최대 제한
         if (limit <= 0) limit = 50;
         if (limit > 100) limit = 100;
 
@@ -139,7 +138,7 @@ public class CommentServiceImpl implements CommentService {
                 "해당 사용자를 찾을 수 없습니다. userId: " + requestDto.getUserId()
             ));
 
-        // 🔥 기사 댓글 수 증가
+        // 기사 댓글 수 증가
         Articles article = articlesRepository.findById(requestDto.getArticleId())
             .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + requestDto.getArticleId()));
         article.increaseCommentCount();

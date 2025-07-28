@@ -32,7 +32,7 @@ public class CommentMapperImpl implements CommentMapper {
 
     @Override
     public CommentResponseDto toResponseDto(Comment comment) {
-        return toResponseDto(comment, false); // 🔥 기본은 false로 위임
+        return toResponseDto(comment, false); // 기본은 false로 위임
     }
 
     @Override

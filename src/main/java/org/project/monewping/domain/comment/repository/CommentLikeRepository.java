@@ -16,10 +16,10 @@ import org.springframework.data.repository.query.Param;
  */
 public interface CommentLikeRepository extends JpaRepository<CommentLike, UUID> {
 
-    // 특정 유저가 특정 댓글에 좋아요를 눌렀는지 조회합니다.
+    // 특정 유저가 특정 댓글에 좋아요를 눌렀는지 조회
     Optional<CommentLike> findByUserAndComment(User user, Comment comment);
 
-    //특정 유저가 특정 댓글에 좋아요를 눌렀는지 여부를 확인합니다.
+    //특정 유저가 특정 댓글에 좋아요를 눌렀는지 여부를 확인
     boolean existsByUserAndComment(User user, Comment comment);
 
     @Query("SELECT cl.comment.id FROM CommentLike cl WHERE cl.user.id = :userId AND cl.comment.articleId = :articleId")

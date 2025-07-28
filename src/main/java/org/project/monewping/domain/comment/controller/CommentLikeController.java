@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/comments")
 public class CommentLikeController {
+
     private final CommentLikeService commentLikeService;
         /**
         * 댓글 좋아요 등록

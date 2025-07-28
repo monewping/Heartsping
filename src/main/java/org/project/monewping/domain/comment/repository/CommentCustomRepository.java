@@ -10,6 +10,7 @@ import java.util.UUID;
  * 복합 조건에 따른 댓글 조회 기능을 제공합니다.
  */
 public interface CommentCustomRepository {
+
     List<Comment> findComments(UUID articleId, String direction, String afterId, int limit);
 
     List<Comment> findCommentsByCreatedAtCursor(UUID articleId, Instant afterCreatedAt, int limit);
