@@ -5,8 +5,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### 필수 ###
 .env
 *.env
+monewping-s3.env
 
 ### STS ###
 .apt_generated
@@ -54,6 +56,3 @@ backup/
 aws-credentials
 *.pem
 *.key
-
-# 로컬 설정 파일 (추후 application.yaml 나눌 때 대비)
-application-dev.yaml

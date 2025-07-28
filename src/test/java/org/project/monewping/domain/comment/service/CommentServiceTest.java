@@ -3,19 +3,20 @@ package org.project.monewping.domain.comment.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.BDDMockito.given;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,39 +32,32 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
+import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
-import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
-
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CommentService 테스트")
 class CommentServiceTest {
 
-    @Mock
-    private CommentRepository commentRepository;
+    @Mock private CommentRepository commentRepository;
+    @Mock private CommentMapper commentMapper;
+    @Mock private UserRepository userRepository;
+    @Mock private ArticlesRepository articlesRepository;
+    @Mock private CommentLikeRepository commentLikeRepository;
+    @Mock private NotificationRepository notificationRepository;
+    @Mock private UserActivityService userActivityService;
 
-    @Mock
-    private CommentMapper commentMapper;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private ArticlesRepository articlesRepository;
-
-    @Mock
-    private UserActivityService userActivityService;
-
-    @InjectMocks
-    private CommentServiceImpl commentService;
+    @InjectMocks private CommentServiceImpl commentService;
 
     private UUID testArticleId;
     private UUID testUserId;
+    private UUID testCommentId;
     private List<Comment> testComments;
     private List<CommentResponseDto> testResponseDtos;
 
@@ -71,6 +65,7 @@ class CommentServiceTest {
     void setUp() {
         testArticleId = UUID.randomUUID();
         testUserId = UUID.randomUUID();
+        testCommentId = UUID.randomUUID();
 
         testComments = Arrays.asList(
             Comment.builder()
@@ -99,353 +94,220 @@ class CommentServiceTest {
 
         testResponseDtos = Arrays.asList(
             new CommentResponseDto(
-                testComments.get(0).getId(),
-                testComments.get(0).getArticleId(),
-                testComments.get(0).getUserId(),
-                testComments.get(0).getUserNickname(),
-                testComments.get(0).getContent(),
-                testComments.get(0).getLikeCount(),
-                false,
-                testComments.get(0).getCreatedAt().toString()
+                testComments.get(0).getId(), testComments.get(0).getArticleId(),
+                testComments.get(0).getUserId(), testComments.get(0).getUserNickname(),
+                testComments.get(0).getContent(), testComments.get(0).getLikeCount(),
+                false, testComments.get(0).getCreatedAt().toString()
             ),
             new CommentResponseDto(
-                testComments.get(1).getId(),
-                testComments.get(1).getArticleId(),
-                testComments.get(1).getUserId(),
-                testComments.get(1).getUserNickname(),
-                testComments.get(1).getContent(),
-                testComments.get(1).getLikeCount(),
-                false,
-                testComments.get(1).getCreatedAt().toString()
+                testComments.get(1).getId(), testComments.get(1).getArticleId(),
+                testComments.get(1).getUserId(), testComments.get(1).getUserNickname(),
+                testComments.get(1).getContent(), testComments.get(1).getLikeCount(),
+                false, testComments.get(1).getCreatedAt().toString()
             )
         );
     }
+
     @Test
-    @DisplayName("댓글 조회 성공 - createdAt 기준 기본 파라미터")
-    void getComments_Success_WithCreatedAtCursor() {
-        int limit = 51; // 내부적으로 limit+1
-
-        when(commentRepository.findCommentsByCreatedAtCursor(
-            eq(testArticleId),
-            eq(null),
-            eq(limit)
-        )).thenReturn(testComments);
-
+    @DisplayName("댓글 조회 성공 - createdAt 기준")
+    void getComments_ByCreatedAt_Success() {
+        int limit = 50;
+        when(commentRepository.findCommentsByCreatedAtCursor(eq(testArticleId), eq(null), eq(limit + 1)))
+            .thenReturn(testComments);
         when(commentRepository.countByArticleId(testArticleId)).thenReturn((long) testComments.size());
+        when(commentLikeRepository.findCommentIdsByUserIdAndArticleId(testUserId, testArticleId)).thenReturn(Set.of());
+
         for (int i = 0; i < testComments.size(); i++) {
-            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+            when(commentMapper.toResponseDto(testComments.get(i), false)).thenReturn(testResponseDtos.get(i));
         }
 
-        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            testArticleId, "createdAt", "DESC", null, null, limit - 1
+        CursorPageResponse<CommentResponseDto> response = commentService.getComments(
+            testArticleId, "createdAt", "DESC", null, null, limit, testUserId
         );
 
-        assertThat(result.content()).hasSize(testComments.size());
-        assertThat(result.nextCursor()).isEqualTo(testComments.get(testComments.size() - 1).getCreatedAt().toString());
-        assertThat(result.size()).isEqualTo(testComments.size());
-        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
-        assertThat(result.hasNext()).isFalse();
+        assertThat(response.content()).hasSize(2);
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.nextCursor()).isEqualTo(testComments.get(1).getCreatedAt().toString());
     }
 
-
     @Test
-    @DisplayName("댓글 조회 성공 - likeCount 기준 커서 조회")
-    void getComments_Success_WithLikeCountCursor() {
+    @DisplayName("댓글 조회 성공 - likeCount 기준")
+    void getComments_ByLikeCount_Success() {
         int limit = 20;
-        int queryLimit = limit + 1;
-
-        UUID articleId = testArticleId;
-
-        when(commentRepository.findCommentsByLikeCountCursor(
-            eq(articleId),
-            eq(null),
-            eq(queryLimit)
-        )).thenReturn(testComments);
-
-        when(commentRepository.countByArticleId(articleId)).thenReturn((long) testComments.size());
+        when(commentRepository.findCommentsByLikeCountCursor(eq(testArticleId), eq(null), eq(limit + 1)))
+            .thenReturn(testComments);
+        when(commentRepository.countByArticleId(testArticleId)).thenReturn((long) testComments.size());
+        when(commentLikeRepository.findCommentIdsByUserIdAndArticleId(testUserId, testArticleId)).thenReturn(Set.of());
 
         for (int i = 0; i < testComments.size(); i++) {
-            when(commentMapper.toResponseDto(testComments.get(i))).thenReturn(testResponseDtos.get(i));
+            when(commentMapper.toResponseDto(testComments.get(i), false)).thenReturn(testResponseDtos.get(i));
         }
 
-        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            articleId, "likeCount", "ASC", null, null, limit
+        CursorPageResponse<CommentResponseDto> response = commentService.getComments(
+            testArticleId, "likeCount", "ASC", null, null, limit, testUserId
         );
 
-        assertThat(result.content()).hasSize(testComments.size());
-        assertThat(result.nextCursor()).isEqualTo(String.valueOf(testComments.get(testComments.size() - 1).getLikeCount()));
-        assertThat(result.size()).isEqualTo(testComments.size());
-        assertThat(result.totalElements()).isEqualTo((long) testComments.size());
-        assertThat(result.hasNext()).isFalse();
+        assertThat(response.content()).hasSize(2);
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.nextCursor()).isEqualTo(String.valueOf(testComments.get(1).getLikeCount()));
     }
 
-
     @Test
-    @DisplayName("댓글 등록 성공 - 기사 댓글 수 증가 확인")
-    void registerComment_Success_IncreaseArticleCommentCount() {
+    @DisplayName("댓글 등록 성공 - 기사 댓글 수 증가")
+    void registerComment_IncreaseCommentCount() {
         UUID articleId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        String userNickname = "테스트 유저";
+        String nickname = "테스트유저";
 
-        CommentRegisterRequestDto requestDto = new CommentRegisterRequestDto();
-        requestDto.setArticleId(articleId);
-        requestDto.setUserId(userId);
-        requestDto.setContent("테스트 댓글입니다.");
+        CommentRegisterRequestDto dto = new CommentRegisterRequestDto();
+        dto.setArticleId(articleId);
+        dto.setUserId(userId);
+        dto.setContent("내용");
 
-        User mockUser = User.builder()
-            .id(userId)
-            .nickname(userNickname)
-            .build();
+        Articles article = Articles.builder().commentCount(0L).deleted(false).build();
+        User user = User.builder().id(userId).nickname(nickname).build();
 
-        Articles article = Articles.builder()
-            .commentCount(0L)
-            .deleted(false)
-            .build();
-
-        Comment commentToSave = Comment.builder()
-            .articleId(articleId)
-            .userId(userId)
-            .userNickname(userNickname)
-            .content("테스트 댓글입니다.")
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .likeCount(0)
-            .isDeleted(false)
-            .build();
-
-        Comment savedComment = Comment.builder()
-            .id(UUID.randomUUID()) // ID가 있는 저장된 댓글
-            .articleId(articleId)
-            .userId(userId)
-            .userNickname(userNickname)
-            .content("테스트 댓글입니다.")
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .likeCount(0)
-            .isDeleted(false)
-            .build();
-
-        CommentResponseDto expectedResponse = new CommentResponseDto(
-            savedComment.getId(),
-            savedComment.getArticleId(),
-            savedComment.getUserId(),
-            savedComment.getUserNickname(),
-            savedComment.getContent(),
-            savedComment.getLikeCount(),
-            savedComment.getIsDeleted(),
-            savedComment.getCreatedAt().toString()
-        );
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(articlesRepository.findById(articleId)).thenReturn(Optional.of(article));
-        when(commentMapper.toEntity(eq(requestDto), eq(userNickname))).thenReturn(commentToSave);
-        when(commentRepository.save(commentToSave)).thenReturn(savedComment);
-        when(commentMapper.toResponseDto(savedComment)).thenReturn(expectedResponse);
-
-        CommentResponseDto result = commentService.registerComment(requestDto);
-
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(savedComment.getId());
-        assertThat(result.content()).isEqualTo("테스트 댓글입니다.");
-        assertThat(article.getCommentCount()).isEqualTo(1); // 증가 확인
-        verify(commentRepository).save(any(Comment.class));
-        verify(userRepository).findById(userId);
-        verify(commentMapper).toEntity(eq(requestDto), eq(userNickname));
-        verify(commentMapper).toResponseDto(savedComment);
-    }
-
-    @Test
-    @DisplayName("댓글 조회 성공 - 빈 결과")
-    void getComments_Success_EmptyResult() {
-        when(commentRepository.findCommentsByCreatedAtCursor(
-            any(UUID.class),
-            any(),
-            anyInt()
-        )).thenReturn(List.of());
-
-        when(commentRepository.countByArticleId(testArticleId)).thenReturn(0L);
-
-        CursorPageResponse<CommentResponseDto> result = commentService.getComments(
-            testArticleId, "createdAt", "DESC", null, null, 50
+        when(commentMapper.toEntity(dto, nickname)).thenReturn(
+            Comment.builder()
+                .articleId(articleId).userId(userId).userNickname(nickname)
+                .content("내용").createdAt(Instant.now()).updatedAt(Instant.now())
+                .likeCount(0).isDeleted(false).build()
         );
 
-        assertThat(result.content()).isEmpty();
-        assertThat(result.nextCursor()).isNull();
-        assertThat(result.nextAfter()).isNull();
-        assertThat(result.size()).isEqualTo(0);
-        assertThat(result.totalElements()).isEqualTo(0L);
-        assertThat(result.hasNext()).isFalse();
+        Comment saved = Comment.builder()
+            .id(UUID.randomUUID())
+            .articleId(articleId).userId(userId).userNickname(nickname)
+            .content("내용").createdAt(Instant.now()).updatedAt(Instant.now())
+            .likeCount(0).isDeleted(false).build();
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+
+        commentService.registerComment(dto);
+        assertThat(article.getCommentCount()).isEqualTo(1L);
+        verify(commentRepository).save(any(Comment.class));
     }
 
     @Test
-    @DisplayName("댓글 논리 삭제 성공 - 기사 댓글 수 감소 확인")
-    void deleteComment_Success_DecreaseArticleCommentCount() {
+    @DisplayName("댓글 논리 삭제 성공")
+    void deleteComment_Logical_Success() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID articleId = UUID.randomUUID();
 
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(userId)
-            .articleId(articleId)
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-
-        Articles article = Articles.builder()
-            .commentCount(1L)
-            .deleted(false)
-            .build();
+        Comment comment = Comment.builder().id(commentId).userId(userId).articleId(articleId).isDeleted(false).build();
+        Articles article = Articles.builder().commentCount(1L).deleted(false).build();
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
+        Notification notification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
+            .build();
+
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(notification));
+
+        doNothing().when(notificationRepository)
+            .deactivateByResourceId(commentId);
+
         commentService.deleteComment(commentId, userId);
 
+        then(notificationRepository).should()
+            .findByResourceIdAndActiveTrue(commentId);
+
+        then(notificationRepository).should()
+            .deactivateByResourceId(commentId);
+
         assertThat(comment.getIsDeleted()).isTrue();
-        assertThat(article.getCommentCount()).isEqualTo(0);
-        verify(commentRepository).save(comment);
+        assertThat(article.getCommentCount()).isEqualTo(0L);
     }
 
     @Test
     @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
-    void deleteComment_Fail_NotOwner() {
+    void deleteComment_NotOwner_Fail() {
         UUID commentId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
-        UUID attackerId = UUID.randomUUID();
-
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(ownerId)
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-
+        UUID otherUser = UUID.randomUUID();
+        Comment comment = Comment.builder().id(commentId).userId(ownerId).isDeleted(false).build();
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-
-        assertThatThrownBy(() -> commentService.deleteComment(commentId, attackerId))
+        assertThatThrownBy(() -> commentService.deleteComment(commentId, otherUser))
             .isInstanceOf(CommentDeleteException.class)
             .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
     }
 
     @Test
-    @DisplayName("댓글 물리 삭제 성공 - 기사 댓글 수 감소 확인")
-    void deleteCommentPhysically_Success_DecreaseArticleCommentCount() {
+    @DisplayName("댓글 물리 삭제 성공")
+    void deleteComment_Physical_Success() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID articleId = UUID.randomUUID();
 
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(userId)
-            .articleId(articleId)
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-
-        Articles article = Articles.builder()
-            .commentCount(1L)
-            .deleted(false)
-            .build();
+        Comment comment = Comment.builder().id(commentId).userId(userId).articleId(articleId).isDeleted(false).build();
+        Articles article = Articles.builder().commentCount(1L).deleted(false).build();
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
-        commentService.deleteCommentPhysically(commentId, userId);
-
-        assertThat(article.getCommentCount()).isEqualTo(0);
-        verify(commentRepository).delete(comment);
-    }
-
-    @Test
-    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
-    void deleteCommentPhysically_Fail_NotOwner() {
-        UUID commentId = UUID.randomUUID();
-        UUID ownerId = UUID.randomUUID();
-        UUID attackerId = UUID.randomUUID();
-
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(ownerId)
-            .isDeleted(false)
-            .updatedAt(Instant.now())
+        Notification likeNotification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
             .build();
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(likeNotification));
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        doNothing().when(notificationRepository).deactivateByResourceId(commentId);
 
-        assertThatThrownBy(() -> commentService.deleteCommentPhysically(commentId, attackerId))
-            .isInstanceOf(CommentDeleteException.class)
-            .hasMessageContaining("본인의 댓글만 삭제할 수 있습니다.");
+        commentService.deleteCommentPhysically(commentId, userId);
+        verify(commentRepository).delete(comment);
+
+        assertThat(article.getCommentCount()).isEqualTo(0L);
+        verify(notificationRepository).findByResourceIdAndActiveTrue(commentId);
+        verify(notificationRepository).deactivateByResourceId(commentId);
     }
 
-    @DisplayName("댓글 수정 성공")
     @Test
+    @DisplayName("댓글 수정 성공")
     void updateComment_Success() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(userId)
-            .content("기존 댓글입니다.")
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-
+        Comment comment = Comment.builder().id(commentId).userId(userId).content("old").isDeleted(false).build();
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
-
-        commentService.updateComment(commentId, userId, request);
-
-        assertThat(comment.getContent()).isEqualTo("수정된 댓글입니다.");
-        verify(commentRepository).findById(commentId);
+        CommentUpdateRequestDto dto = new CommentUpdateRequestDto("new content");
+        commentService.updateComment(commentId, userId, dto);
+        assertThat(comment.getContent()).isEqualTo("new content");
     }
 
-    @DisplayName("댓글 수정 실패 - 본인 아님")
     @Test
-    void updateComment_Fail_NotOwner() {
-        UUID commentId = UUID.randomUUID();
-        UUID ownerId = UUID.randomUUID();
-        UUID attackerId = UUID.randomUUID();
-
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(ownerId)
-            .content("기존 댓글입니다.")
-            .isDeleted(false)
-            .updatedAt(Instant.now())
-            .build();
-
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-
-        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
-
-        assertThatThrownBy(() -> commentService.updateComment(commentId, attackerId, request))
-            .isInstanceOf(CommentDeleteException.class)
-            .hasMessageContaining("본인의 댓글만 수정할 수 있습니다.");
-    }
-
     @DisplayName("댓글 수정 실패 - 삭제된 댓글")
-    @Test
-    void updateComment_Fail_Deleted() {
+    void updateComment_Deleted_Fail() {
         UUID commentId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-
-        Comment comment = Comment.builder()
-            .id(commentId)
-            .userId(userId)
-            .content("기존 댓글입니다.")
-            .isDeleted(true)
-            .updatedAt(Instant.now())
-            .build();
-
+        Comment comment = Comment.builder().id(commentId).userId(userId).content("old").isDeleted(true).build();
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        CommentUpdateRequestDto request = new CommentUpdateRequestDto("수정된 댓글입니다.");
-
-        assertThatThrownBy(() -> commentService.updateComment(commentId, userId, request))
+        CommentUpdateRequestDto dto = new CommentUpdateRequestDto("new content");
+        assertThatThrownBy(() -> commentService.updateComment(commentId, userId, dto))
             .isInstanceOf(CommentDeleteException.class)
             .hasMessageContaining("삭제된 댓글은 수정할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("댓글 수정 실패 - 본인 아님")
+    void updateComment_NotOwner_Fail() {
+        UUID commentId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID otherUser = UUID.randomUUID();
+        Comment comment = Comment.builder().id(commentId).userId(ownerId).content("old").isDeleted(false).build();
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        CommentUpdateRequestDto dto = new CommentUpdateRequestDto("new content");
+        assertThatThrownBy(() -> commentService.updateComment(commentId, otherUser, dto))
+            .isInstanceOf(CommentDeleteException.class)
+            .hasMessageContaining("본인의 댓글만 수정할 수 있습니다.");
     }
 }

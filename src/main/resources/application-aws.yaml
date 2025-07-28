@@ -1,0 +1,42 @@
+spring:
+  sql.init.mode: never
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
+
+  jpa:
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        ddl-auto: validate
+        format_sql: false
+        highlight_sql: false
+        use_sql_comments: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: monewping
+  batch:
+    jdbc:
+      initialize-schema: embedded
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+logging:
+  level:
+    org.project.monewping: info
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn

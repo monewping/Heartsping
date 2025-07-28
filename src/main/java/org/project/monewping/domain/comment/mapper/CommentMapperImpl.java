@@ -32,6 +32,11 @@ public class CommentMapperImpl implements CommentMapper {
 
     @Override
     public CommentResponseDto toResponseDto(Comment comment) {
+        return toResponseDto(comment, false); // 🔥 기본은 false로 위임
+    }
+
+    @Override
+    public CommentResponseDto toResponseDto(Comment comment, boolean likedByMe) {
         if (comment == null) {
             return null;
         }
@@ -42,7 +47,7 @@ public class CommentMapperImpl implements CommentMapper {
             comment.getUserNickname(),
             comment.getContent(),
             comment.getLikeCount(),
-            false,
+            likedByMe,
             comment.getCreatedAt().toString()
         );
     }

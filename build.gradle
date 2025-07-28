@@ -73,6 +73,21 @@ dependencies {
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
     // Jsoup 라이브러리
     implementation 'org.jsoup:jsoup:1.16.1'
+
+    // AWS SDK 버전 관리를 위한 BOM (Bill of Materials) - 모든 AWS SDK 모듈의 버전을 통합 관리
+    implementation platform('software.amazon.awssdk:bom:2.21.29')
+
+    // Amazon S3 파일 업로드/다운로드/삭제 기능을 위한 클라이언트 라이브러리
+    implementation 'software.amazon.awssdk:s3:2.31.7'
+    // Amazon RDS 데이터베이스 연결 및 관리를 위한 클라이언트 라이브러리
+    implementation 'software.amazon.awssdk:rds'
+    // AWS 인증 및 권한 처리를 위한 라이브러리 (액세스 키, IAM 역할 등)
+    implementation 'software.amazon.awssdk:auth'
+
+    // AWS SDK 핵심 기능을 제공하는 공통 라이브러리
+    implementation 'software.amazon.awssdk:aws-core'
+    // AWS 리전(지역) 설정 및 관리를 위한 라이브러리
+    implementation 'software.amazon.awssdk:regions'
 }
 
 tasks.named('test') {

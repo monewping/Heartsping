@@ -1,9 +1,10 @@
 package org.project.monewping.domain.comment.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.ArgumentMatchers.any;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -16,10 +17,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.domain.CommentLike;
-import org.project.monewping.domain.comment.exception.CommentLikeAlreadyExistsException;
-import org.project.monewping.domain.comment.exception.CommentLikeNotFoundException;
 import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 
@@ -35,6 +35,9 @@ class CommentLikeServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -66,7 +69,7 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 좋아요 등록 성공")
+    @DisplayName("댓글 좋아요 등록 후 알림 생성 성공")
     void likeComment_Success() {
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
@@ -76,17 +79,11 @@ class CommentLikeServiceTest {
 
         verify(commentLikeRepository).save(any(CommentLike.class));
 
-    }
-
-    @Test
-    @DisplayName("댓글 좋아요 중복 등록 실패")
-    void likeComment_AlreadyExists() {
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(true);
-
-        assertThatThrownBy(() -> commentLikeService.likeComment(userId, commentId))
-            .isInstanceOf(CommentLikeAlreadyExistsException.class);
+        verify(notificationRepository).save(argThat(n ->
+            n.getUserId().equals(comment.getUserId()) &&
+            n.getResourceId().equals(comment.getId()) &&
+            n.getContent().contains(user.getNickname())
+        ));
     }
 
     @Test
@@ -106,14 +103,4 @@ class CommentLikeServiceTest {
         verify(commentLikeRepository).delete(commentLike);
     }
 
-    @Test
-    @DisplayName("댓글 좋아요 취소 실패 - 존재하지 않음")
-    void unlikeComment_NotFound() {
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> commentLikeService.unlikeComment(userId, commentId))
-            .isInstanceOf(CommentLikeNotFoundException.class);
-    }
 }

@@ -10,4 +10,5 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
 public interface CommentMapper {
     Comment toEntity(CommentRegisterRequestDto requestDto, String userNickname);
     CommentResponseDto toResponseDto(Comment comment);
+    CommentResponseDto toResponseDto(Comment comment, boolean likedByMe);
 }

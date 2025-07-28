@@ -47,33 +47,6 @@ public class NotificationControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/notifications – 알림 생성 성공")
-    void testCreateNotification() throws Exception {
-        NotificationDto dto = NotificationDto.builder()
-            .id(UUID.randomUUID())
-            .userId(userId)
-            .resourceId(resourceId)
-            .resourceType("Article")
-            .content("영화와 관련된 기사가 2건 등록되었습니다.")
-            .confirmed(false)
-            .createdAt(Instant.now())
-            .build();
-        when(notificationService.create(userId, resourceId, "Article"))
-            .thenReturn(List.of(dto));
-
-        mockMvc.perform(post("/api/notifications")
-                .param("userId", userId.toString())
-                .param("resourceId", resourceId.toString())
-                .param("resourceType", "Article")
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$[0].userId").value(userId.toString()))
-            .andExpect(jsonPath("$[0].resourceId").value(resourceId.toString()))
-            .andExpect(jsonPath("$[0].resourceType").value("Article"));
-    }
-
-    @Test
     @DisplayName("GET /api/notifications – 알림 조회 성공")
     void testGetNotifications() throws Exception {
         NotificationDto notificationDto = NotificationDto.builder()
@@ -110,7 +83,7 @@ public class NotificationControllerTest {
         mockMvc.perform(patch("/api/notifications")
                 .header("Monew-Request-User-ID", userId.toString())
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         verify(notificationService).confirmAll(userId);
     }
@@ -126,7 +99,7 @@ public class NotificationControllerTest {
                 .header("Monew-Request-User-ID", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         // verify
         verify(notificationService).confirmNotification(userId, notificationId);

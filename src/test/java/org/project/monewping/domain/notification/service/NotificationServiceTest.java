@@ -3,6 +3,7 @@ package org.project.monewping.domain.notification.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
@@ -14,21 +15,24 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.domain.interest.repository.SubscriptionRepository;
 import org.project.monewping.domain.notification.dto.NotificationDto;
 import org.project.monewping.domain.notification.dto.response.CursorPageResponseNotificationDto;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.exception.InvalidCursorFormatException;
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
-import org.project.monewping.domain.notification.exception.UnsupportedResourceTypeException;
 import org.project.monewping.domain.notification.mapper.NotificationMapper;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
@@ -47,6 +51,9 @@ public class NotificationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
     @InjectMocks
     private BasicNotificationService notificationService;
 
@@ -55,19 +62,98 @@ public class NotificationServiceTest {
 
     private UUID userId;
     private Instant after;
-    private UUID    lastId;
+    private UUID lastId;
     private String cursor;
     private UUID notificationId;
     private UUID resourceId;
-    private Pageable pageable;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
         after  = Instant.parse("2025-07-22T00:00:00Z");
         lastId = UUID.randomUUID();
+        resourceId = UUID.randomUUID();
         notificationId = UUID.randomUUID();
         cursor = after.toString() + "|" + lastId;
+    }
+
+    @Test
+    @DisplayName("newCount가 0 이하면 알림 생성 로직을 실행하지 않는다")
+    void whenNewCountIsZero_thenDoNothing() {
+        // given
+        Interest interest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("날씨")
+            .build();
+
+        // when
+        notificationService.createNewArticleNotification(interest, 0);
+
+        // then
+        then(subscriptionRepository).should(never()).findUserIdsByInterestId(any());
+        then(notificationRepository).should(never()).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("구독자 리스트가 비어있으면 알림 생성 로직을 실행하지 않는다")
+    void whenNoSubscribers_thenDoNothing() {
+        //given
+        Interest interest = Interest.builder()
+            .id(UUID.randomUUID())
+            .name("날씨")
+            .build();
+
+        given(subscriptionRepository.findUserIdsByInterestId(interest.getId()))
+            .willReturn(Collections.emptyList());
+
+        // when
+        notificationService.createNewArticleNotification(interest, 5);
+
+        // then
+        then(subscriptionRepository).should().findUserIdsByInterestId(interest.getId());
+        then(notificationRepository).should(never()).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("newCount가 양수이고 구독자가 있으면 해당 수만큼 알림을 저장한다")
+    void createArticleNotifications_success() {
+        //given
+        UUID interestId = UUID.randomUUID();
+        Interest interest = Interest.builder()
+            .id(interestId)
+            .name("스포츠")
+            .build();
+
+        List<UUID> subs = List.of(UUID.randomUUID(), UUID.randomUUID());
+        given(subscriptionRepository.findUserIdsByInterestId(interestId))
+            .willReturn(subs);
+
+        ArgumentCaptor<List<Notification>> captor = ArgumentCaptor.forClass(List.class);
+        given(notificationRepository.saveAll(captor.capture()))
+            .willAnswer(inv -> inv.getArgument(0));
+
+        int newCount = 3;
+
+        // when
+        notificationService.createNewArticleNotification(interest, newCount);
+
+        // then
+        then(subscriptionRepository).should().findUserIdsByInterestId(interestId);
+        then(notificationRepository).should().saveAll(anyList());
+
+        List<Notification> saved = captor.getValue();
+        assertThat(saved).hasSize(subs.size());
+
+        for (int i = 0; i < subs.size(); i++) {
+            Notification n = saved.get(i);
+            assertThat(n.getUserId()).isEqualTo(subs.get(i));
+            assertThat(n.getResourceId()).isEqualTo(interestId);
+            assertThat(n.getResourceType()).isEqualTo(BasicNotificationService.RESOURCE_TYPE_ARTICLE);
+            assertThat(n.isConfirmed()).isFalse();
+            assertThat(n.isActive()).isTrue();
+            assertThat(n.getContent())
+                .isEqualTo("스포츠와 관련된 기사가 3건 등록되었습니다.");
+        }
     }
 
     @Test
@@ -164,8 +250,7 @@ public class NotificationServiceTest {
             .willReturn(50L);
 
         // when
-        CursorPageResponseNotificationDto result =
-            notificationService.findNotifications(userId, cursor, null, limit);
+        CursorPageResponseNotificationDto result = notificationService.findNotifications(userId, cursor, null, limit);
 
         // then
         assertThat(result.content())
@@ -189,7 +274,7 @@ public class NotificationServiceTest {
 
     @Test
     @DisplayName("정상적으로 알림을 확인 처리한다")
-    void confirmNotificationSuccessfully() {
+    void confirmNotification_success() {
         // given
         Notification notification = mock(Notification.class);
 
@@ -206,7 +291,7 @@ public class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 유저인 경우 UserNotFoundException을 던진다")
+    @DisplayName("단일 알림 수정 중 존재하지 않는 유저인 경우 UserNotFoundException을 던진다")
     void throwExceptionWhenUserNotFound() {
         // given
         when(userRepository.existsById(userId)).thenReturn(false);
@@ -247,31 +332,8 @@ public class NotificationServiceTest {
             .hasMessageContaining(invalidCursor);
     }
 
-    @DisplayName("알림 생성 시 리소스 타입이 잘못된 경우 예외가 발생한다")
     @Test
-    void throwExceptionWhenResourceTypeUnsupported() {
-        // given
-        UUID userId = UUID.randomUUID();
-        UUID resourceId = UUID.randomUUID();
-        String invalidResourceType = "UnknownType";
-
-        // when & then
-        assertThatThrownBy(() ->
-            notificationService.create(userId, resourceId, invalidResourceType)
-        ).isInstanceOf(UnsupportedResourceTypeException.class)
-            .hasMessageContaining(invalidResourceType);
-    }
-
-    @Test
-    void testCursorValueInsideException() {
-        String invalidCursor = "bad_cursor";
-        InvalidCursorFormatException ex = new InvalidCursorFormatException(invalidCursor, null);
-
-        assertThat(ex.getCursor()).isEqualTo(invalidCursor);
-    }
-
-    @Test
-    @DisplayName("존재하는 사용자에 대해 전체 알림 확인 처리 성공")
+    @DisplayName("전체 알림 수정 중 존재하는 사용자에 대해 전체 알림 확인 처리 성공")
     void confirmAllNotifications_success() {
         // given
         given(userRepository.existsById(userId)).willReturn(true);

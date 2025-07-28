@@ -118,7 +118,7 @@ class NotificationQueryDSLTest {
 
         // then
         assertThat(notifications).isNotEmpty();
-        assertThat(notifications.get(0).getConfirmed()).isFalse();
+        assertThat(notifications.get(0).isConfirmed()).isFalse();
     }
 
     @Test
@@ -173,7 +173,7 @@ class NotificationQueryDSLTest {
         assertThat(notifications).isNotEmpty();
         assertThat(notifications.get(0).getUserId()).isEqualTo(testUser.getId());
         assertThat(notifications.get(0).getResourceType()).isEqualTo("ARTICLE");
-        assertThat(notifications.get(0).getConfirmed()).isFalse();
+        assertThat(notifications.get(0).isConfirmed()).isFalse();
     }
 
     @Test
