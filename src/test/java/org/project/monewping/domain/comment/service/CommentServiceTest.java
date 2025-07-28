@@ -12,8 +12,11 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +38,7 @@ import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +51,7 @@ class CommentServiceTest {
     @Mock private ArticlesRepository articlesRepository;
     @Mock private CommentLikeRepository commentLikeRepository;
     @Mock private NotificationRepository notificationRepository;
+    @Mock private UserActivityService userActivityService;
 
     @InjectMocks private CommentServiceImpl commentService;
 

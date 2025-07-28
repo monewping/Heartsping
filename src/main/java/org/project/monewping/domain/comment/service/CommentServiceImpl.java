@@ -1,8 +1,8 @@
 package org.project.monewping.domain.comment.service;
 
 import java.time.Instant;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +22,8 @@ import org.project.monewping.domain.notification.repository.NotificationReposito
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.document.UserActivityDocument;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
     private final ArticlesRepository articlesRepository;
+    private final UserActivityService userActivityService;
     private final CommentLikeRepository commentLikeRepository;
     private final NotificationRepository notificationRepository;
 
@@ -95,6 +98,7 @@ public class CommentServiceImpl implements CommentService {
                 comments = commentRepository.findCommentsByCreatedAtCursor(articleId, afterCreatedAt, limit + 1);
             }
         }
+
         boolean hasNext = comments.size() > limit;
         List<Comment> page = hasNext ? comments.subList(0, limit) : comments;
 
@@ -146,6 +150,28 @@ public class CommentServiceImpl implements CommentService {
         log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
             requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
 
+        // 사용자 활동 내역에 댓글 추가
+        try {
+            UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
+                .id(saved.getId())
+                .articleId(requestDto.getArticleId())
+                .articleTitle(article.getTitle())
+                .userId(requestDto.getUserId())
+                .userNickname(user.getNickname())
+                .content(saved.getContent())
+                .likeCount(0L)
+                .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
+                .build();
+
+            userActivityService.addComment(requestDto.getUserId(), commentInfo);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 추가 완료 - userId: {}, commentId: {}",
+                requestDto.getUserId(), saved.getId());
+
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 추가 실패 - userId: {}, commentId: {}, error: {}", 
+                requestDto.getUserId(), saved.getId(), e.getMessage());
+        }
+
         return commentMapper.toResponseDto(saved);
     }
 
@@ -174,6 +200,15 @@ public class CommentServiceImpl implements CommentService {
         articlesRepository.save(article);
 
         log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 사용자 활동 내역에서 댓글 제거
+        try {
+            userActivityService.removeComment(userId, commentId);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
 
         deactivateLikeNotification(commentId);
     }
@@ -204,9 +239,17 @@ public class CommentServiceImpl implements CommentService {
 
         log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
 
+        // 사용자 활동 내역에서 댓글 제거
+        try {
+            userActivityService.removeComment(userId, commentId);
+            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
+
         deactivateLikeNotification(commentId);
     }
-
 
     // 댓글 수정
     @Override
@@ -225,6 +268,21 @@ public class CommentServiceImpl implements CommentService {
         comment.updateContent(request.content());
 
         log.info("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
+
+        // 사용자 활동 내역에서 댓글 내용 업데이트
+        try {
+            // 1. 사용자 활동 내역에서 업데이트한 댓글 내용 반영
+            userActivityService.updateComment(userId, commentId, request.content());
+            log.debug("[CommentService] 사용자 활동 내역 댓글 업데이트 완료 - userId: {}, commentId: {}", userId, commentId);
+
+            // 2. 좋아요를 누른 댓글 목록의 해당 댓글 내용도 업데이트 (모든 사용자)
+            userActivityService.updateCommentInLikes(commentId, request.content());
+            log.debug("[CommentService] 사용자 활동 내역 댓글 좋아요 항목 업데이트 완료 - commentId: {}", commentId);
+        } catch (Exception e) {
+            log.error("[CommentService] 사용자 활동 내역 댓글 업데이트 실패 - userId: {}, commentId: {}, error: {}", 
+                userId, commentId, e.getMessage());
+        }
+
         return commentMapper.toResponseDto(comment);
     }
 
