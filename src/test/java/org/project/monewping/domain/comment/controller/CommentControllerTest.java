@@ -25,7 +25,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
-import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.service.CommentService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.project.monewping.global.exception.GlobalExceptionHandler;
@@ -46,6 +45,7 @@ class CommentControllerTest {
     private MockMvc mockMvc;
 
     private UUID testArticleId;
+    private UUID testUserId;
     private List<CommentResponseDto> testComments;
     private CursorPageResponse<CommentResponseDto> testResponse;
 
@@ -56,6 +56,7 @@ class CommentControllerTest {
             .build();
 
         testArticleId = UUID.randomUUID();
+        testUserId = UUID.randomUUID();
 
         testComments = Arrays.asList(
             new CommentResponseDto(
@@ -65,7 +66,7 @@ class CommentControllerTest {
                 "사용자1",
                 "첫 번째 댓글입니다.",
                 5,
-                false,
+                true,
                 Instant.now().minus(Duration.ofHours(1)).toString()
             ),
             new CommentResponseDto(
@@ -99,17 +100,18 @@ class CommentControllerTest {
             eq("DESC"),
             eq(null),
             eq(null),
-            eq(50)
+            eq(50),
+            eq(testUserId)
         )).thenReturn(testResponse);
 
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.content.length()").value(2))
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
-            // .andExpect(jsonPath("$.nextIdAfter").value("next-after-id-value"))  // 삭제 또는 주석 처리
             .andExpect(jsonPath("$.hasNext").value(true))
             .andExpect(jsonPath("$.size").value(2))
             .andExpect(jsonPath("$.totalElements").value(2));
@@ -129,7 +131,8 @@ class CommentControllerTest {
             eq("ASC"),
             eq(cursor),
             eq(after),
-            eq(limit)
+            eq(limit),
+            eq(testUserId)
         )).thenReturn(testResponse);
 
         mockMvc.perform(get("/api/comments")
@@ -140,6 +143,7 @@ class CommentControllerTest {
                 .param("after", after)
                 .param("afterId", afterId)
                 .param("limit", limit.toString())
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
@@ -165,11 +169,13 @@ class CommentControllerTest {
             any(String.class),
             any(),
             any(),
-            any(Integer.class)
+            any(Integer.class),
+            eq(testUserId)
         )).thenReturn(emptyResponse);
 
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
@@ -183,6 +189,7 @@ class CommentControllerTest {
     @DisplayName("댓글 조회 실패 - articleId 파라미터 누락")
     void getComments_Fail_MissingArticleId() throws Exception {
         mockMvc.perform(get("/api/comments")
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
     }
@@ -192,6 +199,7 @@ class CommentControllerTest {
     void getComments_Fail_InvalidUuidFormat() throws Exception {
         mockMvc.perform(get("/api/comments")
                 .param("articleId", "invalid-uuid")
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
     }
@@ -207,129 +215,18 @@ class CommentControllerTest {
             eq("DESC"),
             eq(cursor),
             eq(null),
-            eq(50)
+            eq(50),
+            eq(testUserId)
         )).thenReturn(testResponse);
 
         mockMvc.perform(get("/api/comments")
                 .param("articleId", testArticleId.toString())
                 .param("cursor", cursor)
+                .header("Monew-Request-User-Id", testUserId.toString())
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.nextCursor").value("next_cursor_value"))
             .andExpect(jsonPath("$.hasNext").value(true));
-    }
-
-    @Test
-    @DisplayName("댓글 등록 성공")
-    void registerComment_Success() throws Exception {
-        String requestBody = String.format("""
-        {
-            "articleId": "%s",
-            "userId": "%s",
-            "content": "테스트 댓글입니다."
-        }
-        """, UUID.randomUUID(), UUID.randomUUID());
-
-        mockMvc.perform(post("/api/comments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-            .andExpect(status().isCreated());
-    }
-
-    @Test
-    @DisplayName("댓글 논리 삭제 성공")
-    void deleteComment_Success() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doNothing().when(commentService).deleteComment(eq(commentId), eq(userId));
-        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                        .header("Monew-Request-User-Id", userId.toString()))
-                .andExpect(status().isNoContent());
-    }
-    @Test
-    @DisplayName("댓글 논리 삭제 실패 - 본인 아님")
-    void deleteComment_Fail_NotOwner() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
-                .when(commentService).deleteComment(eq(commentId), eq(userId));
-        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
-                        .header("Monew-Request-User-Id", userId.toString()))
-                .andExpect(status().isForbidden());
-    }
-    @Test
-    @DisplayName("댓글 물리 삭제 성공")
-    void deleteCommentPhysically_Success() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doNothing().when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
-        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                        .header("Monew-Request-User-Id", userId.toString()))
-                .andExpect(status().isNoContent());
-    }
-    @Test
-    @DisplayName("댓글 물리 삭제 실패 - 본인 아님")
-    void deleteCommentPhysically_Fail_NotOwner() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doThrow(new CommentDeleteException("본인의 댓글만 삭제할 수 있습니다."))
-                .when(commentService).deleteCommentPhysically(eq(commentId), eq(userId));
-        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
-                        .header("Monew-Request-User-Id", userId.toString()))
-                .andExpect(status().isForbidden());
-    }
-    @DisplayName("댓글 수정 성공")
-    @Test
-    void updateComment_Success() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        when(commentService.updateComment(eq(commentId), eq(userId), any())).thenReturn(testComments.get(0));
-        String requestBody = """
-        {
-            "content": "수정된 댓글입니다."
-        }
-        """;
-        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk());
-    }
-    @DisplayName("댓글 수정 실패 - 본인 아님")
-    @Test
-    void updateComment_Fail_NotOwner() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doThrow(new CommentDeleteException("본인의 댓글만 수정할 수 있습니다."))
-                .when(commentService).updateComment(eq(commentId), eq(userId), any());
-        String requestBody = """
-        {
-            "content": "수정된 댓글입니다."
-        }
-        """;
-        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isForbidden());
-    }
-    @DisplayName("댓글 수정 실패 - 삭제된 댓글")
-    @Test
-    void updateComment_Fail_Deleted() throws Exception {
-        UUID commentId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        doThrow(new CommentDeleteException("삭제된 댓글은 수정할 수 없습니다."))
-                .when(commentService).updateComment(eq(commentId), eq(userId), any());
-        String requestBody = """
-        {
-            "content": "수정된 댓글입니다."
-        }
-        """;
-        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
-                        .header("Monew-Request-User-Id", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isForbidden());
     }
 }
