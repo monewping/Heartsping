@@ -40,8 +40,3 @@ logging:
     org.project.monewping: info
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
-
-#제대로안된거같음
-#file:
-#  upload-dir: s3
-#  base-url: https://${aws.s3.logs.bucket-name}.s3.${aws.region}.amazonaws.com/
