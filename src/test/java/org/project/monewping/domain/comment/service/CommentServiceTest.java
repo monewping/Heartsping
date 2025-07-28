@@ -176,6 +176,13 @@ class CommentServiceTest {
                 .likeCount(0).isDeleted(false).build()
         );
 
+        Comment saved = Comment.builder()
+            .id(UUID.randomUUID())
+            .articleId(articleId).userId(userId).userNickname(nickname)
+            .content("내용").createdAt(Instant.now()).updatedAt(Instant.now())
+            .likeCount(0).isDeleted(false).build();
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+
         commentService.registerComment(dto);
         assertThat(article.getCommentCount()).isEqualTo(1L);
         verify(commentRepository).save(any(Comment.class));
