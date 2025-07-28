@@ -1,6 +1,7 @@
 package org.project.monewping.domain.comment.service;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +13,11 @@ import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.project.monewping.domain.comment.dto.CommentUpdateRequestDto;
 import org.project.monewping.domain.comment.exception.CommentNotFoundException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
+import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
-import org.project.monewping.domain.useractivity.document.UserActivityDocument;
-import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.project.monewping.domain.comment.exception.CommentDeleteException;
@@ -39,7 +39,8 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
     private final ArticlesRepository articlesRepository;
-    private final UserActivityService userActivityService;
+    private final CommentLikeRepository commentLikeRepository;
+
 
     @Override
     public CursorPageResponse<CommentResponseDto> getComments(
@@ -48,7 +49,8 @@ public class CommentServiceImpl implements CommentService {
         String direction,
         String cursor,
         String after,
-        int limit
+        int limit,
+        UUID userId
     ) {
         // limit 기본값 및 최대 제한
         if (limit <= 0) limit = 50;
@@ -92,20 +94,21 @@ public class CommentServiceImpl implements CommentService {
                 comments = commentRepository.findCommentsByCreatedAtCursor(articleId, afterCreatedAt, limit + 1);
             }
         }
-
         boolean hasNext = comments.size() > limit;
         List<Comment> page = hasNext ? comments.subList(0, limit) : comments;
 
+        Set<UUID> likedCommentIds = commentLikeRepository.findCommentIdsByUserIdAndArticleId(userId, articleId);
+
         List<CommentResponseDto> response = page.stream()
-            .map(commentMapper::toResponseDto)
+            .map(comment -> commentMapper.toResponseDto(comment, likedCommentIds.contains(comment.getId())))
             .toList();
 
-        int size = page.size();
+        int size = limit;
         long totalElements = commentRepository.countByArticleId(articleId);
 
         String nextAfter = null;
         if (!page.isEmpty()) {
-            Comment last = page.get(size - 1);
+            Comment last = page.get(page.size() - 1);
             nextAfter = switch (orderBy) {
                 case "likeCount" -> String.valueOf(last.getLikeCount());
                 case "createdAt" -> last.getCreatedAt().toString();
@@ -139,30 +142,8 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentMapper.toEntity(requestDto, user.getNickname());
         Comment saved = commentRepository.save(comment);
 
-        log.debug("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
+        log.info("[CommentService] 댓글 등록 완료 - articleId: {}, userId: {}, userNickname: {}",
             requestDto.getArticleId(), requestDto.getUserId(), user.getNickname());
-
-        // 사용자 활동 내역에 댓글 추가
-        try {
-            UserActivityDocument.CommentInfo commentInfo = UserActivityDocument.CommentInfo.builder()
-                .id(saved.getId())
-                .articleId(requestDto.getArticleId())
-                .articleTitle(article.getTitle())
-                .userId(requestDto.getUserId())
-                .userNickname(user.getNickname())
-                .content(saved.getContent())
-                .likeCount(0L)
-                .createdAt(Instant.ofEpochMilli(saved.getCreatedAt().toEpochMilli()))
-                .build();
-
-            userActivityService.addComment(requestDto.getUserId(), commentInfo);
-            log.debug("[CommentService] 사용자 활동 내역 댓글 추가 완료 - userId: {}, commentId: {}",
-                requestDto.getUserId(), saved.getId());
-
-        } catch (Exception e) {
-            log.error("[CommentService] 사용자 활동 내역 댓글 추가 실패 - userId: {}, commentId: {}, error: {}", 
-                requestDto.getUserId(), saved.getId(), e.getMessage());
-        }
 
         return commentMapper.toResponseDto(saved);
     }
@@ -191,16 +172,7 @@ public class CommentServiceImpl implements CommentService {
         article.decreaseCommentCount();
         articlesRepository.save(article);
 
-        log.debug("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
-
-        // 사용자 활동 내역에서 댓글 제거
-        try {
-            userActivityService.removeComment(userId, commentId);
-            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
-        } catch (Exception e) {
-            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
-                userId, commentId, e.getMessage());
-        }
+        log.info("[CommentService] 댓글 논리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
     }
 
 
@@ -224,19 +196,10 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new RuntimeException("해당 기사를 찾을 수 없습니다. articleId: " + comment.getArticleId()));
             article.decreaseCommentCount();
 
-            log.debug("[CommentService] 댓글 수 감소 (물리 삭제로 인한) - commentId: {}", commentId);
+            log.info("[CommentService] 댓글 수 감소 (물리 삭제로 인한) - commentId: {}", commentId);
         }
 
-        log.debug("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
-
-        // 사용자 활동 내역에서 댓글 제거
-        try {
-            userActivityService.removeComment(userId, commentId);
-            log.debug("[CommentService] 사용자 활동 내역 댓글 제거 완료 - userId: {}, commentId: {}", userId, commentId);
-        } catch (Exception e) {
-            log.error("[CommentService] 사용자 활동 내역 댓글 제거 실패 - userId: {}, commentId: {}, error: {}", 
-                userId, commentId, e.getMessage());
-        }
+        log.info("[CommentService] 댓글 물리 삭제 완료 - commentId: {}, userId: {}", commentId, userId);
     }
 
 
@@ -256,22 +219,7 @@ public class CommentServiceImpl implements CommentService {
 
         comment.updateContent(request.content());
 
-        log.debug("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
-
-        // 사용자 활동 내역에서 댓글 내용 업데이트
-        try {
-            // 1. 사용자 활동 내역에서 업데이트한 댓글 내용 반영
-            userActivityService.updateComment(userId, commentId, request.content());
-            log.debug("[CommentService] 사용자 활동 내역 댓글 업데이트 완료 - userId: {}, commentId: {}", userId, commentId);
-
-            // 2. 좋아요를 누른 댓글 목록의 해당 댓글 내용도 업데이트 (모든 사용자)
-            userActivityService.updateCommentInLikes(commentId, request.content());
-            log.debug("[CommentService] 사용자 활동 내역 댓글 좋아요 항목 업데이트 완료 - commentId: {}", commentId);
-        } catch (Exception e) {
-            log.error("[CommentService] 사용자 활동 내역 댓글 업데이트 실패 - userId: {}, commentId: {}, error: {}", 
-                userId, commentId, e.getMessage());
-        }
-
+        log.info("[CommentService] 댓글 수정 완료 - commentId: {}, userId: {}", commentId, userId);
         return commentMapper.toResponseDto(comment);
     }
 

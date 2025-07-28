@@ -19,7 +19,8 @@ public interface CommentService {
         String direction,
         String cursor,
         String after,
-        int limit
+        int limit,
+        UUID userId
     );
 
     // 댓글 등록
