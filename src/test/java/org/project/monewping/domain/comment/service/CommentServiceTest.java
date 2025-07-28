@@ -5,13 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,8 +34,11 @@ import org.project.monewping.domain.comment.exception.CommentDeleteException;
 import org.project.monewping.domain.comment.mapper.CommentMapper;
 import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.entity.Notification;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.dto.CursorPageResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,11 +50,14 @@ class CommentServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ArticlesRepository articlesRepository;
     @Mock private CommentLikeRepository commentLikeRepository;
+    @Mock private NotificationRepository notificationRepository;
+    @Mock private UserActivityService userActivityService;
 
     @InjectMocks private CommentServiceImpl commentService;
 
     private UUID testArticleId;
     private UUID testUserId;
+    private UUID testCommentId;
     private List<Comment> testComments;
     private List<CommentResponseDto> testResponseDtos;
 
@@ -54,6 +65,7 @@ class CommentServiceTest {
     void setUp() {
         testArticleId = UUID.randomUUID();
         testUserId = UUID.randomUUID();
+        testCommentId = UUID.randomUUID();
 
         testComments = Arrays.asList(
             Comment.builder()
@@ -164,6 +176,13 @@ class CommentServiceTest {
                 .likeCount(0).isDeleted(false).build()
         );
 
+        Comment saved = Comment.builder()
+            .id(UUID.randomUUID())
+            .articleId(articleId).userId(userId).userNickname(nickname)
+            .content("내용").createdAt(Instant.now()).updatedAt(Instant.now())
+            .likeCount(0).isDeleted(false).build();
+        when(commentRepository.save(any(Comment.class))).thenReturn(saved);
+
         commentService.registerComment(dto);
         assertThat(article.getCommentCount()).isEqualTo(1L);
         verify(commentRepository).save(any(Comment.class));
@@ -182,7 +201,26 @@ class CommentServiceTest {
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
+        Notification notification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
+            .build();
+
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(notification));
+
+        doNothing().when(notificationRepository)
+            .deactivateByResourceId(commentId);
+
         commentService.deleteComment(commentId, userId);
+
+        then(notificationRepository).should()
+            .findByResourceIdAndActiveTrue(commentId);
+
+        then(notificationRepository).should()
+            .deactivateByResourceId(commentId);
+
         assertThat(comment.getIsDeleted()).isTrue();
         assertThat(article.getCommentCount()).isEqualTo(0L);
     }
@@ -213,9 +251,22 @@ class CommentServiceTest {
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
 
+        Notification likeNotification = Notification.builder()
+            .id(UUID.randomUUID())
+            .resourceId(commentId)
+            .active(true)
+            .build();
+        given(notificationRepository.findByResourceIdAndActiveTrue(commentId))
+            .willReturn(List.of(likeNotification));
+
+        doNothing().when(notificationRepository).deactivateByResourceId(commentId);
+
         commentService.deleteCommentPhysically(commentId, userId);
         verify(commentRepository).delete(comment);
+
         assertThat(article.getCommentCount()).isEqualTo(0L);
+        verify(notificationRepository).findByResourceIdAndActiveTrue(commentId);
+        verify(notificationRepository).deactivateByResourceId(commentId);
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.project.monewping.domain.notification.entity.Notification;
 import org.springframework.data.domain.Pageable;
 
 public interface NotificationRepositoryCustom {
+
     /**
      * 특정 사용자의 미확인 알림을 커서(cursor) 기반으로 페이지 조회합니다.
      *

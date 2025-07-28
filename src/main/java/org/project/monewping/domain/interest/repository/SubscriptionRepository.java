@@ -33,4 +33,13 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
      */
     @Query("select count(s) > 0 from Subscription s where s.user.id = :userId and s.interest.id = :interestId")
     boolean existsByUserIdAndInterestId(UUID userId, UUID interestId);
-} 
+
+    /**
+     * 특정 관심사에 구독한 사용자 ID 리스트를 조회합니다.
+     *
+     * @param interestId 조회할 관심사 ID
+     * @return 구독자 ID 리스트
+     */
+    @Query("SELECT s.user.id FROM Subscription s WHERE s.interest.id = :interestId")
+    List<UUID> findUserIdsByInterestId(UUID interestId);
+}

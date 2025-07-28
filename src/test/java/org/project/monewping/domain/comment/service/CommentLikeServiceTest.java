@@ -1,9 +1,10 @@
 package org.project.monewping.domain.comment.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.ArgumentMatchers.any;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import org.project.monewping.domain.comment.domain.Comment;
 import org.project.monewping.domain.comment.domain.CommentLike;
 import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 
@@ -33,6 +35,9 @@ class CommentLikeServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -64,7 +69,7 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 좋아요 등록 성공")
+    @DisplayName("댓글 좋아요 등록 후 알림 생성 성공")
     void likeComment_Success() {
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
@@ -74,6 +79,11 @@ class CommentLikeServiceTest {
 
         verify(commentLikeRepository).save(any(CommentLike.class));
 
+        verify(notificationRepository).save(argThat(n ->
+            n.getUserId().equals(comment.getUserId()) &&
+            n.getResourceId().equals(comment.getId()) &&
+            n.getContent().contains(user.getNickname())
+        ));
     }
 
     @Test

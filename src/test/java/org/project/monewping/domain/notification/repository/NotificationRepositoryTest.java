@@ -186,6 +186,6 @@ public class NotificationRepositoryTest {
         List<Notification> all = notificationRepository.findAll();
         assertThat(all)
             .isNotEmpty()
-            .allMatch(Notification::getConfirmed);
+            .allMatch(Notification::isConfirmed);
     }
 }
