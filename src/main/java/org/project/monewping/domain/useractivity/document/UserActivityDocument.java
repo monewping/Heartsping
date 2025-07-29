@@ -59,6 +59,7 @@ public class UserActivityDocument {
         private UUID id;
         private String email;
         private String nickname;
+        private Boolean isDeleted;
         private Instant createdAt;
     }
 

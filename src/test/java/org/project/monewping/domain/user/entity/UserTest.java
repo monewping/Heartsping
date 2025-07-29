@@ -31,6 +31,7 @@ class UserTest {
                 .email("test@example.com")
                 .nickname("testuser")
                 .password("password123")
+                .isDeleted(false)
                 .build();
 
         // then

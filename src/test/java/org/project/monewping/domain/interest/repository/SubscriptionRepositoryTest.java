@@ -43,6 +43,7 @@ class SubscriptionRepositoryTest {
                 .email("test@email.com")
                 .nickname("tester")
                 .password("pw")
+                .isDeleted(false)
                 .build());
         Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
 
@@ -63,6 +64,7 @@ class SubscriptionRepositoryTest {
                 .email("test2@email.com")
                 .nickname("tester2")
                 .password("pw")
+                .isDeleted(false)
                 .build());
         Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
         Interest baseball = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
@@ -81,7 +83,7 @@ class SubscriptionRepositoryTest {
     @DisplayName("사용자와 관심사로 구독을 찾을 수 있다")
     void findByUserIdAndInterestId_success() {
         // Given
-        User user = userRepository.save(User.builder().email("a@a.com").nickname("a").password("pw").build());
+        User user = userRepository.save(User.builder().email("a@a.com").nickname("a").password("pw").isDeleted(false).build());
         Interest interest = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());
         Subscription subscription = subscriptionRepository.save(new Subscription(user, interest));
 
@@ -112,7 +114,7 @@ class SubscriptionRepositoryTest {
     @DisplayName("구독 존재 여부를 정확히 반환한다")
     void existsByUserIdAndInterestId() {
         // Given
-        User user = userRepository.save(User.builder().email("b@b.com").nickname("b").password("pw").build());
+        User user = userRepository.save(User.builder().email("b@b.com").nickname("b").password("pw").isDeleted(false).build());
         Interest interest = interestRepository.save(Interest.builder().name("야구").subscriberCount(0L).build());
         subscriptionRepository.save(new Subscription(user, interest));
 

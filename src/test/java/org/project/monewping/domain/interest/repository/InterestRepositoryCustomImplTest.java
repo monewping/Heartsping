@@ -112,6 +112,7 @@ class InterestRepositoryCustomImplTest {
             .email("test@email.com")
             .nickname("tester")
             .password("pw")
+            .isDeleted(false)
             .build());
 
         Interest soccer = interestRepository.save(Interest.builder().name("축구").subscriberCount(0L).build());

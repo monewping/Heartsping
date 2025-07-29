@@ -14,6 +14,7 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "isDeleted", constant = "false")
     User toEntity(UserRegisterRequest request);
 
     UserRegisterResponse toResponse(User user);

@@ -2,6 +2,7 @@ package org.project.monewping.domain.useractivity.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 import org.project.monewping.domain.useractivity.document.UserActivityDocument;
 import org.project.monewping.domain.useractivity.dto.UserActivityDto;
 
@@ -9,6 +10,7 @@ import org.project.monewping.domain.useractivity.dto.UserActivityDto;
  * 사용자 활동 내역 Document와 DTO 간의 매핑을 담당하는 Mapper
  */
 @Mapper(componentModel = "spring")
+@Component
 public interface UserActivityMapper {
 
     /**
@@ -17,6 +19,7 @@ public interface UserActivityMapper {
     @Mapping(source = "userId", target = "id")
     @Mapping(source = "user.email", target = "email")
     @Mapping(source = "user.nickname", target = "nickname")
+    @Mapping(source = "user.isDeleted", target = "isDeleted")
     @Mapping(source = "user.createdAt", target = "createdAt")
     UserActivityDto toDto(UserActivityDocument document);
 

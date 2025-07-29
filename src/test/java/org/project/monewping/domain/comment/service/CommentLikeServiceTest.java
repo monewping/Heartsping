@@ -56,6 +56,7 @@ class CommentLikeServiceTest {
             .email("test@example.com")
             .nickname("테스트유저")
             .password("1234")
+            .isDeleted(false)
             .build();
         comment = Comment.builder()
             .id(commentId)

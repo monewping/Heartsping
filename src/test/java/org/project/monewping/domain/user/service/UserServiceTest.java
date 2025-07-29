@@ -17,8 +17,12 @@ import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
 import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.exception.UserDeleteException;
+import org.project.monewping.domain.user.exception.UserAlreadyDeletedException;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
+import org.project.monewping.domain.user.repository.UserDeletionRepository;
+import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
 
@@ -57,6 +61,12 @@ class UserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private UserActivityService userActivityService;
+
+    @Mock
+    private UserDeletionRepository userDeletionRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -90,6 +100,7 @@ class UserServiceTest {
                 .email("test@example.com")
                 .nickname("testuser")
                 .password("password123")
+                .isDeleted(false)
                 .build();
 
         savedUser = User.builder()
@@ -97,6 +108,7 @@ class UserServiceTest {
                 .email("test@example.com")
                 .nickname("testuser")
                 .password("password123")
+                .isDeleted(false)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -402,6 +414,7 @@ class UserServiceTest {
                 .email("test@example.com")
                 .nickname("oldNickname")
                 .password("password123")
+                .isDeleted(false)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -410,6 +423,7 @@ class UserServiceTest {
                 .email("test@example.com")
                 .nickname("newNickname")
                 .password("password123")
+                .isDeleted(false)
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
@@ -446,5 +460,129 @@ class UserServiceTest {
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("존재하지 않는 사용자입니다.");
         verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("사용자 논리 삭제 성공")
+    void softDelete_Success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID requesterId = userId; // 본인 삭제
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("테스트")
+                .password("password123")
+                .isDeleted(false)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.save(user)).willReturn(user);
+
+        // when
+        userService.softDelete(userId, requesterId);
+
+        // then
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(user);
+        verify(userActivityService).softDeleteUser(userId);
+        verify(userDeletionRepository).deleteSubscriptionsByUserId(userId);
+        verify(userDeletionRepository).softDeleteCommentsByUserId(userId);
+        verify(userDeletionRepository).deleteNotificationsByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("사용자 논리 삭제 실패 - 권한 없음")
+    void softDelete_NoPermission() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID(); // 다른 사용자
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("테스트")
+                .password("password123")
+                .isDeleted(false)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when & then
+        assertThatThrownBy(() -> userService.softDelete(userId, requesterId))
+                .isInstanceOf(UserDeleteException.class)
+                .hasMessageContaining("사용자 삭제 권한이 없습니다");
+    }
+
+    @Test
+    @DisplayName("사용자 논리 삭제 실패 - 이미 삭제된 사용자")
+    void softDelete_AlreadyDeleted() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID requesterId = userId;
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("테스트")
+                .password("password123")
+                .isDeleted(true)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when & then
+        assertThatThrownBy(() -> userService.softDelete(userId, requesterId))
+                .isInstanceOf(UserAlreadyDeletedException.class)
+                .hasMessageContaining("이미 삭제된 사용자입니다");
+    }
+
+    @Test
+    @DisplayName("사용자 물리 삭제 성공")
+    void hardDelete_Success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID requesterId = userId; // 본인 삭제
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("테스트")
+                .password("password123")
+                .isDeleted(false)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when
+        userService.hardDelete(userId, requesterId);
+
+        // then
+        verify(userRepository).findById(userId);
+        verify(userRepository).delete(user);
+        verify(userActivityService).deleteUserActivity(userId);
+        verify(userDeletionRepository).deleteSubscriptionsByUserId(userId);
+        verify(userDeletionRepository).deleteCommentsByUserId(userId);
+        verify(userDeletionRepository).deleteNotificationsByUserId(userId);
+        verify(userDeletionRepository).deleteArticleViewsByUserId(userId);
+    }
+
+    @Test
+    @DisplayName("사용자 물리 삭제 실패 - 권한 없음")
+    void hardDelete_NoPermission() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID(); // 다른 사용자
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .nickname("테스트")
+                .password("password123")
+                .isDeleted(false)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when & then
+        assertThatThrownBy(() -> userService.hardDelete(userId, requesterId))
+                .isInstanceOf(UserDeleteException.class)
+                .hasMessageContaining("사용자 삭제 권한이 없습니다");
     }
 }

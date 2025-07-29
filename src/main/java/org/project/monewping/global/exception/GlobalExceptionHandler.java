@@ -11,6 +11,8 @@ import org.project.monewping.domain.notification.exception.InvalidCursorFormatEx
 import org.project.monewping.domain.notification.exception.NotificationNotFoundException;
 import org.project.monewping.domain.notification.exception.NotificationBatchRunException;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.exception.UserDeleteException;
+import org.project.monewping.domain.user.exception.UserAlreadyDeletedException;
 import org.project.monewping.global.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -252,6 +254,40 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
             HttpStatus.NOT_FOUND,
             "사용자를 조회할 수 없습니다.",
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * 사용자 삭제 권한이 없을 때 발생하는 예외를 처리합니다.
+     *
+     * @param ex 발생한 UserDeleteException
+     * @return HTTP 403 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+     */
+    @ExceptionHandler(UserDeleteException.class)
+    public ResponseEntity<ErrorResponse> handleUserDeleteException(UserDeleteException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.FORBIDDEN,
+            "사용자 삭제 권한이 없습니다.",
+            ex.getMessage()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
+     * 이미 삭제된 사용자에 대한 작업을 시도할 때 발생하는 예외를 처리합니다.
+     *
+     * @param ex 발생한 UserAlreadyDeletedException
+     * @return HTTP 404 상태와 에러 메시지를 담은 ResponseEntity<ErrorResponse>
+     */
+    @ExceptionHandler(UserAlreadyDeletedException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyDeletedException(UserAlreadyDeletedException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+            HttpStatus.NOT_FOUND,
+            "이미 삭제된 사용자입니다.",
             ex.getMessage()
         );
 

@@ -52,6 +52,7 @@ class NotificationQueryDSLTest {
                 .email("test@example.com")
                 .nickname("테스트유저")
                 .password("password123")
+                .isDeleted(false)
                 .build());
 
         testNotification = notificationRepository.save(new Notification(
