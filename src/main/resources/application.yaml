@@ -39,7 +39,7 @@ info:
   java:
     version: ${java.version}
   spring-boot:
-    version: 3.4.4
+    version: 3.5.3
   datasource:
     url: ${spring.datasource.url}
     driver: ${spring.datasource.driver-class-name}
