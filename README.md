@@ -104,7 +104,6 @@
 
 ### **임정현**
 
-![img_5.png](img_5.png)
 ![img_6.png](img_6.png)
 ![img_7.png](img_7.png)
 - 관심사 관리
