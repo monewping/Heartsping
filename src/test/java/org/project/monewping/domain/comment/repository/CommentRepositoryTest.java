@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.entity.Comment;
 import org.project.monewping.global.config.QuerydslConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;

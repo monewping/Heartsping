@@ -1,4 +1,4 @@
-package org.project.monewping.domain.comment.domain;
+package org.project.monewping.domain.comment.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
