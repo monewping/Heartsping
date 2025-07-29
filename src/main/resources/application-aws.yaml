@@ -36,6 +36,9 @@ management:
           - metrics
 
 logging:
+  file:
+    path: ${LOGGING_FILE_PATH:/app/logs}
+    name: ${LOGGING_FILE_NAME:monewping}
   level:
     org.project.monewping: info
     org.hibernate.SQL: warn

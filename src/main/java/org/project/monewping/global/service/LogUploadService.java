@@ -88,6 +88,22 @@ public class LogUploadService {
         String bucketName = s3Properties.logs().bucketName();
         String prefix = s3Properties.logs().prefix();
 
+        log.info(SERVICE_NAME + "S3 설정 - 버킷: {}, 접두사: {}, 로그경로: {}", bucketName, prefix, logPath);
+
+        // 로그 디렉토리 확인
+        Path logDir = Paths.get(logPath);
+        log.info(SERVICE_NAME + "로그 디렉토리 존재 여부: {}", Files.exists(logDir));
+
+        if (Files.exists(logDir)) {
+            try {
+                log.info(SERVICE_NAME + "로그 디렉토리 내용:");
+                Files.list(logDir).forEach(file ->
+                    log.info(SERVICE_NAME + "  - {}", file.getFileName()));
+            } catch (IOException e) {
+                log.error(SERVICE_NAME + "로그 디렉토리 읽기 실패", e);
+            }
+        }
+
         // 업로드할 로그 파일 목록
         String[] logTypes = {"", "-error", "-sql"};
         int uploadedCount = 0;
