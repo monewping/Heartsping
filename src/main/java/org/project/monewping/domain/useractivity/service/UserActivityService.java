@@ -50,6 +50,14 @@ public interface UserActivityService {
     void deleteUserActivity(UUID userId);
 
     /**
+     * 사용자를 논리 삭제 상태로 변경합니다.
+     * 사용자 정보의 isDeleted를 true로 설정하고 활동 내역은 유지합니다.
+     * 
+     * @param userId 사용자 ID
+     */
+    void softDeleteUser(UUID userId);
+
+    /**
      * 사용자 닉네임을 활동내역에 업데이트합니다.
      * 
      * @param userId 사용자 ID
@@ -74,6 +82,13 @@ public interface UserActivityService {
      * @param interestId 관심사 ID
      */
     void removeSubscription(UUID userId, UUID interestId);
+
+    /**
+     * 사용자의 모든 구독 정보를 삭제합니다.
+     * 
+     * @param userId 사용자 ID
+     */
+    void removeAllSubscriptionsByUserId(UUID userId);
 
     /**
      * 관심사의 키워드 변경 시 구독 정보를 업데이트합니다.
@@ -135,6 +150,13 @@ public interface UserActivityService {
      * @param commentId 댓글 ID
      */
     void removeCommentLike(UUID userId, UUID commentId);
+
+    /**
+     * 사용자의 모든 댓글 좋아요를 삭제합니다.
+     * 
+     * @param userId 사용자 ID
+     */
+    void removeAllCommentLikesByUserId(UUID userId);
 
     /**
      * 좋아요를 누른 댓글의 내용을 업데이트합니다.

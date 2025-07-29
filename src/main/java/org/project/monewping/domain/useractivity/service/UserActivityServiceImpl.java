@@ -43,6 +43,15 @@ public class UserActivityServiceImpl implements UserActivityService {
         UserActivityDocument document = userActivityRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserActivityNotFoundException(userId));
 
+        // isDeleted 필드가 null인 경우 기본값 false로 설정
+        if (document.getUser() != null && document.getUser().getIsDeleted() == null) {
+            UserActivityDocument.UserInfo userInfo = document.getUser();
+            userInfo.setIsDeleted(false);
+            document.setUser(userInfo);
+            userActivityRepository.save(document);
+            log.debug("기존 사용자 활동 내역의 isDeleted 필드를 false로 설정. userId: {}", userId);
+        }
+
         UserActivityDto dto = userActivityMapper.toDto(document);
 
         log.debug("사용자 활동 내역 조회 완료. userId: {}", userId);
@@ -68,6 +77,7 @@ public class UserActivityServiceImpl implements UserActivityService {
                 .id(userId)
                 .email(userEmail)
                 .nickname(userNickname)
+                .isDeleted(false)
                 .createdAt(userCreatedAt)
                 .build();
 
@@ -94,6 +104,27 @@ public class UserActivityServiceImpl implements UserActivityService {
         userActivityRepository.deleteByUserId(userId);
 
         log.debug("사용자 활동 내역 삭제 완료. userId: {}", userId);
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteUser(UUID userId) {
+        log.debug("사용자 논리 삭제 시작. userId: {}", userId);
+
+        UserActivityDocument document = userActivityRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserActivityNotFoundException(userId));
+
+        // 사용자 정보의 isDeleted를 true로 설정
+        UserActivityDocument.UserInfo userInfo = document.getUser();
+        if (userInfo != null) {
+            userInfo.setIsDeleted(true);
+            document.setUser(userInfo);
+            document.setUpdatedAt(Instant.now());
+            userActivityRepository.save(document);
+            log.debug("사용자 논리 삭제 완료. userId: {}", userId);
+        } else {
+            log.warn("사용자 정보가 없습니다. userId: {}", userId);
+        }
     }
 
     @Override
@@ -166,6 +197,28 @@ public class UserActivityServiceImpl implements UserActivityService {
         }
 
         log.debug("구독 정보 삭제 완료. userId: {}, interestId: {}", userId, interestId);
+    }
+
+    @Override
+    @Transactional
+    public void removeAllSubscriptionsByUserId(UUID userId) {
+        log.debug("사용자의 모든 구독 정보 삭제 시작. userId: {}", userId);
+
+        // 기존 구독 목록 조회
+        UserActivityDocument document = userActivityRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserActivityNotFoundException(userId));
+
+        List<UserActivityDocument.SubscriptionInfo> subscriptions = document.getSubscriptions();
+        if (subscriptions != null && !subscriptions.isEmpty()) {
+            int removedCount = subscriptions.size();
+            subscriptions.clear();
+            document.setSubscriptions(subscriptions);
+            document.setUpdatedAt(Instant.now());
+            userActivityRepository.save(document);
+            log.debug("사용자의 모든 구독 정보 삭제 완료. userId: {}, 삭제된 구독 수: {}", userId, removedCount);
+        } else {
+            log.debug("삭제할 구독 정보가 없습니다. userId: {}", userId);
+        }
     }
 
     @Override
@@ -366,6 +419,28 @@ public class UserActivityServiceImpl implements UserActivityService {
         }
 
         log.debug("댓글 좋아요 정보 삭제 완료. userId: {}, commentId: {}", userId, commentId);
+    }
+
+    @Override
+    @Transactional
+    public void removeAllCommentLikesByUserId(UUID userId) {
+        log.debug("사용자의 모든 댓글 좋아요 정보 삭제 시작. userId: {}", userId);
+
+        // 기존 좋아요 목록 조회
+        UserActivityDocument document = userActivityRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserActivityNotFoundException(userId));
+
+        List<UserActivityDocument.CommentLikeInfo> commentLikes = document.getCommentLikes();
+        if (commentLikes != null && !commentLikes.isEmpty()) {
+            int removedCount = commentLikes.size();
+            commentLikes.clear();
+            document.setCommentLikes(commentLikes);
+            document.setUpdatedAt(Instant.now());
+            userActivityRepository.save(document);
+            log.debug("사용자의 모든 댓글 좋아요 정보 삭제 완료. userId: {}, 삭제된 좋아요 수: {}", userId, removedCount);
+        } else {
+            log.debug("삭제할 댓글 좋아요가 없습니다. userId: {}", userId);
+        }
     }
 
     @Override
