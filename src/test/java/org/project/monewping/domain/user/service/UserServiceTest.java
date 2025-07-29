@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;

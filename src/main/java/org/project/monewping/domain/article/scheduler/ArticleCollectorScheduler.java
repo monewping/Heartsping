@@ -1,8 +1,6 @@
 package org.project.monewping.domain.article.scheduler;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +10,7 @@ import org.project.monewping.domain.article.service.ArticlesService;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.KeywordRepository;
+import org.project.monewping.domain.notification.service.NotificationService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +34,7 @@ public class ArticleCollectorScheduler {
     private final List<ArticleFetcher> articleFetchers;
     private final ArticlesService articlesService;
     private final KeywordRepository keywordRepository;
+    private final NotificationService notificationService;
 
     /**
      * 등록된 모든 관심사에 대해 뉴스 기사 수집을 수행하는 스케줄러 메서드입니다.
@@ -53,23 +53,15 @@ public class ArticleCollectorScheduler {
         List<Interest> interests = interestRepository.findAll();
         int totalSaved = 0;
 
-        // 관심사별 저장 기사 수 집계용 Map
-        Map<String, Integer> savedCountByInterest = new LinkedHashMap<>();
-
         // 모든 관심사에 대해 기사 수집 시도
         for (Interest interest : interests) {
             int saved = collectForInterest(interest);
             totalSaved += saved;
-            savedCountByInterest.put(interest.getName(), saved);
+
+            notificationService.createNewArticleNotification(interest, saved);
         }
 
         log.info("[ 수집 완료 ] 전체 저장된 기사 수 : {}", totalSaved);
-
-        if (!savedCountByInterest.isEmpty()) {
-            log.info("[ 관심사별 저장 현황 ]");
-            savedCountByInterest.forEach((name, count) ->
-                log.info(" - {} : {}개", name, count));
-        }
     }
 
     /**
@@ -120,5 +112,4 @@ public class ArticleCollectorScheduler {
         log.info("관심사 '{}' 수집 완료 - 저장된 기사 수: {}", interest.getName(), savedCount);
         return savedCount;
     }
-
 }

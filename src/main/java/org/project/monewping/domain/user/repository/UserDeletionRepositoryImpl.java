@@ -66,12 +66,12 @@ public class UserDeletionRepositoryImpl implements UserDeletionRepository {
             // 1. 삭제될 댓글 ID 목록을 먼저 조회
             @SuppressWarnings("unchecked")
             List<UUID> commentIds = entityManager.createQuery(
-                    "SELECT c.id FROM org.project.monewping.domain.comment.domain.Comment c WHERE c.userId = :userId AND c.isDeleted = false")
+                    "SELECT c.id FROM org.project.monewping.domain.comment.entity.Comment c WHERE c.userId = :userId AND c.isDeleted = false")
                     .setParameter("userId", userId)
                     .getResultList();
             
             // 2. 댓글 마스킹 처리
-            entityManager.createQuery("UPDATE org.project.monewping.domain.comment.domain.Comment c SET c.isDeleted = true, c.content = '삭제한 사용자의 댓글입니다', c.updatedAt = CURRENT_TIMESTAMP WHERE c.userId = :userId AND c.isDeleted = false")
+            entityManager.createQuery("UPDATE org.project.monewping.domain.comment.entity.Comment c SET c.isDeleted = true, c.content = '삭제한 사용자의 댓글입니다', c.updatedAt = CURRENT_TIMESTAMP WHERE c.userId = :userId AND c.isDeleted = false")
                     .setParameter("userId", userId)
                     .executeUpdate();
             
@@ -94,7 +94,7 @@ public class UserDeletionRepositoryImpl implements UserDeletionRepository {
     @Override
     public void deleteCommentsByUserId(UUID userId) {
         try {
-            entityManager.createQuery("DELETE FROM org.project.monewping.domain.comment.domain.Comment c WHERE c.userId = :userId")
+            entityManager.createQuery("DELETE FROM org.project.monewping.domain.comment.entity.Comment c WHERE c.userId = :userId")
                     .setParameter("userId", userId)
                     .executeUpdate();
             log.debug("사용자 댓글 물리 삭제 완료: userId={}", userId);
@@ -110,18 +110,18 @@ public class UserDeletionRepositoryImpl implements UserDeletionRepository {
             // 1. 삭제될 좋아요 정보를 먼저 조회하여 댓글 ID 목록을 얻음
             @SuppressWarnings("unchecked")
             List<UUID> commentIds = entityManager.createQuery(
-                    "SELECT cl.comment.id FROM org.project.monewping.domain.comment.domain.CommentLike cl WHERE cl.user.id = :userId")
+                    "SELECT cl.comment.id FROM org.project.monewping.domain.comment.entity.CommentLike cl WHERE cl.user.id = :userId")
                     .setParameter("userId", userId)
                     .getResultList();
             
             // 2. 좋아요 정보 삭제
-            int deletedCount = entityManager.createQuery("DELETE FROM org.project.monewping.domain.comment.domain.CommentLike cl WHERE cl.user.id = :userId")
+            int deletedCount = entityManager.createQuery("DELETE FROM org.project.monewping.domain.comment.entity.CommentLike cl WHERE cl.user.id = :userId")
                     .setParameter("userId", userId)
                     .executeUpdate();
             
             // 3. 각 댓글의 좋아요 수 감소
             for (UUID commentId : commentIds) {
-                entityManager.createQuery("UPDATE org.project.monewping.domain.comment.domain.Comment c SET c.likeCount = c.likeCount - 1 WHERE c.id = :commentId AND c.likeCount > 0")
+                entityManager.createQuery("UPDATE org.project.monewping.domain.comment.entity.Comment c SET c.likeCount = c.likeCount - 1 WHERE c.id = :commentId AND c.likeCount > 0")
                         .setParameter("commentId", commentId)
                         .executeUpdate();
             }

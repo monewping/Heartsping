@@ -1,7 +1,7 @@
 package org.project.monewping.domain.comment.mapper;
 
 import java.time.Instant;
-import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.entity.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.springframework.stereotype.Component;
@@ -32,6 +32,11 @@ public class CommentMapperImpl implements CommentMapper {
 
     @Override
     public CommentResponseDto toResponseDto(Comment comment) {
+        return toResponseDto(comment, false); // 🔥 기본은 false로 위임
+    }
+
+    @Override
+    public CommentResponseDto toResponseDto(Comment comment, boolean likedByMe) {
         if (comment == null) {
             return null;
         }
@@ -42,7 +47,7 @@ public class CommentMapperImpl implements CommentMapper {
             comment.getUserNickname(),
             comment.getContent(),
             comment.getLikeCount(),
-            false,
+            likedByMe,
             comment.getCreatedAt().toString()
         );
     }

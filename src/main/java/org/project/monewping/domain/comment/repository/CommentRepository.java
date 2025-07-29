@@ -1,6 +1,6 @@
 package org.project.monewping.domain.comment.repository;
 
-import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.entity.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

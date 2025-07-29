@@ -1,6 +1,6 @@
 package org.project.monewping.domain.user.service;
 
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
@@ -12,7 +12,6 @@ import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.domain.user.repository.UserDeletionRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
-import org.project.monewping.global.exception.GlobalExceptionHandler;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.exception.UserDeleteException;
 import org.project.monewping.domain.user.exception.UserAlreadyDeletedException;
@@ -24,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.UUID;
-import java.util.Optional;
 
 /**
  * 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스

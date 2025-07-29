@@ -22,9 +22,13 @@ spring:
 
 logging:
   level:
-    com.project.monewping: debug
+    org.project.monewping: debug
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     org.springframework.test: debug
     org.springframework.boot.devtools.restart: trace
     org.springframework.boot.devtools.classpath: trace
+aws:
+  s3:
+    backup:
+      enabled: true

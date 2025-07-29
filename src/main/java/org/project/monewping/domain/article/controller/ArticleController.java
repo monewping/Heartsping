@@ -137,18 +137,28 @@ public class ArticleController {
     }
 
     /**
-     * 날짜 범위 내에서 유실된 뉴스 기사 복구를 수행합니다.
+     * 유실된 뉴스 기사 데이터를 지정된 날짜 범위(from ~ to) 내에서 복구합니다.
      *
-     * @param from 복구 시작일 (yyyy-MM-dd)
-     * @param to   복구 종료일 (yyyy-MM-dd)
-     * @return 각 날짜별 복구 결과 리스트
+     * <p>요청 파라미터는 ISO 8601 형식의 문자열(예: {@code 2025-07-25T00:00:00})을 받으며,
+     * 서버 내부에서 날짜(LocalDate) 단위로 변환되어 처리됩니다.
+     *
+     * <p>범위 내 날짜별로 백업된 JSON 파일을 S3에서 로드하고,
+     * DB에 존재하지 않는 기사만 필터링하여 복구합니다.
+     *
+     * @param fromRaw 복구 시작 날짜/시간 문자열 (예: {@code 2025-07-25T00:00:00})
+     * @param toRaw   복구 종료 날짜/시간 문자열 (예: {@code 2025-07-27T23:59:59})
+     * @return 날짜별 복구 결과 리스트. 각 요소는 복구된 날짜, 기사 ID 목록, 복구 건수를 포함.
+     *         파라미터가 잘못되었거나 순서가 잘못되면 400 Bad Request 반환.
      */
     @GetMapping("/restore")
     public ResponseEntity<List<ArticleRestoreResultDto>> restoreArticles(
-        @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-        @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        @RequestParam("from") String fromRaw,
+        @RequestParam("to") String toRaw) {
 
-        if (from.isAfter(to)) {
+        LocalDate from = parseToLocalDate(fromRaw);
+        LocalDate to = parseToLocalDate(toRaw);
+
+        if (from == null || to == null || from.isAfter(to)) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -183,6 +193,32 @@ public class ArticleController {
         log.info("뉴스 기사 물리 삭제 요청 : articleId = {}", articleId);
         articlesService.hardDelete(articleId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * ISO 8601 형식의 문자열을 LocalDate로 변환합니다.
+     *
+     * <p>지원되는 형식:
+     * <ul>
+     *     <li>{@code yyyy-MM-dd} (예: {@code 2025-07-25})</li>
+     *     <li>{@code yyyy-MM-dd'T'HH:mm:ss} (예: {@code 2025-07-25T00:00:00})</li>
+     * </ul>
+     *
+     * @param rawDate 변환할 날짜 문자열
+     * @return 파싱된 LocalDate, 실패 시 {@code null}
+     */
+    private LocalDate parseToLocalDate(String rawDate) {
+        try {
+            // 입력이 ISO-8601 date-time일 경우 LocalDateTime으로 파싱 후 LocalDate만 추출
+            return LocalDateTime.parse(rawDate).toLocalDate();
+        } catch (Exception e) {
+            // fallback: date-only 형식도 허용
+            try {
+                return LocalDate.parse(rawDate);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
     }
 
 }

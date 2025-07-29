@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,6 +36,7 @@ import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.service.impl.ArticlesServiceImpl;
+import org.project.monewping.domain.notification.repository.NotificationRepository;
 import org.project.monewping.global.dto.CursorPageResponse;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
@@ -53,6 +56,9 @@ public class ArticlesServiceTest {
 
     @Mock
     private InterestRepository interestRepository;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @Mock
     private ArticlesMapper articlesMapper;
@@ -346,19 +352,41 @@ public class ArticlesServiceTest {
     }
 
     @Test
-    @DisplayName("논리 삭제 - 존재하는 기사일 경우 삭제 플래그만 true로 변경 후 저장")
+    @DisplayName("논리 삭제 - 존재하는 기사일 경우 삭제 플래그만 true로 변경 후 저장 및 관련 알림 비활성화")
     void softDelete_Success() {
         // given
+        Interest interest = Interest.builder()
+                .name("Interest Name")
+                .subscriberCount(1L)
+                .keywords(Collections.emptyList())
+                .build();
+
         UUID articleId = UUID.randomUUID();
         Articles article = Articles.builder()
             .id(articleId)
+            .interest(interest)
             .title("Original Title")
             .summary("Original Summary")
             .originalLink("http://original.link")
             .deleted(false)
+            .createdAt(Instant.now())
             .build();
 
         given(articlesRepository.findByIdAndDeletedFalse(articleId)).willReturn(Optional.of(article));
+
+        doNothing().when(notificationRepository)
+            .deactivateByResourceIdAndCreatedAtBetween(
+                eq(interest.getId()),
+                any(Instant.class),
+                any(Instant.class)
+            );
+
+        given(notificationRepository.findByResourceIdAndActiveFalseAndCreatedAtBetween(
+            eq(interest.getId()),
+            any(Instant.class),
+            any(Instant.class)
+        ))
+            .willReturn(Collections.emptyList());
 
         // when
         articleService.softDelete(articleId);
@@ -370,8 +398,13 @@ public class ArticlesServiceTest {
         assertThat(article.getTitle()).isEqualTo("Original Title");
         assertThat(article.getSummary()).isEqualTo("Original Summary");
         assertThat(article.getOriginalLink()).isEqualTo("http://original.link");
-    }
 
+        then(notificationRepository).should().deactivateByResourceIdAndCreatedAtBetween(
+            eq(interest.getId()),
+            any(Instant.class),
+            any(Instant.class)
+        );
+    }
 
     @Test
     @DisplayName("논리 삭제 - 존재하지 않는 기사일 경우 ArticleNotFoundException 예외 발생")
@@ -389,19 +422,46 @@ public class ArticlesServiceTest {
     @DisplayName("물리 삭제 - 존재하는 기사일 경우 기사 삭제 수행")
     void hardDelete_Success() {
         // given
+        Interest interest = Interest.builder()
+            .name("Interest Name")
+            .subscriberCount(1L)
+            .keywords(Collections.emptyList())
+            .build();
+
         UUID articleId = UUID.randomUUID();
         Articles article = Articles.builder()
             .id(articleId)
+            .interest(interest)
             .deleted(false)
+            .createdAt(Instant.now())
             .build();
 
         given(articlesRepository.findById(articleId)).willReturn(Optional.of(article));
+
+        doNothing().when(notificationRepository)
+            .deactivateByResourceIdAndCreatedAtBetween(
+                eq(interest.getId()),
+                any(Instant.class),
+                any(Instant.class)
+            );
+        given(notificationRepository.findByResourceIdAndActiveFalseAndCreatedAtBetween(
+            eq(interest.getId()),
+            any(Instant.class),
+            any(Instant.class)
+        ))
+            .willReturn(Collections.emptyList());
 
         // when
         articleService.hardDelete(articleId);
 
         // then
         verify(articlesRepository).delete(article);
+
+        then(notificationRepository).should().deactivateByResourceIdAndCreatedAtBetween(
+            eq(interest.getId()),
+            any(Instant.class),
+            any(Instant.class)
+        );
     }
 
     @Test

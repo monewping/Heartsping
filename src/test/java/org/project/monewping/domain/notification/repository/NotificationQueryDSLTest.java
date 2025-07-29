@@ -7,7 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.entity.QNotification;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.project.monewping.global.config.QuerydslConfig;
@@ -16,7 +16,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -119,7 +118,7 @@ class NotificationQueryDSLTest {
 
         // then
         assertThat(notifications).isNotEmpty();
-        assertThat(notifications.get(0).getConfirmed()).isFalse();
+        assertThat(notifications.get(0).isConfirmed()).isFalse();
     }
 
     @Test
@@ -174,7 +173,7 @@ class NotificationQueryDSLTest {
         assertThat(notifications).isNotEmpty();
         assertThat(notifications.get(0).getUserId()).isEqualTo(testUser.getId());
         assertThat(notifications.get(0).getResourceType()).isEqualTo("ARTICLE");
-        assertThat(notifications.get(0).getConfirmed()).isFalse();
+        assertThat(notifications.get(0).isConfirmed()).isFalse();
     }
 
     @Test

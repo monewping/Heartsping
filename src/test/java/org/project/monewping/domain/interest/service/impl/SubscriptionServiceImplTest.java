@@ -11,13 +11,15 @@ import org.project.monewping.domain.interest.dto.SubscriptionDto;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.entity.Keyword;
 import org.project.monewping.domain.interest.entity.Subscription;
+import org.project.monewping.domain.interest.exception.DuplicateSubscriptionException;
+import org.project.monewping.domain.interest.exception.InterestNotFoundException;
 import org.project.monewping.domain.interest.exception.SubscriptionNotFoundException;
 import org.project.monewping.domain.interest.repository.InterestRepository;
 import org.project.monewping.domain.interest.repository.SubscriptionRepository;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.project.monewping.domain.user.repository.UserRepository;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -126,7 +128,7 @@ class SubscriptionServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.subscribe(interestId, subscriberId))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("사용자 없음");
     }
 
@@ -139,8 +141,11 @@ class SubscriptionServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.subscribe(interestId, subscriberId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("관심사 없음");
+                .isInstanceOf(InterestNotFoundException.class)
+                .satisfies(e -> {
+                    InterestNotFoundException ex = (InterestNotFoundException) e;
+                    assertThat(ex.getInterestId()).isEqualTo(interestId);
+                });
     }
 
     @Test
@@ -153,7 +158,7 @@ class SubscriptionServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.subscribe(interestId, subscriberId))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(DuplicateSubscriptionException.class)
                 .hasMessage("이미 구독 중입니다.");
     }
 
@@ -321,7 +326,7 @@ class SubscriptionServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("사용자 없음");
     }
 
@@ -334,8 +339,11 @@ class SubscriptionServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.unsubscribe(interestId, subscriberId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("관심사 없음");
+                .isInstanceOf(InterestNotFoundException.class)
+                .satisfies(e -> {
+                    InterestNotFoundException ex = (InterestNotFoundException) e;
+                    assertThat(ex.getInterestId()).isEqualTo(interestId);
+                });
     }
 
     @Test

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -16,7 +16,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.hibernate.exception.ConstraintViolationException;
 
 /**
@@ -29,7 +28,7 @@ import org.hibernate.exception.ConstraintViolationException;
  *               </p>
  */
 @DataJpaTest
-@EntityScan(basePackages = "org.project.monewping.domain.user.domain")
+@EntityScan(basePackages = "org.project.monewping.domain.user.entity")
 @EnableJpaRepositories(basePackages = "org.project.monewping.domain.user.repository")
 @Import(JpaAuditingConfig.class)
 @DisplayName("UserRepository 슬라이스 테스트")

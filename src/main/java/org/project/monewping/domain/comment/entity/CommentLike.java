@@ -1,8 +1,8 @@
-package org.project.monewping.domain.comment.domain;
+package org.project.monewping.domain.comment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.global.base.BaseEntity;
 
 /**

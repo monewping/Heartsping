@@ -1,4 +1,4 @@
-package org.project.monewping.domain.comment.domain;
+package org.project.monewping.domain.comment.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -57,5 +57,15 @@ public class Comment extends BaseUpdatableEntity {
 
     public Boolean isDeleted() {
         return this.isDeleted;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
     }
 }

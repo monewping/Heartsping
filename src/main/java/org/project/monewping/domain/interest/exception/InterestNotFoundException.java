@@ -9,11 +9,19 @@ import java.util.UUID;
  */
 public class InterestNotFoundException extends RuntimeException {
 
+    private final UUID interestId;
+
     public InterestNotFoundException(UUID interestId) {
         super("관심사를 찾을 수 없습니다: " + interestId);
+        this.interestId = interestId;
     }
 
-    public InterestNotFoundException(String message, Throwable cause) {
+    public InterestNotFoundException(String message, Throwable cause, UUID interestId) {
         super(message, cause);
+        this.interestId = interestId;
     }
-} 
+
+    public UUID getInterestId() {
+        return interestId;
+    }
+}

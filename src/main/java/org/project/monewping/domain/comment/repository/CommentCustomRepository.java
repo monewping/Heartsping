@@ -1,7 +1,7 @@
 package org.project.monewping.domain.comment.repository;
 
 import java.time.Instant;
-import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.entity.Comment;
 
 import java.util.List;
 import java.util.UUID;

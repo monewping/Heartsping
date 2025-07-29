@@ -3,7 +3,7 @@ package org.project.monewping.domain.user.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
 import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;

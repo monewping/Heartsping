@@ -30,7 +30,10 @@ public class Notification extends BaseUpdatableEntity {
     private String resourceType;
 
     @Column(name = "confirmed", nullable = false)
-    private Boolean confirmed;
+    private boolean confirmed;
+
+    @Column(name = "active", nullable = false)
+    private boolean active;
 
     public Notification(UUID userId, String content, UUID resourceId, String resourceType) {
         this.userId = userId;
