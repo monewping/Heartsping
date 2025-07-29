@@ -1,0 +1,74 @@
+package org.project.monewping.domain.article.entity;
+
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.project.monewping.domain.interest.entity.Interest;
+import org.project.monewping.global.base.BaseEntity;
+
+@Entity
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@Table
+public class Articles extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interest_id", nullable = false)
+    private Interest interest;
+
+    @Column(nullable = false, length = 30)
+    private String source;
+
+    @Column(name = "original_link", nullable = false, length = 500, unique = true)
+    private String originalLink;
+
+    @Column(nullable = false, length = 100)
+    private String title;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String summary;
+
+    @Column(name = "published_at",  nullable = false)
+    private LocalDateTime publishedAt;
+
+    @Column(name = "comment_count", nullable = false)
+    private long commentCount;
+
+    @Column(name = "view_count", nullable = false)
+    private long viewCount;
+
+    @Column(nullable = false, name = "is_deleted")
+    private boolean deleted;
+
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    public void updateInterest(Interest interest) {
+        this.interest = interest;
+    }
+
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        this.commentCount--;
+    }
+
+}

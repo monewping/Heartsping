@@ -2,11 +2,31 @@ name: Java CI with Gradle
 
 on:
   pull_request:
-    branches: [ "develop", "main" ]
+    branches: [ "dev", "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: monewping
+          MONGO_INITDB_DATABASE: monewping
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+      NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+      SPRING_DATA_MONGODB_URI: mongodb://admin:monewping@localhost:27017/monewping?authSource=admin
 
     steps:
       - name: Checkout code
@@ -22,4 +42,25 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle and check coverage
-        run: ./gradlew clean build check
+        run: ./gradlew clean build check --parallel --build-cache
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dorg.gradle.daemon=false"
+
+      - name: Generate JaCoCo coverage report
+        run: ./gradlew jacocoTestReport
+
+      - name: Check coverage threshold
+        run: |
+          echo "Checking coverage threshold..."
+          if [ -f "build/reports/jacoco/test/jacocoTestReport.xml" ]; then
+            echo "Coverage report found"
+          else
+            echo "Coverage report not found"
+            exit 1
+          fi
+
+      - name: Upload JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html

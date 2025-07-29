@@ -1,0 +1,87 @@
+# 1. Git
+.git
+.gitignore
+.gitattributes
+.github/
+
+# 2. IDE 및 에디터 설정 파일
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+
+# 3. Gradle 빌드 관련
+.gradle/
+!gradle/
+build/
+!build/libs/
+bin/
+
+# 4. 로그 및 임시 파일
+*.log
+*.tmp
+*.temp
+logs/
+temp/
+*.pid
+*.lock
+
+# 5. 운영체제별 파일
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# 6. Docker 관련 파일
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# 7. 문서 및 설명서==
+README.md
+HELP.md
+*.md
+docs/
+
+# 8. 테스트 관련 (런타임에 불필요)
+src/test/
+*Test.java
+*Tests.java
+
+# 9. 환경 설정 파일 (보안)
+.env
+.env.*
+*.key
+*.pem
+*.cert
+monewping-s3.env
+
+# 10. 기타 개발 도구
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 11. AWS 관련 (혹시 몰라 미리 추가)
+.aws/
+aws-credentials
+*.pem
+*.key
+
+# 12. 로컬 설정 파일 (추후 application.yaml 나눌 때 대비)
+application-dev.yaml

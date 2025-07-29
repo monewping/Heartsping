@@ -5,7 +5,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### 필수 ###
+.env
 *.env
+monewping-s3.env
 
 ### STS ###
 .apt_generated
@@ -37,3 +40,19 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# 로그 파일
+logs/
+*.log
+*.log.*
+
+# 백업 파일
+backup/
+*.bak
+*.backup
+
+# AWS 관련 (혹시 몰라 미리 추가)
+.aws/
+aws-credentials
+*.pem
+*.key
