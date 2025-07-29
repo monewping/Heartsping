@@ -9,10 +9,13 @@ import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.mapper.UserMapper;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
+import org.project.monewping.domain.user.repository.UserDeletionRepository;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
 import org.project.monewping.global.exception.GlobalExceptionHandler;
 import org.project.monewping.domain.user.exception.UserNotFoundException;
+import org.project.monewping.domain.user.exception.UserDeleteException;
+import org.project.monewping.domain.user.exception.UserAlreadyDeletedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final UserActivityService userActivityService;
+    private final UserDeletionRepository userDeletionRepository;
 
     /**
      * 사용자 회원가입을 처리합니다.
@@ -73,6 +77,7 @@ public class UserService {
                 .password(request.password())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .isDeleted(false)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -187,5 +192,184 @@ public class UserService {
         }
         
         return userMapper.toResponse(savedUser);
+    }
+
+    /**
+     * 사용자를 논리적으로 삭제합니다.
+     * 
+     * <p>
+     * 사용자와 관련된 모든 데이터를 논리적으로 삭제 처리합니다.
+     * 실제 데이터는 유지하되 삭제 표시를 합니다.
+     * </p>
+     * 
+     * @param userId 삭제할 사용자 ID
+     * @param requesterId 삭제 요청자 ID (권한 검사용)
+     * @throws UserNotFoundException 사용자를 찾을 수 없는 경우
+     * @throws UserDeleteException 삭제 권한이 없는 경우
+     * @throws UserAlreadyDeletedException 이미 삭제된 사용자인 경우
+     */
+    @Transactional
+    public void softDelete(UUID userId, UUID requesterId) {
+        log.info("사용자 논리 삭제 요청: userId={}, requesterId={}", userId, requesterId);
+
+        // 사용자 존재 여부 및 삭제 상태 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+
+        if (user.isDeleted()) {
+            log.warn("이미 삭제된 사용자입니다: userId={}", userId);
+            throw new UserAlreadyDeletedException(userId);
+        }
+
+        // 권한 검사 (본인만 삭제 가능)
+        if (!userId.equals(requesterId)) {
+            log.warn("사용자 삭제 권한이 없습니다: userId={}, requesterId={}", userId, requesterId);
+            throw new UserDeleteException(userId);
+        }
+
+        // 사용자 논리 삭제
+        user.delete();
+        userRepository.save(user);
+
+        // 사용자 활동 내역에서 댓글 좋아요 제거 (활동 내역 삭제 전에 실행)
+        try {
+            userActivityService.removeAllCommentLikesByUserId(userId);
+            log.info("사용자 활동 내역 댓글 좋아요 제거 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 댓글 좋아요 제거 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 연관 데이터 논리 삭제 처리
+        try {
+            // 사용자 활동 내역에서 사용자만 논리 삭제 상태로 변경 (MongoDB)
+            userActivityService.softDeleteUser(userId);
+            log.info("사용자 활동 내역 논리 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 논리 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 구독 정보 삭제
+        try {
+            userDeletionRepository.deleteSubscriptionsByUserId(userId);
+            log.info("구독 정보 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("구독 정보 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 댓글 논리 삭제
+        try {
+            userDeletionRepository.softDeleteCommentsByUserId(userId);
+            log.info("댓글 논리 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("댓글 논리 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 댓글 좋아요 삭제
+        try {
+            userDeletionRepository.deleteCommentLikesByUserId(userId);
+            log.info("댓글 좋아요 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("댓글 좋아요 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 알림 삭제
+        try {
+            userDeletionRepository.deleteNotificationsByUserId(userId);
+            log.info("알림 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("알림 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        log.info("사용자 논리 삭제 완료: userId={}", userId);
+    }
+
+    /**
+     * 사용자를 물리적으로 삭제합니다.
+     * 
+     * <p>
+     * 사용자와 관련된 모든 데이터를 물리적으로 삭제합니다.
+     * 이 작업은 되돌릴 수 없습니다.
+     * </p>
+     * 
+     * @param userId 삭제할 사용자 ID
+     * @param requesterId 삭제 요청자 ID (권한 검사용)
+     * @throws UserNotFoundException 사용자를 찾을 수 없는 경우
+     * @throws UserDeleteException 삭제 권한이 없는 경우
+     */
+    @Transactional
+    public void hardDelete(UUID userId, UUID requesterId) {
+        log.info("사용자 물리 삭제 요청: userId={}, requesterId={}", userId, requesterId);
+
+        // 사용자 존재 여부 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+
+        // 권한 검사 (본인만 삭제 가능)
+        if (!userId.equals(requesterId)) {
+            log.warn("사용자 삭제 권한이 없습니다: userId={}, requesterId={}", userId, requesterId);
+            throw new UserDeleteException(userId);
+        }
+
+        // 연관 데이터 물리 삭제 처리
+        try {
+            // 사용자 활동 내역에서 댓글 좋아요 제거 (활동 내역 삭제 전에 실행)
+            userActivityService.removeAllCommentLikesByUserId(userId);
+            log.info("사용자 활동 내역 댓글 좋아요 제거 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 댓글 좋아요 제거 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        try {
+            // 사용자 활동 내역 삭제 (MongoDB)
+            userActivityService.deleteUserActivity(userId);
+            log.info("사용자 활동 내역 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 구독 정보 삭제
+        try {
+            userDeletionRepository.deleteSubscriptionsByUserId(userId);
+            log.info("구독 정보 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("구독 정보 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 댓글 물리 삭제
+        try {
+            userDeletionRepository.deleteCommentsByUserId(userId);
+            log.info("댓글 물리 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("댓글 물리 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 댓글 좋아요 삭제
+        try {
+            userDeletionRepository.deleteCommentLikesByUserId(userId);
+            log.info("댓글 좋아요 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("댓글 좋아요 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 알림 삭제
+        try {
+            userDeletionRepository.deleteNotificationsByUserId(userId);
+            log.info("알림 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("알림 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 기사 조회 기록 삭제
+        try {
+            userDeletionRepository.deleteArticleViewsByUserId(userId);
+            log.info("기사 조회 기록 삭제 완료: userId={}", userId);
+        } catch (Exception e) {
+            log.error("기사 조회 기록 삭제 실패: userId={}, error={}", userId, e.getMessage());
+        }
+
+        // 사용자 물리 삭제
+        userRepository.delete(user);
+
+        log.info("사용자 물리 삭제 완료: userId={}", userId);
     }
 }
