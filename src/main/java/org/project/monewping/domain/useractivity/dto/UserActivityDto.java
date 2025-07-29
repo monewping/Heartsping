@@ -32,6 +32,9 @@ public class UserActivityDto {
     @NotNull(message = "사용자 닉네임은 필수입니다.")
     private String nickname;
 
+    @NotNull(message = "사용자 삭제 여부는 필수입니다.")
+    private Boolean isDeleted;
+
     @NotNull(message = "가입 날짜는 필수입니다.")
     private Instant createdAt;
 
