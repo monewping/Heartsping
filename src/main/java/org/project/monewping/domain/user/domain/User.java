@@ -39,7 +39,41 @@ public class User extends BaseUpdatableEntity {
     @Column(name = "password", nullable = false, length = 100)
     private String password;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted;
+
     public void setNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    /**
+     * 사용자를 논리적으로 삭제합니다.
+     * 
+     * <p>
+     * 실제 데이터는 유지하되 삭제 표시를 합니다.
+     * </p>
+     */
+    public void delete() {
+        this.isDeleted = true;
+    }
+
+    /**
+     * 사용자의 논리 삭제를 취소합니다.
+     * 
+     * <p>
+     * 삭제 표시를 해제하고 정상 상태로 복구합니다.
+     * </p>
+     */
+    public void restore() {
+        this.isDeleted = false;
+    }
+
+    /**
+     * 사용자가 삭제되었는지 확인합니다.
+     * 
+     * @return 삭제 여부
+     */
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.isDeleted);
     }
 }
