@@ -55,7 +55,12 @@ naver:
     client-id: ${NAVER_CLIENT_ID:test-client-id}
     client-secret: ${NAVER_CLIENT_SECRET:test-client-secret}
 
-# aws (추후 운영환경 분리)
+logging:
+  file:
+    path: ./logs
+    name: monewping
+
+# AWS
 aws:
   storage:
     type: ${STORAGE_TYPE:local}

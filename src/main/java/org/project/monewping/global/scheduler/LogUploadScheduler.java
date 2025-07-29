@@ -24,7 +24,7 @@ import java.time.LocalDate;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "aws.s3.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "aws.s3.logs.enabled", havingValue = "true")
 public class LogUploadScheduler {
 
     private static final String SCHEDULER_NAME = "[LogUploadService] ";
