@@ -3,6 +3,7 @@ package org.project.monewping.domain.user.service;
 import org.project.monewping.domain.user.domain.User;
 import org.project.monewping.domain.user.dto.request.LoginRequest;
 import org.project.monewping.domain.user.dto.request.UserRegisterRequest;
+import org.project.monewping.domain.user.dto.request.UserNicknameUpdateRequest;
 import org.project.monewping.domain.user.dto.response.LoginResponse;
 import org.project.monewping.domain.user.dto.response.UserRegisterResponse;
 import org.project.monewping.domain.user.mapper.UserMapper;
@@ -10,6 +11,8 @@ import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
 import org.project.monewping.global.exception.EmailAlreadyExistsException;
 import org.project.monewping.global.exception.LoginFailedException;
+import org.project.monewping.global.exception.GlobalExceptionHandler;
+import org.project.monewping.domain.user.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
+import java.util.UUID;
+import java.util.Optional;
 
 /**
  * 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스
@@ -155,5 +160,32 @@ public class UserService {
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException("이미 존재하는 이메일입니다.");
         }
+    }
+
+    /**
+     * 사용자 닉네임을 업데이트합니다.
+     * 
+     * @param userId 업데이트할 사용자 ID
+     * @param request 닉네임 업데이트 요청 정보
+     * @return 업데이트된 사용자 정보
+     * @throws IllegalArgumentException 존재하지 않는 사용자 ID인 경우
+     */
+    @Transactional
+    public UserRegisterResponse updateNickname(UUID userId, UserNicknameUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+        user.setNickname(request.nickname());
+        User savedUser = userRepository.save(user);
+        
+        // MongoDB 사용자 활동 내역도 함께 업데이트
+        try {
+            userActivityService.updateUserNickname(userId, request.nickname());
+            log.info("사용자 활동 내역 닉네임 업데이트 완료: userId={}, newNickname={}", userId, request.nickname());
+        } catch (Exception e) {
+            log.error("사용자 활동 내역 닉네임 업데이트 실패: userId={}, error={}", userId, e.getMessage());
+            // MongoDB 업데이트 실패가 PostgreSQL 업데이트를 실패시키지 않도록 예외를 잡아서 로그만 남김
+        }
+        
+        return userMapper.toResponse(savedUser);
     }
 }
