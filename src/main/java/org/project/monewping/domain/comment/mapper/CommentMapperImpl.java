@@ -1,7 +1,7 @@
 package org.project.monewping.domain.comment.mapper;
 
 import java.time.Instant;
-import org.project.monewping.domain.comment.domain.Comment;
+import org.project.monewping.domain.comment.entity.Comment;
 import org.project.monewping.domain.comment.dto.CommentRegisterRequestDto;
 import org.project.monewping.domain.comment.dto.CommentResponseDto;
 import org.springframework.stereotype.Component;

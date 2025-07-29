@@ -1,4 +1,4 @@
-package org.project.monewping.domain.user.domain;
+package org.project.monewping.domain.user.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

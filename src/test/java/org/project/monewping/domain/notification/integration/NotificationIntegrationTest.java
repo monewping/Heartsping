@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.project.monewping.MonewpingApplication;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;

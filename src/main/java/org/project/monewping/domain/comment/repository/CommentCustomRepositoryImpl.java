@@ -7,8 +7,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.project.monewping.domain.comment.domain.Comment;
-import org.project.monewping.domain.comment.domain.QComment;
+import org.project.monewping.domain.comment.entity.Comment;
+import org.project.monewping.domain.comment.entity.QComment;
 import org.springframework.stereotype.Repository;
 
 @Repository

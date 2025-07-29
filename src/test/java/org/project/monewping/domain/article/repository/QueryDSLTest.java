@@ -10,7 +10,7 @@ import org.project.monewping.domain.article.entity.QArticleViews;
 import org.project.monewping.domain.article.entity.QArticles;
 import org.project.monewping.domain.interest.entity.Interest;
 import org.project.monewping.domain.interest.repository.InterestRepository;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.global.config.JpaAuditingConfig;
 import org.project.monewping.global.config.QuerydslConfig;

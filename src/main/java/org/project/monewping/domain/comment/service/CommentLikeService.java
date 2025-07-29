@@ -7,13 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
-import org.project.monewping.domain.comment.domain.Comment;
-import org.project.monewping.domain.comment.domain.CommentLike;
+import org.project.monewping.domain.comment.entity.Comment;
+import org.project.monewping.domain.comment.entity.CommentLike;
 import org.project.monewping.domain.comment.repository.CommentLikeRepository;
 import org.project.monewping.domain.comment.repository.CommentRepository;
 import org.project.monewping.domain.notification.entity.Notification;
 import org.project.monewping.domain.notification.repository.NotificationRepository;
-import org.project.monewping.domain.user.domain.User;
+import org.project.monewping.domain.user.entity.User;
 import org.project.monewping.domain.user.repository.UserRepository;
 import org.project.monewping.domain.useractivity.document.UserActivityDocument;
 import org.project.monewping.domain.useractivity.service.UserActivityService;
