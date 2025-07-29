@@ -145,6 +145,7 @@ class UserRepositorySliceTest {
                 .password(password)
                 .createdAt(now)
                 .updatedAt(now)
+                .isDeleted(false)
                 .build();
     }
 }

@@ -340,6 +340,7 @@ class InterestApiIntegrationTest {
                 .email("test@email.com")
                 .nickname("tester")
                 .password("pw")
+                .isDeleted(false)
                 .build());
         UUID userId = user.getId();
 

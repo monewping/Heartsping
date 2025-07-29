@@ -60,6 +60,7 @@ public class NotificationIntegrationTest {
             .email("binu@google.com")
             .nickname("binu")
             .password("pw123456")
+            .isDeleted(false)
             .build();
 
         userRepository.saveAndFlush(user);

@@ -195,6 +195,7 @@ class CommentServiceTest {
         User mockUser = User.builder()
             .id(userId)
             .nickname(userNickname)
+            .isDeleted(false)
             .build();
 
         Articles article = Articles.builder()
