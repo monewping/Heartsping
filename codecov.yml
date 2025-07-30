@@ -1,0 +1,53 @@
+# Codecov 설정 파일
+# 이 파일은 Codecov의 동작을 제어하는 설정을 포함합니다
+
+codecov:
+  # CI가 성공해야만 커버리지 업로드를 허용
+  require_ci_to_pass: yes
+  notify:
+    # CI 완료 후 알림 전송
+    wait_for_ci: yes
+  # 브랜치 설정
+  branch: [main, dev]
+
+# 커버리지 관련 설정
+coverage:
+  # 커버리지 퍼센트 소수점 자릿수 (2자리)
+  precision: 2
+  # 커버리지 반올림 방식 (내림)
+  round: down
+  # 커버리지 표시 범위 (80% ~ 100%)
+  range: "80...100"
+  # 커버리지 상태 설정
+  status:
+    # 프로젝트 전체 커버리지 상태
+    project:
+      default:
+        target: 80%        # 목표 커버리지 80%
+        threshold: 5%      # 허용 가능한 감소 비율 5%
+        base: auto         # 자동으로 기준점 설정
+    # PR 패치 커버리지 상태
+    patch:
+      default:
+        target: 80%        # 패치 목표 커버리지 80%
+        threshold: 5%      # 패치 허용 감소 비율 5%
+        base: auto         # 자동으로 기준점 설정
+
+# 파서 설정 (JaCoCo XML 파일 처리)
+parsers:
+  gcov:
+    # 브랜치 커버리지 감지 설정
+    branch_detection:
+      conditional: yes     # 조건문 브랜치 감지
+      loop: yes           # 루프 브랜치 감지
+      method: no          # 메서드 브랜치 감지 비활성화
+      macro: no           # 매크로 브랜치 감지 비활성화
+
+# PR 코멘트 설정
+comment:
+  # 코멘트 레이아웃 (도달률, 차이, 플래그, 파일 목록)
+  layout: "reach, diff, flags, files"
+  # 코멘트 동작 방식 (기본값)
+  behavior: default
+  # 변경사항이 없어도 코멘트 작성
+  require_changes: no 

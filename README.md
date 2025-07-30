@@ -1,5 +1,10 @@
 ## **{ Heartsping }**
 
+[![Java CI with Gradle](https://github.com/monewping/Heartsping/workflows/Java%20CI%20with%20Gradle/badge.svg)](https://github.com/monewping/Heartsping/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/monewping/Heartsping/branch/dev/graph/badge.svg)](https://codecov.io/gh/monewping/Heartsping)
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.3-brightgreen.svg)](https://spring.io/projects/spring-boot)
+
 [4랑의 하츄핑](https://www.notion.so/4-207649136c118047b997dcecb838e150?pvs=21)
 
 ## **팀원 구성**
