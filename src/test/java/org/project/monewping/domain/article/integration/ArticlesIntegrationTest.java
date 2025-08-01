@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 import org.project.monewping.MonewpingApplication;
+import org.project.monewping.domain.article.config.WebConfig;
+import org.project.monewping.domain.article.converter.StringToLocalDateTimeConverter;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.entity.Articles;
 import org.project.monewping.domain.article.repository.ArticleViewsRepository;
@@ -46,7 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@Import(TestS3MockConfig.class)
+@Import({TestS3MockConfig.class, WebConfig.class, StringToLocalDateTimeConverter.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Articles 통합 테스트")
 public class ArticlesIntegrationTest {
@@ -187,13 +189,16 @@ public class ArticlesIntegrationTest {
 
 
     @Test
-    @DisplayName("뉴스 기사 복구 API 테스트 (날짜 범위)")
+    @DisplayName("뉴스 기사 복구 API 테스트 (날짜 범위) - 단일 날짜 범위, 최소 데이터 사용")
     void testRestoreArticles() throws Exception {
+        // 단일 날짜 (예: 2025-07-05)로 범위 제한
+        LocalDate testDate = LocalDate.of(2025, 7, 5);
+
         List<ArticleDto> mockArticles = List.of(
             new ArticleDto(
                 UUID.randomUUID(),
                 "TestSource",
-                "https://test.com/article/1",
+                "https://test.com/article/unique-url",
                 "테스트 기사 제목",
                 LocalDateTime.of(2025, 7, 5, 10, 30),
                 "테스트 기사 요약",
@@ -203,15 +208,27 @@ public class ArticlesIntegrationTest {
             )
         );
 
-        Mockito.when(s3ArticleBackupStorage.load(Mockito.any(LocalDate.class)))
+        // load() 호출 시 단일 날짜에 대해서만 mockArticles 반환
+        Mockito.when(s3ArticleBackupStorage.load(Mockito.eq(testDate)))
             .thenReturn(mockArticles);
 
-        mockMvc.perform(get("/api/articles/restore")
-                .param("from", "2025-07-01")
-                .param("to", "2025-07-10"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
-    }
+        // 그 외 날짜에는 빈 리스트 반환
+        Mockito.when(s3ArticleBackupStorage.load(Mockito.any(LocalDate.class)))
+            .thenAnswer(invocation -> {
+                LocalDate date = invocation.getArgument(0);
+                if (date.equals(testDate)) {
+                    return mockArticles;
+                } else {
+                    return List.of();
+                }
+            });
 
+        mockMvc.perform(get("/api/articles/restore")
+                .param("from", "2025-07-05")
+                .param("to", "2025-07-05"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$[0].restoredArticleCount").value(1));
+    }
 
 }

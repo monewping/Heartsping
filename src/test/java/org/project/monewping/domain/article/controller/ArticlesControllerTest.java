@@ -245,11 +245,11 @@ public class ArticlesControllerTest {
     @DisplayName("복구 API는 유효한 날짜 범위 요청 시 200 OK와 결과를 반환한다")
     void restoreArticles_success() throws Exception {
         // given
-        LocalDate from = LocalDate.of(2025, 7, 16);
-        LocalDate to = LocalDate.of(2025, 7, 18);
+        LocalDateTime from = LocalDate.of(2025, 7, 16).atStartOfDay();
+        LocalDateTime to = LocalDate.of(2025, 7, 18).atStartOfDay();
 
         ArticleRestoreResultDto result = new ArticleRestoreResultDto(
-            from.atStartOfDay(),
+            from,
             List.of("id-1", "id-2"),
             2
         );
@@ -259,8 +259,8 @@ public class ArticlesControllerTest {
 
         // when & then
         mockMvc.perform(get("/api/articles/restore")
-                .param("from", from.toString())
-                .param("to", to.toString()))
+                .param("from", from.toString()) // 예: "2025-07-16T00:00:00"
+                .param("to", to.toString()))    // 예: "2025-07-18T00:00:00"
             .andExpect(status().isOk());
 
         // then
