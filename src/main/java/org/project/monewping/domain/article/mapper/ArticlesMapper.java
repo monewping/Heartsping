@@ -24,6 +24,7 @@ public interface ArticlesMapper {
     @Mapping(target = "withViewedByMe", ignore = true)
     ArticleDto toDto(Articles article);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "publishedAt", source = "publishDate")

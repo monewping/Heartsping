@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.project.monewping.domain.article.dto.data.ArticleDto;
 import org.project.monewping.domain.article.dto.response.ArticleRestoreResultDto;
 import org.project.monewping.domain.article.entity.Articles;
+import org.project.monewping.domain.article.exception.InvalidRestoreRangeException;
 import org.project.monewping.domain.article.mapper.ArticlesMapper;
 import org.project.monewping.domain.article.repository.ArticlesRepository;
 import org.project.monewping.domain.article.service.impl.ArticleRestoreServiceImpl;
@@ -47,11 +48,11 @@ public class ArticleRestoreServiceTest {
     @DisplayName("복구 시 시작 날짜가 끝 날짜보다 늦으면 예외가 발생한다")
     void restoreArticlesByRange_invalidDateRange_throwsException() {
         // given
-        LocalDate from = LocalDate.of(2025, 7, 20);
-        LocalDate to = LocalDate.of(2025, 7, 19);
+        LocalDateTime from = LocalDateTime.of(2025, 7, 20, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2025, 7, 19, 0, 0);
 
         // when & then
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(InvalidRestoreRangeException.class, () -> {
             restoreService.restoreArticlesByRange(from, to);
         });
     }
@@ -61,15 +62,18 @@ public class ArticleRestoreServiceTest {
     void restoreArticlesByRange_emptyBackupData_returnsEmptyResult() {
         // given
         LocalDate date = LocalDate.of(2025, 7, 18);
+        LocalDateTime from = date.atStartOfDay();
+        LocalDateTime to = from;
+
         when(backupStorage.load(date)).thenReturn(Collections.emptyList());
 
         // when
-        List<ArticleRestoreResultDto> result = restoreService.restoreArticlesByRange(date, date);
+        List<ArticleRestoreResultDto> result = restoreService.restoreArticlesByRange(from, to);
 
         // then
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(date.atStartOfDay(), result.get(0).restoreDate());
+        assertEquals(from, result.get(0).restoreDate());
         assertTrue(result.get(0).restoredArticleIds().isEmpty());
         assertEquals(0, result.get(0).restoredArticleCount());
     }
@@ -79,6 +83,9 @@ public class ArticleRestoreServiceTest {
     void restoreArticlesByRange_backupData_restoresOnlyMissingArticles() {
         // given
         LocalDate date = LocalDate.of(2025, 7, 18);
+        LocalDateTime from = date.atStartOfDay();
+        LocalDateTime to = from;
+
         ArticleDto article1 = new ArticleDto(UUID.randomUUID(), "source1", "url1", "title1",
             LocalDateTime.now(), "summary", 0L, 0L, false);
         ArticleDto article2 = new ArticleDto(UUID.randomUUID(), "source2", "url2", "title2",
@@ -90,17 +97,17 @@ public class ArticleRestoreServiceTest {
 
         Articles entity2 = mock(Articles.class);
         when(articlesMapper.toEntity(article2)).thenReturn(entity2);
-        when(articlesRepository.saveAll(anyList())).thenReturn(List.of(entity2));
         UUID savedId = UUID.randomUUID();
         when(entity2.getId()).thenReturn(savedId);
+        when(articlesRepository.saveAll(anyList())).thenReturn(List.of(entity2));
 
         // when
-        List<ArticleRestoreResultDto> result = restoreService.restoreArticlesByRange(date, date);
+        List<ArticleRestoreResultDto> result = restoreService.restoreArticlesByRange(from, to);
 
         // then
         assertEquals(1, result.size());
         ArticleRestoreResultDto dto = result.get(0);
-        assertEquals(date.atStartOfDay(), dto.restoreDate());
+        assertEquals(from, dto.restoreDate());
         assertEquals(1, dto.restoredArticleCount());
         assertEquals(List.of(savedId.toString()), dto.restoredArticleIds());
     }
