@@ -208,11 +208,6 @@ public class ArticlesIntegrationTest {
             )
         );
 
-        // load() 호출 시 단일 날짜에 대해서만 mockArticles 반환
-        Mockito.when(s3ArticleBackupStorage.load(Mockito.eq(testDate)))
-            .thenReturn(mockArticles);
-
-        // 그 외 날짜에는 빈 리스트 반환
         Mockito.when(s3ArticleBackupStorage.load(Mockito.any(LocalDate.class)))
             .thenAnswer(invocation -> {
                 LocalDate date = invocation.getArgument(0);
